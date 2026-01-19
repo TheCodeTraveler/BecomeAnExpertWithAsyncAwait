@@ -1,5 +1,17 @@
 # Become An Expert With Async Await in C#
 
+Outline
+* [0. Install Prerequisites](#0.-Install-Prerequisites)
+* 1. Presentation
+    * Teach thread switching
+    * Show compiled code using Sharplab.io
+    * (Basically, the first part of Correcting Common Mistakes talk)
+* 2. Code
+    * Use asyncawaitbestpractices example
+* 3. Creating Custum Immplementation of Task
+* 4. .NET Internals Presentation
+* 5. .NET Internals Code
+
 ## 0. Install Prerequisites
 
 This workshop requires the following tools:
@@ -53,18 +65,3 @@ This workshop requires the following tools:
 5. Stand by while the latest version of .NET MAUI is being installed
 
 
-Outline
-* Install Prerequisites
-    * Install/Update Visual Studio 2026 or Jet Brains Rider
-    * Install maui `dotnet workload maui install`
-* Presentation
-    * Teach thread switching
-    * Show compiled code using Sharplab.io
-    * (Basically, the first part of Correcting Common Mistakes talk)
-* Code
-    * Use asyncawaitbestpractices example
-* Lunch?
-* Creating Custum Immplementation of Task
-* .NET Internals Presentation
-* .NET Internals Code
-    * 
