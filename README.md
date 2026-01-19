@@ -1,7 +1,7 @@
 # Become An Expert With Async Await in C#
 
 Outline
-* [0. Install Prerequisites](#0.-Install-Prerequisites)
+* [0. Install Prerequisites](#0-install-prerequisites)
 * 1. Presentation
     * Teach thread switching
     * Show compiled code using Sharplab.io
