@@ -1,16 +1,13 @@
 # Become An Expert With Async Await in C#
 
-Outline
+Agenda
 * [0. Install Prerequisites](#0-install-prerequisites)
-* 1. Presentation
-    * Teach thread switching
-    * Show compiled code using Sharplab.io
-    * (Basically, the first part of Correcting Common Mistakes talk)
-* 2. Code
+* 1. (Presentation) Thread Switching + Compiler Generated Code
+* 2. (Code) Correct Common Async Await Mistakes
     * Use asyncawaitbestpractices example
-* 3. Creating Custum Immplementation of Task
-* 4. .NET Internals Presentation
-* 5. .NET Internals Code
+* 3. (Code) Creating Custom Immplementation of Task
+* 4. (Presentation) .NET Internals Presentation
+* 5. (Code) .NET Internals
 
 ## 0. Install Prerequisites
 
