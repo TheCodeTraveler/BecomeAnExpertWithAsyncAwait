@@ -65,7 +65,7 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
     _hackerNewsApiService = hackerNewsApiService;
 
     //ToDo Refactor
-    Refresh(CancellationToken.None); <-- This `async Task` method is not being awaited
+    Refresh(CancellationToken.None); // <-- This `async Task` method is not being awaited
 }
 ```
 
@@ -145,9 +145,19 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
 
 > **Note:** What is `.SafeFireAndForget()`? Let's discuss!
 
-4. In **NewsViewModel**, in the constructor, delete `//ToDo Refactor`
-
-
 ## 5. Forwarding Cancellation Tokens
 
-1. In **NewsViewModel**, in the `async Task Refresh(CancellationToken method)`,
+1. In **NewsViewModel**, in the `async Task Refresh(CancellationToken token)` method, locate the next `// ToDo Refactor`
+2. In the `async Task Refresh(CancellationToken token)` method, note the warning caused by `Task.Delay(TimeSpan.FromSeconds(2))`
+
+<img width="1896" height="532" alt="Screenshot 2026-01-22 at 3 52 20 PM" src="https://github.com/user-attachments/assets/31135b1b-2bdc-4e5b-8de4-18dd30298a96" />
+
+> **Note**: Why is it important to forward a `CancellationToken`? Let's discuss! 
+
+3. In the `async Task Refresh(CancellationToken token)` method, forward the `CancellationToken` to the `Task.Delay(TimeSpan.FromSeconds(2))` method:
+
+```cs
+var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
+```
+
+## 6. Using `.ConfigureAwait()`
