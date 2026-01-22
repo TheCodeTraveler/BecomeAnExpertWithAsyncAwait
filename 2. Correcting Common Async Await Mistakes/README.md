@@ -49,6 +49,89 @@ In this section we will correct common async/await mistakes using `HackerNews.sl
 
 <img width="737" height="1083" alt="image" src="https://github.com/user-attachments/assets/2d07f935-055e-4e21-b9aa-fb1c54fc2558" />
 
+## 3. Using Async Void
 
+1. In your IDE, open the file **/HackerNews/ViewModels/NewsViewModel**
+2. In **NewsViewModel**, in the constructor, locate the `Refresh(CancellationToken.None)` method:
 
+```cs
+public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
+{
+    _hackerNewsApiService = hackerNewsApiService;
+
+    //ToDo Refactor
+    Refresh(CancellationToken.None); <-- This `async Task` method is not being awaited
+}
+```
+3. In **NewsViewModel**, below the constructor, copy/paste the following `async void Refresh()` method below the constructor:
+
+```cs
+public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
+{
+    _hackerNewsApiService = hackerNewsApiService;
+
+    //ToDo Refactor
+    Refresh(CancellationToken.None);
+}
+
+async void Refresh()
+{
+    await Refresh(CancellationToken.None);
+}
+```
+
+4. In **NewsViewModel**, in the constructor, use the newly created `async void` method:
+
+```cs
+public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
+{
+    _hackerNewsApiService = hackerNewsApiService;
+
+    //ToDo Refactor
+    Refresh();
+}
+
+async void Refresh()
+{
+    await Refresh(CancellationToken.None);
+}
+```
+> **Note:** Is it dangerous to use an `async void` method? Let's discuss!
+
+## 4. Using Safe Fire and Forget
+
+1. In **NewsViewModel**, below the constructor, delete the `async void Refresh()`:
+
+```cs
+public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
+{
+    _hackerNewsApiService = hackerNewsApiService;
+
+    //ToDo Refactor
+    Refresh();
+}
+```
+2. In **NewsViewModel**, in the constructor, replace `Refresh()` with `Refresh(CancellationToken.None)`:
+
+```cs
+public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
+{
+    _hackerNewsApiService = hackerNewsApiService;
+
+    //ToDo Refactor
+    Refresh(CancellationToken.None);
+}
+```
+
+3. In **NewsViewModel**, in the constructor, append `.SafeFireAndForget()` to the `Refresh(CancellationToken.None)` method:
+
+```cs
+public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
+{
+    _hackerNewsApiService = hackerNewsApiService;
+
+    //ToDo Refactor
+    Refresh(CancellationToken.None).SafeFireAndForget(ex => Trace.WriteLine(ex);
+}
+```
 
