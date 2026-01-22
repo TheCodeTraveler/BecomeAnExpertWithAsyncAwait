@@ -3,12 +3,14 @@
 In this section we will correct common async/await mistakes using `HackerNews.sln`.
 
 ## 1. Open **HackerNews.slnx** in IDE
+
 1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/2. Correcting Common Async Await Mistakes/1. Start**
 2. In the **1. Start** folder, open **HackerNews.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
 
 <img width="1032" height="674" alt="Screenshot 2026-01-22 at 2 51 36 PM" src="https://github.com/user-attachments/assets/8a714e01-2bb6-40cc-83ff-5b389566499b" />
 
 ## 2a Build/Run the App (macOS)
+
 1. In **Jet Brains Rider**, using the macOS Menu Bar, navigate to **JetBrains Rider -> Settings**
 
 <img width="376" height="302" alt="image" src="https://github.com/user-attachments/assets/f06c3819-fe72-46dc-bd7c-cf9fd38d75a7" />
@@ -21,6 +23,7 @@ In this section we will correct common async/await mistakes using `HackerNews.sl
 4. In the **Plugins** window, in the **search bar**, type `Rider Android Support`
 5. In the **Plugins** window, in the search results, locate the **Rider Android Support** plugin
 6. On the **Rider Android Support** plugin, click **Install**
+
 > **Note:** If **Rider Android Support** is already installed, skip this step
 
 <img width="1462" height="1162" alt="Screenshot 2026-01-22 at 3 14 54 PM" src="https://github.com/user-attachments/assets/ee5fe44f-f405-423a-a9fa-e43477e539f1" />
@@ -34,7 +37,9 @@ In this section we will correct common async/await mistakes using `HackerNews.sl
 <img width="633" height="280" alt="image" src="https://github.com/user-attachments/assets/7ef7075c-978a-49f7-b0b8-b09913cec8b0" />
 
 12. In the **HackerNews** startup project drop-down menu, select the Android icon
+
 > **Note**: Alternatively, you may select the macOS or iOS icon if you have [Xcode](https://developer.apple.com/xcode/) installed
+
 13. In Jet Brains Rider, on the top-center of the toolbar, click the Android Device drop-down menu
 
 <img width="1212" height="357" alt="image" src="https://github.com/user-attachments/assets/dc4463ce-5e88-4741-ba66-9683f8a2dfe7" />
@@ -63,6 +68,7 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
     Refresh(CancellationToken.None); <-- This `async Task` method is not being awaited
 }
 ```
+
 3. In **NewsViewModel**, below the constructor, copy/paste the following `async void Refresh()` method below the constructor:
 
 ```cs
@@ -96,6 +102,7 @@ async void Refresh()
     await Refresh(CancellationToken.None);
 }
 ```
+
 > **Note:** Is it dangerous to use an `async void` method? Let's discuss!
 
 ## 4. Using Safe Fire and Forget
@@ -111,6 +118,7 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
     Refresh();
 }
 ```
+
 2. In **NewsViewModel**, in the constructor, replace `Refresh()` with `Refresh(CancellationToken.None)`:
 
 ```cs
@@ -135,3 +143,11 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
 }
 ```
 
+> **Note:** What is `.SafeFireAndForget()`? Let's discuss!
+
+4. In **NewsViewModel**, in the constructor, delete `//ToDo Refactor`
+
+
+## 5. Forwarding Cancellation Tokens
+
+1. In **NewsViewModel**, in the `async Task Refresh(CancellationToken method)`,
