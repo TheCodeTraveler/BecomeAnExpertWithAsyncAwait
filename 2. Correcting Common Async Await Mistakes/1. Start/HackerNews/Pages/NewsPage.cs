@@ -10,6 +10,7 @@ class NewsPage : BaseContentPage<NewsViewModel>
 	public NewsPage(IBrowser browser, NewsViewModel newsViewModel) : base(newsViewModel, "Top Stories")
 	{
 		_browser = browser;
+		Title = PageTitleConstants.NewsPageTitle;
 
 		BindingContext.PullToRefreshFailed += HandlePullToRefreshFailed;
 
@@ -71,5 +72,5 @@ class NewsPage : BaseContentPage<NewsViewModel>
 	}
 
 	void HandlePullToRefreshFailed(object? sender, string message) =>
-		Dispatcher.Dispatch(() => DisplayAlertAsync("Refresh Failed", message, "OK"));
+		Dispatcher.Dispatch(async () => await DisplayAlertAsync("Refresh Failed", message, "OK"));
 }
