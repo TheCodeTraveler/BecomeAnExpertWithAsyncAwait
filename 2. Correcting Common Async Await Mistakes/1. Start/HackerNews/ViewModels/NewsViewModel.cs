@@ -1,5 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Diagnostics;
+using AsyncAwaitBestPractices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
