@@ -61,7 +61,7 @@ partial class NewsViewModel : BaseViewModel
 	}
 
 	// ToDo Refactor
-	async Task<FrozenSet<StoryModel>> GetTopStories(CancellationToken token, int storyCount = int.MaxValue)
+	async Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken token, int storyCount = int.MaxValue)
 	{
 		List<StoryModel> topStoryList = [];
 
@@ -76,7 +76,7 @@ partial class NewsViewModel : BaseViewModel
 				break;
 		}
 
-		return topStoryList.OrderByDescending(x => x.Score).ToFrozenSet();
+		return topStoryList.OrderByDescending(x => x.Score).ToList();
 	}
 
 	//ToDo Refactor
