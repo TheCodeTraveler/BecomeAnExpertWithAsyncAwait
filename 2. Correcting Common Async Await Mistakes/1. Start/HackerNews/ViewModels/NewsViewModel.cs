@@ -1,5 +1,4 @@
-﻿using System.Collections.Frozen;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using AsyncAwaitBestPractices;
 using CommunityToolkit.Mvvm.ComponentModel;
