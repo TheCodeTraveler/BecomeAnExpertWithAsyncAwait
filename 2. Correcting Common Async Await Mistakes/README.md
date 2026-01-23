@@ -251,9 +251,45 @@ async Task Refresh(CancellationToken token)
 ```
 
 ## 9. Returning `Task`
+
 1. In **NewsViewModel**, above the **Task<StoryModel> GetStory(long, CancellationToken)** method, scroll down to the next `// ToDo Refactor`:
 > //ToDo Refactor
 >
 > async Task<StoryModel> GetStory(long storyId, CancellationToken token)
 
-2. In the `Task<StoryModel> GetStory(long, CancellationToken)`
+2. Update the `Task<StoryModel> GetStory(long, CancellationToken)` method as follows:
+
+```cs
+	Task<StoryModel> GetStory(long storyId, CancellationToken token)
+	{
+		return _hackerNewsApiService.GetStory(storyId, token);
+	}
+```
+> **Note:** Returning a `Task` improves performance by avoiding unnecessary thread switching
+
+## 10. Using `ValueTask`
+
+1. In **NewsViewModel**, above the **Task<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken)** method, scroll down to the next `// ToDo Refactor`:
+2. Update the the **Task<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken)** method to return `ValueTask`:
+
+```cs
+//ToDo Refactor
+async ValueTask<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken token)
+{
+    if (IsDataRecent(TimeSpan.FromHours(1)))
+        return TopStoryCollection.Select(x => x.Id).ToList();
+
+    try
+    {
+        return await _hackerNewsApiService.GetTopStoryIDs(token);
+    }
+    catch (Exception e)
+    {
+        Trace.WriteLine(e.Message);
+        throw;
+    }
+}
+```
+> **Note:** `ValueTask` is more performant than `Task` because it is a value-type which is initialized on the Stack whereas `Task` is a reference-type that is initialized on the Heap
+>
+> **Note:** Use `ValueTask` when the hot-path of the method does not require the `await` keyword
