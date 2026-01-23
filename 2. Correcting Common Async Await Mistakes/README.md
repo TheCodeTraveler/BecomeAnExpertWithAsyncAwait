@@ -57,17 +57,11 @@ In this section we will correct common async/await mistakes using `HackerNews.sl
 ## 3. Using Async Void
 
 1. In your IDE, open the file **/HackerNews/ViewModels/NewsViewModel**
-2. In **NewsViewModel**, in the constructor, locate the `Refresh(CancellationToken.None)` method:
+1. In **NewsViewModel**, in the Constructor, scroll down to the first `// ToDo Refactor` comment:
 
-```cs
-public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
-{
-    _hackerNewsApiService = hackerNewsApiService;
-
-    //ToDo Refactor
-    Refresh(CancellationToken.None); // <-- This `async Task` method is not being awaited
-}
-```
+> //ToDo Refactor
+> 
+> Refresh(CancellationToken.None); // <-- This `async Task` method is not being awaited
 
 3. In **NewsViewModel**, below the constructor, copy/paste the following `async void Refresh()` method below the constructor:
 
@@ -107,7 +101,7 @@ async void Refresh()
 
 ## 4. Using Safe Fire and Forget
 
-1. In **NewsViewModel**, below the constructor, delete the `async void Refresh()`:
+1. In **NewsViewModel**, below the constructor, delete the `async void Refresh()` method:
 
 ```cs
 public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
@@ -147,17 +141,54 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
 
 ## 5. Forwarding Cancellation Tokens
 
-1. In **NewsViewModel**, in the `async Task Refresh(CancellationToken token)` method, locate the next `// ToDo Refactor`
-2. In the `async Task Refresh(CancellationToken token)` method, note the warning caused by `Task.Delay(TimeSpan.FromSeconds(2))`
+1. In **NewsViewModel**, in the `Task Refresh(CancellationToken)` method, scroll down to the next `// ToDo Refactor`
+> // ToDo Refactor
+> 
+> var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
+
+3. In the `Task Refresh(CancellationToken)` method, note the warning caused by `Task.Delay(TimeSpan.FromSeconds(2))`
 
 <img width="1896" height="532" alt="Screenshot 2026-01-22 at 3 52 20 PM" src="https://github.com/user-attachments/assets/31135b1b-2bdc-4e5b-8de4-18dd30298a96" />
 
 > **Note**: Why is it important to forward a `CancellationToken`? Let's discuss! 
 
-3. In the `async Task Refresh(CancellationToken token)` method, forward the `CancellationToken` to the `Task.Delay(TimeSpan.FromSeconds(2))` method:
+3. In the `.Task Refresh(CancellationToken)` method, forward the `CancellationToken` to the `Task.Delay(TimeSpan.FromSeconds(2))` method:
 
 ```cs
 var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
 ```
+> **Note:** Fun Fact! You can capture a `Task` as a variable and `await` it later.
 
 ## 6. Using `.ConfigureAwait()`
+
+1. In **NewsViewModel**, in the `Task Refresh(CancellationToken)` method, scroll down to the next `// ToDo Refactor`: 
+> // ToDo Refactor
+> 
+> var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories);
+
+2. In the **NewsViewModel**, in the `Task Refresh(CancellationToken)` method, append to `await GetTopStories(token, StoriesConstants.NumberOfStories)` the extension menthod `.ConfigureAwait(false)`
+
+```cs
+var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories).ConfigureAwait(false)
+```
+> **Note:** `.ConfigureAwait(false)` tells the .NET runtime to continue on any background thread once the await'd `Task` has completed
+
+> **Note:** .NET 8 debuted the enum `ConfigureAwaitOptions`, introducing 4 new Flags we can pass into `.ConfigureAwait()`: `ConfigureAwaitOptions.None`, `ConfigureAwaitOptions.ContinueOnCapturedContext`, `ConfigureAwaitOptions.SuppressThrowing` and `ConfigureAwaitOptions.ForceYielding`
+
+## 7. Avoiding `.Wait()` and `.Result`
+1. In **NewsViewModel**, in the `async Task Refresh(CancellationToken token)` method, scroll down to the next `// ToDo Refactor`: 
+> // ToDo Refactor
+> 
+> minimumRefreshTimeTask.Wait();
+
+2. In **NewsViewModel**, in the `async Task Refresh(CancellationToken token)` method, replace `minimumRefreshTimeTask.Wait();` with the following code:
+
+```cs
+await minimumRefreshTimeTask.ConfigureAwait(false);
+```
+
+## 8. Use `IAsyncEnumerable` to Stream Data
+1. In **NewsViewModel**, above the `Task<FrozenSet<StoryModel>> GetTopStories(CancellationToken, int)` method, scroll down to the next `// ToDo Refactor`:
+> // ToDo Refactor
+>
+> async Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken token, int storyCount = int.MaxValue)
