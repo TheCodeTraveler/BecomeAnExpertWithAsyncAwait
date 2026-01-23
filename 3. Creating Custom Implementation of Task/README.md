@@ -249,7 +249,7 @@ CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environ
 ## 5. Add **.Delay(TimeSpan)**
 
 1. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
-2. In **CustomTask**, add `public static CustomTask Delay(TimeSpan)`:
+2. In **CustomTask**, add **public static CustomTask Delay(TimeSpan)**:
 
 ```cs
 public static CustomTask Delay(TimeSpan delay)
@@ -283,4 +283,61 @@ CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environ
 5. In your IDE, Build + Run the program
 6. Confirm that the Program no longer finishes executing near-instantly thanks to **CustomTask.Delay(TimeSpan)**
 
-## 6. Enable Usage of **await**
+## 6. Enable **await** Keyword
+
+1. In your IDE, in the **CreatingTaskFromScratch** project, add a new file called **CustomTaskAwaiter.cs**
+
+<img width="1064" height="304" alt="Screenshot 2026-01-23 at 1 59 37 PM" src="https://github.com/user-attachments/assets/d8e03b9c-9d5e-4c61-8ef0-07d40bab31e3" />
+
+
+2. In **CustomTaskAwaiter**, create **readonly struct CustomTaskAwaiter**:
+
+```cs
+using System.Runtime.CompilerServices;
+
+namespace CreatingTaskFromScratch;
+
+readonly struct CustomTaskAwaiter : INotifyCompletion
+{
+	readonly CustomTask _task;
+	
+	internal CustomTaskAwaiter(CustomTask task)
+	{
+		_task = task;
+	}
+
+	public bool IsCompleted => _task.IsCompleted;
+
+	public void OnCompleted(Action continuation) => _task.ContinueWith(continuation);
+
+	public CustomTaskAwaiter GetAwaiter() => this;
+
+	public void GetResult() => _task.Wait();
+}
+```
+3. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
+4. In **CustomTask** add the method **public CustomTaskAwaiter GetAwaiter()**:
+
+```cs
+public CustomTaskAwaiter GetAwaiter() => new(this);
+```
+5. In your IDE, open the file **CreatingTaskFromScratch/Program**
+6. In **Program**, replace **.Wait()** with **await**:
+
+```cs
+using CreatingTaskFromScratch;
+
+Console.WriteLine($"Starting Thread Id: {Environment.CurrentManagedThreadId}");
+
+await CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
+
+await CustomTask.Delay(TimeSpan.FromSeconds(1));
+
+Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}");
+
+await CustomTask.Delay(TimeSpan.FromSeconds(1));
+
+await CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
+```
+>**Note:** The .NET Compiler uses [Duck Typing](https://en.wikipedia.org/wiki/Duck_typing) to enable the **await** keyword. Any object can be await'd as long as it contains the methof **public INotifyCompletion GetAwaiter()**.
+7. In your IDE, Build + Run the program
