@@ -10,7 +10,6 @@ namespace HackerNews;
 partial class NewsViewModel : BaseViewModel
 {
 	readonly HackerNewsAPIService _hackerNewsApiService;
-	readonly AsyncAwaitBestPractices.WeakEventManager _pullToRefreshEventManager = new();
 
 	public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : base(dispatcher)
 	{
@@ -20,13 +19,8 @@ partial class NewsViewModel : BaseViewModel
 		Refresh(CancellationToken.None);
 	}
 
-	public event EventHandler<string> PullToRefreshFailed
-	{
-		add => _pullToRefreshEventManager.AddEventHandler(value);
-		remove => _pullToRefreshEventManager.RemoveEventHandler(value);
-	}
-	
-	
+	public event EventHandler<string>? PullToRefreshFailed;
+
 	[ObservableProperty]
 	public partial bool IsListRefreshing { get; set; }
 
@@ -51,7 +45,7 @@ partial class NewsViewModel : BaseViewModel
 		}
 		catch (Exception e)
 		{
-			OnPullToRefreshFailed(e.ToString());
+			PullToRefreshFailed?.Invoke(this, e.ToString());
 		}
 		finally
 		{
@@ -105,6 +99,4 @@ partial class NewsViewModel : BaseViewModel
 
 	bool IsDataRecent(TimeSpan timeSpan) => TopStoryCollection.Any() 
 	                                        && (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) > timeSpan;
-
-	void OnPullToRefreshFailed(string message) => _pullToRefreshEventManager.RaiseEvent(this, message, nameof(PullToRefreshFailed));
 }
