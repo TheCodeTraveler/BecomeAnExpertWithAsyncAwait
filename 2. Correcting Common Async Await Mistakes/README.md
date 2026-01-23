@@ -161,12 +161,12 @@ var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
 
 ## 6. Using `.ConfigureAwait()`
 
-1. In **NewsViewModel**, in the `Task Refresh(CancellationToken)` method, scroll down to the next `// ToDo Refactor`: 
+1. In **NewsViewModel**, in the **Task Refresh(CancellationToken)** method, scroll down to the next `// ToDo Refactor`: 
 > // ToDo Refactor
 > 
 > var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories);
 
-2. In the **NewsViewModel**, in the `Task Refresh(CancellationToken)` method, append to `await GetTopStories(token, StoriesConstants.NumberOfStories)` the extension menthod `.ConfigureAwait(false)`
+2. In the **NewsViewModel**, in the **Task Refresh(CancellationToken)** method, append to `await GetTopStories(token, StoriesConstants.NumberOfStories)` the extension menthod `.ConfigureAwait(false)`
 
 ```cs
 var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories).ConfigureAwait(false)
@@ -176,7 +176,7 @@ var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories
 > **Note:** .NET 8 debuted the enum `ConfigureAwaitOptions`, introducing 4 new Flags we can pass into `.ConfigureAwait()`: `ConfigureAwaitOptions.None`, `ConfigureAwaitOptions.ContinueOnCapturedContext`, `ConfigureAwaitOptions.SuppressThrowing` and `ConfigureAwaitOptions.ForceYielding`
 
 ## 7. Avoiding `.Wait()` and `.Result`
-1. In **NewsViewModel**, in the `async Task Refresh(CancellationToken token)` method, scroll down to the next `// ToDo Refactor`: 
+1. In **NewsViewModel**, in the **async Task Refresh(CancellationToken token)** method, scroll down to the next `// ToDo Refactor`: 
 > // ToDo Refactor
 > 
 > minimumRefreshTimeTask.Wait();
@@ -188,7 +188,72 @@ await minimumRefreshTimeTask.ConfigureAwait(false);
 ```
 
 ## 8. Use `IAsyncEnumerable` to Stream Data
-1. In **NewsViewModel**, above the `Task<FrozenSet<StoryModel>> GetTopStories(CancellationToken, int)` method, scroll down to the next `// ToDo Refactor`:
+1. In **NewsViewModel**, above the **Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken, int)** method, scroll down to the next **// ToDo Refactor**:
 > // ToDo Refactor
 >
 > async Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken token, int storyCount = int.MaxValue)
+
+2. In **NewsViewModel**, replace the **Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken, int)** method:
+
+```cs
+async IAsyncEnumerable<StoryModel> GetTopStories(int storyCount, [EnumeratorCancellation] CancellationToken token)
+{
+    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(storyCount);
+
+    var topStoryIds = await _hackerNewsApiService.GetTopStoryIDs(token).ConfigureAwait(false);
+
+    var getTopStoryTaskList = topStoryIds.Select(id => _hackerNewsApiService.GetStory(id, token)).ToList();
+
+    await foreach (var topStoryTask in getTopStoryTaskList.ToAsyncEnumerable().WithCancellation(token).ConfigureAwait(false))
+    {
+        yield return await topStoryTask.ConfigureAwait(false);
+
+        if (--storyCount <= 0)
+        {
+            break;
+        }
+    }
+}
+```
+> **Note:** `IAsyncEnumerable` is read using an `await foreach()` loop
+
+> **Note:** `[EnumeratorCancellation]` tells the .NET runtime to check the associated `CancellationToken` on each iteration of the `IAsyncEnumerable`
+
+3. In **NewsViewModel**, scroll up to the red squiggles in the **Task Refresh(CancellationToken)** method
+4. Update the **Task Refresh(CancellationToken)** method using the following code:
+
+```cs
+[RelayCommand]
+async Task Refresh(CancellationToken token)
+{
+    TopStoryCollection.Clear();
+
+    var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
+
+    try
+    {
+        await foreach (var story in GetTopStories(StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
+        {
+            if (!TopStoryCollection.Any(x => x.Title.Equals(story.Title, StringComparison.Ordinal)))
+                InsertIntoSortedCollection(TopStoryCollection, (a, b) => b.Score.CompareTo(a.Score), story);
+        }
+    }
+    catch (Exception e)
+    {
+        OnPullToRefreshFailed(e.ToString());
+    }
+    finally
+    {
+        await minimumRefreshTimeTask.ConfigureAwait(false);
+        IsListRefreshing = false;
+    }
+}
+```
+
+## 9. Returning `Task`
+1. In **NewsViewModel**, above the **Task<StoryModel> GetStory(long, CancellationToken)** method, scroll down to the next `// ToDo Refactor`:
+> //ToDo Refactor
+>
+> async Task<StoryModel> GetStory(long storyId, CancellationToken token)
+
+2. In the `Task<StoryModel> GetStory(long, CancellationToken)`
