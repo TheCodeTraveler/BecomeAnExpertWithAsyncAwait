@@ -104,7 +104,7 @@ sealed class CustomTask
 		return task;
 	}
 
-	public DomeTrainTaskAwaiter GetAwaiter() => new(this);
+	public CustomTaskAwaiter GetAwaiter() => new(this);
 
 	public void SetResult() => CompleteTask(null);
 
@@ -134,19 +134,4 @@ sealed class CustomTask
 			}
 		}
 	}
-}
-
-readonly struct DomeTrainTaskAwaiter : INotifyCompletion
-{
-	readonly CustomTask _task;
-
-	internal DomeTrainTaskAwaiter(CustomTask task) => _task = task;
-
-	public bool IsCompleted => _task.IsCompleted;
-
-	public void OnCompleted(Action continuation) => _task.ContinueWith(continuation);
-
-	public DomeTrainTaskAwaiter GetAwait() => this;
-
-	public void GetResult() => _task.Wait();
 }
