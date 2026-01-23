@@ -6,7 +6,7 @@ namespace ExecutionContextExample;
 
 public static class Program
 {
-	static readonly AsyncLocal<string> asyncLocalData = new();
+	static readonly AsyncLocal<string> _asyncLocalData = new();
 
 	public static async Task Main()
 	{
@@ -15,7 +15,7 @@ public static class Program
 		// Assign data controlled by ExecutionContext
 		CultureInfo.CurrentCulture = new CultureInfo("es-ES");
 		Thread.CurrentPrincipal = new ClaimsPrincipal();
-		asyncLocalData.Value = "Initial Value";
+		_asyncLocalData.Value = "Initial Value";
 
 		PrintThreadValues();
 
@@ -24,8 +24,8 @@ public static class Program
 		var thread = new Thread(() =>
 		{
 			CultureInfo.CurrentCulture = new CultureInfo("en-UK");
-			Thread.CurrentPrincipal = new DomeTrainPrinciple();
-			asyncLocalData.Value = "AsyncLocalData in Thread";
+			Thread.CurrentPrincipal = new CustomPrinciple();
+			_asyncLocalData.Value = "AsyncLocalData in Thread";
 
 			Console.WriteLine("Background Thread after assigning values");
 			PrintThreadValues();
@@ -68,18 +68,18 @@ public static class Program
 		Console.WriteLine($"Thread ID: {Environment.CurrentManagedThreadId}");
 		Console.WriteLine($"Culture: {CultureInfo.CurrentCulture.DisplayName}");
 		Console.WriteLine($"Principal: {Thread.CurrentPrincipal?.GetType()}");
-		Console.WriteLine($"AsyncLocalData: {asyncLocalData.Value}");
+		Console.WriteLine($"AsyncLocalData: {_asyncLocalData.Value}");
 
 		Console.WriteLine();
 	}
 }
 
-sealed class DomeTrainPrinciple() : GenericPrincipal(new DomeTrainIdentity(), null)
+sealed class CustomPrinciple() : GenericPrincipal(new CustomIdentity(), null)
 {
-	sealed class DomeTrainIdentity : IIdentity
+	sealed class CustomIdentity : IIdentity
 	{
-		public string? AuthenticationType { get; } = "Fake";
-		public bool IsAuthenticated { get; } = true;
-		public string? Name { get; } = nameof(DomeTrainIdentity);
+		public string AuthenticationType => "Fake";
+		public bool IsAuthenticated => true;
+		public string Name => nameof(CustomIdentity);
 	}
 }
