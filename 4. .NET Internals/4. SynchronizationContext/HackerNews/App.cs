@@ -1,15 +1,16 @@
 ﻿using CommunityToolkit.Maui.Markup;
-using Microsoft.Maui.Controls;
 
 namespace HackerNews;
 
-partial class App : Application
+class App : Application
 {
 	readonly AppShell _appShell;
-
-	public App(AppShell appshell)
+	
+	public App(AppShell appShell)
 	{
-		Resources = new ResourceDictionary
+		_appShell = appShell;
+		
+		Resources = new ResourceDictionary()
 		{
 			new Style<Shell>(
 				(Shell.NavBarHasShadowProperty, true),
@@ -23,8 +24,6 @@ partial class App : Application
 				(NavigationPage.BarTextColorProperty, ColorConstants.NavigationBarTextColor),
 				(NavigationPage.BarBackgroundColorProperty, ColorConstants.NavigationBarBackgroundColor)).ApplyToDerivedTypes(true)
 		};
-
-		_appShell = appshell;
 	}
 
 	protected override Window CreateWindow(IActivationState? activationState) => new(_appShell);

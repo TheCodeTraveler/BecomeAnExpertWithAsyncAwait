@@ -1,6 +1,8 @@
-﻿namespace HackerNews;
+﻿using Microsoft.Maui.Graphics;
 
-static class ColorConstants
+namespace HackerNews;
+
+public static class ColorConstants
 {
 	public static Color NavigationBarBackgroundColor { get; } = Color.FromArgb("FF6601");
 	public static Color NavigationBarTextColor { get; } = Colors.Black;

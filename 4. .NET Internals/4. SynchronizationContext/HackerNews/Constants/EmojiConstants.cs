@@ -1,6 +1,6 @@
 ﻿namespace HackerNews;
 
-static class EmojiConstants
+public static class EmojiConstants
 {
 	public const string SadFaceEmoji = "☹️";
 	public const string NeutralFaceEmoji = "\U0001F610";

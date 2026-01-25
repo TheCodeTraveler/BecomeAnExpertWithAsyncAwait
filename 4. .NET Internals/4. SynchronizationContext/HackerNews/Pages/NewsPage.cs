@@ -3,38 +3,32 @@ using CommunityToolkit.Maui.Markup;
 
 namespace HackerNews;
 
-partial class NewsPage : BaseContentPage<NewsViewModel>
+class NewsPage : BaseContentPage<NewsViewModel>
 {
 	readonly IBrowser _browser;
-	readonly IDispatcher _dispatcher;
 
-	public NewsPage(IBrowser browser,
-						IDispatcher dispatcher,
-						NewsViewModel newsViewModel) : base(newsViewModel, "Top Stories")
+	public NewsPage(IBrowser browser, NewsViewModel newsViewModel) : base(newsViewModel, PageTitleConstants.NewsPageTitle)
 	{
 		_browser = browser;
-		_dispatcher = dispatcher;
 
 		BindingContext.PullToRefreshFailed += HandlePullToRefreshFailed;
 
 		Content = new RefreshView
-		{
-			RefreshColor = Colors.Black,
-
-			Content = new CollectionView
 			{
-				BackgroundColor = Color.FromArgb("F6F6EF"),
-				SelectionMode = SelectionMode.Single,
-				ItemTemplate = new StoryDataTemplate(),
+				RefreshColor = Colors.Black,
 
-			}.Bind(ItemsView.ItemsSourceProperty,
-					getter: static (NewsViewModel vm) => vm.TopStoryCollection)
-			 .Invoke(collectionView => collectionView.SelectionChanged += HandleSelectionChanged)
-
-		}.Bind(RefreshView.IsRefreshingProperty,
+				Content = new CollectionView
+					{
+						BackgroundColor = Color.FromArgb("F6F6EF"),
+						SelectionMode = SelectionMode.Single,
+						ItemTemplate = new StoryDataTemplate(),
+					}.Bind(CollectionView.ItemsSourceProperty,
+						getter: static (NewsViewModel vm) => vm.TopStoryCollection)
+					.Invoke(collectionView => collectionView.SelectionChanged += HandleSelectionChanged)
+			}.Bind(RefreshView.IsRefreshingProperty,
 				getter: static (NewsViewModel vm) => vm.IsListRefreshing,
-				setter: static (NewsViewModel vm, bool isRefreshing) => vm.IsListRefreshing = isRefreshing)
-		 .Bind(RefreshView.CommandProperty,
+				setter: static (vm, isRefreshing) => vm.IsListRefreshing = isRefreshing)
+			.Bind(RefreshView.CommandProperty,
 				getter: static (NewsViewModel vm) => vm.RefreshCommand,
 				mode: BindingMode.OneTime);
 	}
@@ -43,14 +37,11 @@ partial class NewsPage : BaseContentPage<NewsViewModel>
 	{
 		base.OnAppearing();
 
-		if (Content is RefreshView refreshView
-			&& refreshView.Content is CollectionView collectionView
-			&& IsNullOrEmpty(collectionView.ItemsSource))
+		if (Content is RefreshView { Content: CollectionView collectionView } refreshView
+		    && collectionView.ItemsSource.IsNullOrEmpty())
 		{
 			refreshView.IsRefreshing = true;
 		}
-
-		static bool IsNullOrEmpty(in IEnumerable? enumerable) => !enumerable?.GetEnumerator().MoveNext() ?? true;
 	}
 
 	async void HandleSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -80,5 +71,5 @@ partial class NewsPage : BaseContentPage<NewsViewModel>
 	}
 
 	void HandlePullToRefreshFailed(object? sender, string message) =>
-		_dispatcher.Dispatch(async () => await DisplayAlertAsync("Refresh Failed", message, "OK"));
+		Dispatcher.Dispatch(async () => await DisplayAlertAsync("Refresh Failed", message, "OK"));
 }

@@ -4,9 +4,9 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace HackerNews;
 
-partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsAPIService) : BaseViewModel(dispatcher)
+partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiService) : BaseViewModel(dispatcher)
 {
-	readonly HackerNewsAPIService _hackerNewsAPIService = hackerNewsAPIService;
+	readonly HackerNewsAPIService _hackerNewsApiService = hackerNewsApiService;
 	readonly WeakEventManager _pullToRefreshEventManager = new();
 
 	public event EventHandler<string> PullToRefreshFailed
@@ -16,24 +16,22 @@ partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerN
 	}
 
 	[ObservableProperty]
-	public partial bool IsListRefreshing { get; set; }
+	public partial bool IsListRefreshing { get; set; } 
 
 	[RelayCommand]
 	async Task Refresh(CancellationToken token)
 	{
 		var thread = Thread.CurrentThread;
-
 		TopStoryCollection.Clear();
 
 		var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
 
 		try
 		{
-			await foreach (var story in GetTopStories(StoriesConstants.NumberOfStories, token)
-							   .ConfigureAwait(false))
+			await foreach (var story in GetTopStories(StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
 			{
 				var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
-
+				
 				if (!TopStoryCollection.Any(x => x.Title.Equals(story.Title, StringComparison.Ordinal)))
 					InsertIntoSortedCollection(TopStoryCollection, (a, b) => b.Score.CompareTo(a.Score), story);
 			}
@@ -53,11 +51,11 @@ partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerN
 	{
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(storyCount);
 
-		var topStoryIds = await _hackerNewsAPIService.GetTopStoryIDs(token).ConfigureAwait(false);
+		var topStoryIds = await _hackerNewsApiService.GetTopStoryIDs(token).ConfigureAwait(false);
 
-		var getTopStoryTaskList = topStoryIds.Select(id => _hackerNewsAPIService.GetStory(id, token)).ToList();
+		var getTopStoryTaskList = topStoryIds.Select(id => _hackerNewsApiService.GetStory(id, token)).ToList();
 
-		await foreach (var topStoryTask in Task.WhenEach(getTopStoryTaskList).WithCancellation(token).ConfigureAwait(false))
+		await foreach (var topStoryTask in getTopStoryTaskList.ToAsyncEnumerable().WithCancellation(token).ConfigureAwait(false))
 		{
 			yield return await topStoryTask.ConfigureAwait(false);
 
