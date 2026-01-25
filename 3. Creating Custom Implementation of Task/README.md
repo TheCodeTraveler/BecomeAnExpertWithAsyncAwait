@@ -103,7 +103,7 @@ public static CustomTask Run(Action action)
 ```
 > **Note:** `ThreadPool.QueueUserWorkItem()` queues a method for execution. The method executes when a thread pool thread becomes available.
 
-6. In your IDE, open the file **CreatingTaskFromScratch/Program**
+6. In your IDE, open the file **/CreatingTaskFromScratch/Program**
 7. In **Program**, implement `CustomTask.Run()`:
 
 ```cs
@@ -121,7 +121,7 @@ Console.ReadLine();
 
 ## 3. Add **.ContinueWith()**
 
-1. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
+1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
 2. In **CustomTask**, add `public CustomTask ContinueWith(Action)`:
 
 ```cs
@@ -188,7 +188,7 @@ void CompleteTask(Exception? exception)
   }
 }
 ```
-4. In your IDE, open the file **CreatingTaskFromScratch/Program**
+4. In your IDE, open the file **/CreatingTaskFromScratch/Program**
 5. In **Program**, append `.ContinueWith()` to the existing call to `CustomTask.Run()`:
 ```cs
 CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"))
@@ -200,7 +200,7 @@ CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environ
 
 ## 4. Add **Wait()**
 
-1. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
+1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
 2. In **CustomTask**, add `public void Wait()`:
 ```cs
 public void Wait()
@@ -228,7 +228,7 @@ public void Wait()
 >
 > **Note:** **ManualResetEventSlim.Wait()** is a blocking call
 
-3. In your IDE, open the file **CreatingTaskFromScratch/Program**
+3. In your IDE, open the file **/CreatingTaskFromScratch/Program**
 4. In **Program**, re-write the logic using **.Wait()**, removing the need for **Console.ReadLine()**:
 ```cs
 using CreatingTaskFromScratch;
@@ -248,7 +248,7 @@ CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environ
 
 ## 5. Add **.Delay(TimeSpan)**
 
-1. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
+1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
 2. In **CustomTask**, add **public static CustomTask Delay(TimeSpan)**:
 
 ```cs
@@ -263,7 +263,7 @@ public static CustomTask Delay(TimeSpan delay)
 ```
 > **Note:** Passing **Timeout.InfiniteTimeSpan** into **Timer.Change()** disables the periodic function of **Timer**
 
-3. In your IDE, open the file **CreatingTaskFromScratch/Program**
+3. In your IDE, open the file **/CreatingTaskFromScratch/Program**
 4. In **Program**, add a call to **CustomTask.Delay(TimeSpan)**:
 ```cs
 using CreatingTaskFromScratch;
