@@ -67,15 +67,17 @@ This workshop requires the following tools:
 
 ### 5a. Build/Run the App on Windows (Windows)
 
-1. In **Visual Studio**, in the toolbar, select the **HackerNews** dropdown menu
-2. In the **HackerNews** dropdown menu, select **Framework (net10.0-windows10.0.19041.0)**
-3. In the **Framework (net10.0-windows10.0.19041.0)** menu, select **net10.0-windows10.0.19041.0**
+1. In **Visual Studio**, in the toolbar, select the Target Framework dropdown menu (see screenshot below)
+> **Note:** Your Target Framework dropdown may be titled **HackerNews**, or it may be titled **Windows Machine** or it may be titled **Android Emulator**
+
+3. In the Target Framework dropdown menu, select **Framework (net10.0-windows10.0.19041.0)**
+4. In the **Framework (net10.0-windows10.0.19041.0)** menu, select **net10.0-windows10.0.19041.0**
 <img width="1116" height="242" alt="Screenshot 2026-01-25 at 4 15 44 PM" src="https://github.com/user-attachments/assets/113d87d8-a22c-42a6-83b8-afe9071e8830" />
 
-4. In **Visual Studio**, select the play button next the the **HackerNews Drop Down menu** to build + run the app
+5. In **Visual Studio**, select the play button next the the **HackerNews Drop Down menu** to build + run the app
 <img width="663" height="64" alt="Screenshot 2026-01-25 at 4 18 51 PM" src="https://github.com/user-attachments/assets/c01c5f7e-019b-4f26-b993-c6902339fcb4" />
 
-5. Verify that the **HackerNews** app launches on Windows
+6. Verify that the **HackerNews** app launches on Windows
 
 <img width="1291" height="762" alt="Screenshot 2026-01-25 at 4 39 38 PM" src="https://github.com/user-attachments/assets/8d9b59da-0d18-48d4-8cb8-3ecc890b94fc" />
 
