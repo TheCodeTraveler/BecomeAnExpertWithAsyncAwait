@@ -101,7 +101,7 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
 > 
 > var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
 
-3. In the `Task Refresh(CancellationToken)` method, note the warning caused by `Task.Delay(TimeSpan.FromSeconds(2))`
+2. In the `Task Refresh(CancellationToken)` method, note the warning caused by `Task.Delay(TimeSpan.FromSeconds(2))`
 
 <img width="1896" height="532" alt="Screenshot 2026-01-22 at 3 52 20 PM" src="https://github.com/user-attachments/assets/31135b1b-2bdc-4e5b-8de4-18dd30298a96" />
 
