@@ -121,7 +121,7 @@ Console.ReadLine();
 ```
 > **Note:** We add `Console.ReadLine();` because we cannot yet `await CustomTask.Run()`
 8. In your IDE, Build + Run the program
-9. In your IDE, in the Console output, confirm that the **Starting Thread** ID and the **First CustomTask** ID are different
+9. In your IDE, in the Console output, confirm that the **Starting Thread** ID and the **First CustomTask Thread Id** are different
 
 ## 3. Add **.ContinueWith()**
 
@@ -199,7 +199,7 @@ CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environ
 	.ContinueWith(() => Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
 ```
 6. In your IDE, Build + Run the program
-7. In your IDE, in the Console output, confirm that the **First CustomTask** ID is the same as **Second CustomTask** ID
+7. In your IDE, in the Console output, confirm that the **First CustomTask Thread Id** is the same as **Second CustomTask Thread Id**
 
 ## 4. Add **Wait()**
 
@@ -245,9 +245,9 @@ Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedT
 CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
 ```
 5. In your IDE, Build + Run the program
-6. In your IDE, in the Console output, confirm that the **Second CustomTask Id** is the same as the **Starting Thread Id**
-7. In your IDE, in the Console output, confirm that the **First CustomTask Id** and **Third Thread Id** are background threads (aka not Thread 1)
-> **Note:** **First CustomTask Thread Id** and **Third CustomTask Thread Id** may use the same background thread because **ThreadPool.QueueUserWorkItem** grabs any Thread that is available in the Thread Pool and the Thread used for **First CustomTask Id** may be reused for **Third CustomTask Id**
+6. In your IDE, in the Console output, confirm that the **Second CustomTask Thread Id** is the same as the **Starting Thread Id**
+7. In your IDE, in the Console output, confirm that the **First CustomTask Thread Id** and **Third Thread Id** are background threads (aka not Thread 1)
+> **Note:** **First CustomTask Thread Id** and **Third CustomTask Thread Id** may use the same background thread because **ThreadPool.QueueUserWorkItem** grabs any Thread that is available in the Thread Pool and the Thread used for **First CustomTask Thread Id** may be reused for **Third CustomTask Id**
 
 ## 5. Add **.Delay(TimeSpan)**
 
