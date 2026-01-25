@@ -215,10 +215,10 @@ async Task Refresh(CancellationToken token)
 2. Update the `Task<StoryModel> GetStory(long, CancellationToken)` method as follows:
 
 ```cs
-	Task<StoryModel> GetStory(long storyId, CancellationToken token)
-	{
-		return _hackerNewsApiService.GetStory(storyId, token);
-	}
+Task<StoryModel> GetStory(long storyId, CancellationToken token)
+{
+    return _hackerNewsApiService.GetStory(storyId, token);
+}
 ```
 > **Note:** Returning a `Task` improves performance by avoiding unnecessary thread switching
 
