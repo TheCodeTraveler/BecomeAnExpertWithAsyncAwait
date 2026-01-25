@@ -124,7 +124,7 @@ var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
 2. In the **NewsViewModel**, in the **Task Refresh(CancellationToken)** method, append to `await GetTopStories(token, StoriesConstants.NumberOfStories)` the extension menthod `.ConfigureAwait(false)`
 
 ```cs
-var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories).ConfigureAwait(false)
+var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories).ConfigureAwait(false);
 ```
 > **Note:** `.ConfigureAwait(false)` tells the .NET runtime to continue on any background thread once the await'd `Task` has completed
 
