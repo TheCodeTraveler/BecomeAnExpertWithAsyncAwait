@@ -15,6 +15,11 @@ Join me as we uncover the ways that the .NET compiler modifies each of our async
 
 Join me in these [DomeTrain](https://dometrain.com) courses where we'll learn everything you need to know to master asynchronous programming using async await in C# and .NET
 
-[<img width="1191" height="337" alt="Asynchronous Programming in C#" src="https://github.com/user-attachments/assets/a5e79123-cd0b-4d32-9f49-8b5bb269530f" />](https://dometrain.com/course/from-zero-to-hero-asynchronous-programming-in-csharp/) 
+[<img width="659" height="440" alt="Asynchronous Programming" src="https://github.com/user-attachments/assets/e3ce2f9b-7fb5-4103-9b00-46d1aea5c977" />](https://dometrain.com/course/from-zero-to-hero-asynchronous-programming-in-csharp/) 
 
-[<img width="1198" height="339" alt="Parallel Programming in C#" src="https://github.com/user-attachments/assets/a8d0623b-8943-4bc4-829f-5d61e551178a" />](https://dometrain.com/course/from-zero-to-hero-parallel-programming-in-csharp/)
+[<img width="640" height="435" alt="Parallel Programming" src="https://github.com/user-attachments/assets/8567ec85-83d2-493b-bd9e-0a6dd42af60d" />](https://dometrain.com/course/from-zero-to-hero-parallel-programming-in-csharp/)
+
+[<img width="668" height="404" alt="Maui Getting Started" src="https://github.com/user-attachments/assets/d6de6109-476a-4fd7-8bbc-d24b0df207ed" />](https://dometrain.com/course/getting-started-dotnet-maui/)
+
+
+[<img width="691" height="409" alt="Maui Deep Dive" src="https://github.com/user-attachments/assets/d3194a4d-508e-44f2-8552-e86a2434c6b5" />](https://dometrain.com/course/deep-dive-dotnet-maui/)
