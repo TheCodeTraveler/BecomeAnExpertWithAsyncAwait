@@ -9,9 +9,9 @@ In this section, we will create our own custom await'able `CustomTask`
 
 <img width="1028" height="671" alt="image" src="https://github.com/user-attachments/assets/a8495399-19a4-4fca-9eaf-a07a293be206" />
 
-## 2. Create **CustomTask.Run(Action)**
+## 2. Recreating **Task.Run(Action)**
 
-1. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
+1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
 2. In **CustomTask**, add the following fields:
 
 ```cs
