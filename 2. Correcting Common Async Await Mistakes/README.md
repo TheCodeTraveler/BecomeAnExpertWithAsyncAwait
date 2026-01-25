@@ -54,7 +54,7 @@ async void Refresh()
 
 > **Note:** Is it dangerous to use an `async void` method? Let's discuss!
 
-## 4. Using Safe Fire and Forget
+## 3. Using Safe Fire and Forget
 
 1. In **NewsViewModel**, below the constructor, delete the `async void Refresh()` method:
 
@@ -94,7 +94,7 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
 
 > **Note:** What is `.SafeFireAndForget()`? Let's discuss!
 
-## 5. Forwarding Cancellation Tokens
+## 4. Forwarding Cancellation Tokens
 
 1. In **NewsViewModel**, in the `Task Refresh(CancellationToken)` method, scroll down to the next `// ToDo Refactor`
 > // ToDo Refactor
@@ -114,7 +114,7 @@ var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2), token);
 ```
 > **Note:** Fun Fact! You can capture a `Task` as a variable and `await` it later.
 
-## 6. Using `.ConfigureAwait()`
+## 5. Using `.ConfigureAwait()`
 
 1. In **NewsViewModel**, in the **Task Refresh(CancellationToken)** method, scroll down to the next `// ToDo Refactor`: 
 > // ToDo Refactor
@@ -130,7 +130,7 @@ var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories
 
 > **Note:** .NET 8 debuted the enum `ConfigureAwaitOptions`, introducing 4 new Flags we can pass into `.ConfigureAwait()`: `ConfigureAwaitOptions.None`, `ConfigureAwaitOptions.ContinueOnCapturedContext`, `ConfigureAwaitOptions.SuppressThrowing` and `ConfigureAwaitOptions.ForceYielding`
 
-## 7. Avoiding `.Wait()` and `.Result`
+## 6. Avoiding `.Wait()` and `.Result`
 1. In **NewsViewModel**, in the **async Task Refresh(CancellationToken token)** method, scroll down to the next `// ToDo Refactor`: 
 > // ToDo Refactor
 > 
@@ -142,7 +142,7 @@ var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories
 await minimumRefreshTimeTask.ConfigureAwait(false);
 ```
 
-## 8. Use `IAsyncEnumerable` to Stream Data
+## 7. Use `IAsyncEnumerable` to Stream Data
 1. In **NewsViewModel**, above the **Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken, int)** method, scroll down to the next **// ToDo Refactor**:
 > // ToDo Refactor
 >
@@ -205,7 +205,7 @@ async Task Refresh(CancellationToken token)
 }
 ```
 
-## 9. Returning `Task`
+## 8. Returning `Task`
 
 1. In **NewsViewModel**, above the **Task<StoryModel> GetStory(long, CancellationToken)** method, scroll down to the next `// ToDo Refactor`:
 > //ToDo Refactor
@@ -222,7 +222,7 @@ async Task Refresh(CancellationToken token)
 ```
 > **Note:** Returning a `Task` improves performance by avoiding unnecessary thread switching
 
-## 10. Using `ValueTask`
+## 9. Using `ValueTask`
 
 1. In **NewsViewModel**, above the **Task<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken)** method, scroll down to the next `// ToDo Refactor`:
 2. Update the the **Task<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken)** method to return `ValueTask`:
