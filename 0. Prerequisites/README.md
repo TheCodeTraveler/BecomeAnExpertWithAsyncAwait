@@ -58,14 +58,29 @@ This workshop requires the following tools:
 4. In the Terminal, enter your macOS login Password
 5. Stand by while the latest version of .NET MAUI is being installed
 
-## 4. Open **HackerNews.slnx** in IDE
+## 5. Ensure .NET MAUI App Builds + Runs Successfully
 
-1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/2. Correcting Common Async Await Mistakes/1. Start**
-2. In the **1. Start** folder, open **HackerNews.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
+1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/2. Correcting Common Async Await Mistakes/2. Finish**
+2. In the **2. Finish** folder, open **HackerNews.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
 
 <img width="1032" height="674" alt="Screenshot 2026-01-22 at 2 51 36 PM" src="https://github.com/user-attachments/assets/8a714e01-2bb6-40cc-83ff-5b389566499b" />
 
-## 5a Build/Run the App (macOS)
+### 5a. Build/Run the App on Windows (Windows)
+
+1. In **Visual Studio**, in the toolbar, select the **HackerNews** dropdown menu
+2. In the **HackerNews** dropdown menu, select **Framework (net10.0-windows10.0.19041.0)**
+3. In the **Framework (net10.0-windows10.0.19041.0)** menu, select **net10.0-windows10.0.19041.0**
+<img width="1116" height="242" alt="Screenshot 2026-01-25 at 4 15 44 PM" src="https://github.com/user-attachments/assets/113d87d8-a22c-42a6-83b8-afe9071e8830" />
+
+4. In **Visual Studio**, select the play button next the the **HackerNews Drop Down menu** to build + run the app
+<img width="663" height="64" alt="Screenshot 2026-01-25 at 4 18 51 PM" src="https://github.com/user-attachments/assets/c01c5f7e-019b-4f26-b993-c6902339fcb4" />
+
+5. Verify that the **HackerNews** app launches on Windows
+
+<img width="1291" height="762" alt="Screenshot 2026-01-25 at 4 39 38 PM" src="https://github.com/user-attachments/assets/8d9b59da-0d18-48d4-8cb8-3ecc890b94fc" />
+
+
+### 5b. Build/Run the App on Android (macOS)
 
 1. In **Jet Brains Rider**, using the macOS Menu Bar, navigate to **JetBrains Rider -> Settings**
 
