@@ -1,3 +1,5 @@
+[![Build](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/actions/workflows/build.yml/badge.svg)](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/actions/workflows/build.yml)
+
 # Become An Expert With Async Await in C#
 
 In this workshop, we will dive deep into how .NET implements asynchronous programming under the hood to become experts using async/await!
