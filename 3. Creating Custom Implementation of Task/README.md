@@ -15,6 +15,8 @@ In this section, we will create our own custom await'able `CustomTask`
 2. In **CustomTask**, add the following fields:
 
 ```cs
+namespace CreatingTaskFromScratch;
+
 sealed class CustomTask
 {
 	readonly Lock _lock = new();
@@ -29,6 +31,8 @@ sealed class CustomTask
 3. In **CustomTask**, add the following properties:
 
 ```cs
+namespace CreatingTaskFromScratch;
+
 sealed class CustomTask
 {
 	readonly Lock _lock = new();
