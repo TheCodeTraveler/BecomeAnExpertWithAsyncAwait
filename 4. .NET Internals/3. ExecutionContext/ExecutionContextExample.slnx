@@ -1,3 +1,10 @@
 <Solution>
-  <Project Path="ExecutionContextExample/ExecutionContextExample.csproj" />
+    <Folder Name="/Solution Items/">
+        <File Path="../../.editorconfig"/>
+        <File Path="../../Directory.Build.props"/>
+        <File Path="../../Directory.Build.targets"/>
+        <File Path="../../Directory.Packages.props"/>
+        <File Path="../../global.json"/>
+    </Folder>
+    <Project Path="ExecutionContextExample/ExecutionContextExample.csproj"/>
 </Solution>
