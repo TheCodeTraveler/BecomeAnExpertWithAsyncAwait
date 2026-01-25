@@ -76,7 +76,7 @@ return RedirectToAction("Index", "Home");
 ```
 
 16. In your IDE, using the debugging tools, note the current Thread ID
-> **Note:** The current Thread ID should be different than the Thread ID noted above in **Step 12**
+> **Note:** The current Thread ID should be different than the Thread ID noted above in **Step 11**
 
 17. In your IDE, using the debugging tools, note the Property values in **HttpContext**
 > **Note:** The Property values in **HttpContext** should be the same as noted above on **Step 13**
