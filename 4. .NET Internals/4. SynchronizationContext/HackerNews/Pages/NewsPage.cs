@@ -14,18 +14,18 @@ class NewsPage : BaseContentPage<NewsViewModel>
 		BindingContext.PullToRefreshFailed += HandlePullToRefreshFailed;
 
 		Content = new RefreshView
-			{
-				RefreshColor = Colors.Black,
+		{
+			RefreshColor = Colors.Black,
 
-				Content = new CollectionView
-					{
-						BackgroundColor = Color.FromArgb("F6F6EF"),
-						SelectionMode = SelectionMode.Single,
-						ItemTemplate = new StoryDataTemplate(),
-					}.Bind(CollectionView.ItemsSourceProperty,
+			Content = new CollectionView
+			{
+				BackgroundColor = Color.FromArgb("F6F6EF"),
+				SelectionMode = SelectionMode.Single,
+				ItemTemplate = new StoryDataTemplate(),
+			}.Bind(CollectionView.ItemsSourceProperty,
 						getter: static (NewsViewModel vm) => vm.TopStoryCollection)
 					.Invoke(collectionView => collectionView.SelectionChanged += HandleSelectionChanged)
-			}.Bind(RefreshView.IsRefreshingProperty,
+		}.Bind(RefreshView.IsRefreshingProperty,
 				getter: static (NewsViewModel vm) => vm.IsListRefreshing,
 				setter: static (vm, isRefreshing) => vm.IsListRefreshing = isRefreshing)
 			.Bind(RefreshView.CommandProperty,
@@ -38,7 +38,7 @@ class NewsPage : BaseContentPage<NewsViewModel>
 		base.OnAppearing();
 
 		if (Content is RefreshView { Content: CollectionView collectionView } refreshView
-		    && collectionView.ItemsSource.IsNullOrEmpty())
+			&& collectionView.ItemsSource.IsNullOrEmpty())
 		{
 			refreshView.IsRefreshing = true;
 		}

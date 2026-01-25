@@ -16,7 +16,7 @@ partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerN
 	}
 
 	[ObservableProperty]
-	public partial bool IsListRefreshing { get; set; } 
+	public partial bool IsListRefreshing { get; set; }
 
 	[RelayCommand]
 	async Task Refresh(CancellationToken token)
@@ -31,7 +31,7 @@ partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerN
 			await foreach (var story in GetTopStories(StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
 			{
 				var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
-				
+
 				if (!TopStoryCollection.Any(x => x.Title.Equals(story.Title, StringComparison.Ordinal)))
 					InsertIntoSortedCollection(TopStoryCollection, (a, b) => b.Score.CompareTo(a.Score), story);
 			}

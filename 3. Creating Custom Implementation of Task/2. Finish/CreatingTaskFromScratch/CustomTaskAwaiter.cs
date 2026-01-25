@@ -5,7 +5,7 @@ namespace CreatingTaskFromScratch;
 readonly struct CustomTaskAwaiter : INotifyCompletion
 {
 	readonly CustomTask _task;
-	
+
 	internal CustomTaskAwaiter(CustomTask task)
 	{
 		_task = task;

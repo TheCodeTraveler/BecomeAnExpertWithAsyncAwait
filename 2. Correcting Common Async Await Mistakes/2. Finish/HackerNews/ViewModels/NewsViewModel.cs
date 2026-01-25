@@ -16,7 +16,7 @@ partial class NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerN
 	}
 
 	[ObservableProperty]
-	public partial bool IsListRefreshing { get; set; } 
+	public partial bool IsListRefreshing { get; set; }
 
 	[RelayCommand]
 	async Task Refresh(CancellationToken token)

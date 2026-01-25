@@ -5,11 +5,11 @@ namespace HackerNews;
 class App : Application
 {
 	readonly AppShell _appShell;
-	
+
 	public App(AppShell appShell)
 	{
 		_appShell = appShell;
-		
+
 		Resources = new ResourceDictionary()
 		{
 			new Style<Shell>(
