@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="HackerNews/HackerNews.csproj">
+    <Deploy />
+  </Project>
+</Solution>
