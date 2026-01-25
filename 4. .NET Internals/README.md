@@ -80,6 +80,7 @@ return RedirectToAction("Index", "Home");
 
 17. In your IDE, using the debugging tools, note the Property values in **HttpContext**
 > **Note:** The Property values in **HttpContext** should be the same as noted above on **Step 13**
+> 
 > **Warning:** In .NET Framework 4 and earlier, .NET did not preserve **HttpContext** when switching Threads
 
 18. In your IDE, using the debugging tools, note that the **User** object contains the two **Claims** we passed into our **ClaimsIdentity**
