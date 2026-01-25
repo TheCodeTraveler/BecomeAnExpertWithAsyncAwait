@@ -195,7 +195,7 @@ async Task Refresh(CancellationToken token)
     }
     catch (Exception e)
     {
-        OnPullToRefreshFailed(e.ToString());
+        PullToRefreshFailed?.Invoke(this, e.ToString());
     }
     finally
     {
