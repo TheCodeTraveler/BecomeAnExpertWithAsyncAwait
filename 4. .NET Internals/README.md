@@ -84,7 +84,6 @@ return RedirectToAction("Index", "Home");
 > **Warning:** In .NET Framework 4 and earlier, .NET did not preserve **HttpContext** when switching Threads
 
 18. In your IDE, using the debugging tools, note that the **User** object contains the two **Claims** we passed into our **ClaimsIdentity**
-19. In your IDE, using the debugging tools, note that the **User** object contains **IsAuthenticated = true**
 
 ## 3. ExecutionContext
 
