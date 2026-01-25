@@ -155,9 +155,9 @@ async IAsyncEnumerable<StoryModel> GetTopStories(int storyCount, [EnumeratorCanc
 {
     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(storyCount);
 
-    var topStoryIds = await _hackerNewsApiService.GetTopStoryIDs(token).ConfigureAwait(false);
+    var topStoryIds = await GetTopStoryIDs(token).ConfigureAwait(false);
 
-    var getTopStoryTaskList = topStoryIds.Select(id => _hackerNewsApiService.GetStory(id, token)).ToList();
+    var getTopStoryTaskList = topStoryIds.Select(id => GetStory(id, token)).ToList();
 
     await foreach (var topStoryTask in getTopStoryTaskList.ToAsyncEnumerable().WithCancellation(token).ConfigureAwait(false))
     {
