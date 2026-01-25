@@ -74,7 +74,7 @@ This workshop requires the following tools:
 4. In the **Framework (net10.0-windows10.0.19041.0)** menu, select **net10.0-windows10.0.19041.0**
 <img width="1116" height="242" alt="Screenshot 2026-01-25 at 4 15 44 PM" src="https://github.com/user-attachments/assets/113d87d8-a22c-42a6-83b8-afe9071e8830" />
 
-5. In **Visual Studio**, select the play button next the the **HackerNews Drop Down menu** to build + run the app
+5. In **Visual Studio**, select the play button next the the Target Framework Drop Down menu to build + run the app
 <img width="663" height="64" alt="Screenshot 2026-01-25 at 4 18 51 PM" src="https://github.com/user-attachments/assets/c01c5f7e-019b-4f26-b993-c6902339fcb4" />
 
 6. Verify that the **HackerNews** app launches on Windows
