@@ -173,10 +173,14 @@ return RedirectToAction("Index", "Home");
 
 1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/4. SynchronizationContext/**
 2. In the **4. SynchronizationContext** folder, open **SynchronizationContext.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
-3. In your IDE, open **NewsViewModel.cs**
-4. In **NewsViewModel**, set a Breakpoint on Line 25
-5. In **NewsViewModel**, set a Breakpoint on Line 35
-6. In your IDE, Build + Debug **HackerNews.csproj**
+
+<img width="1032" height="670" alt="image" src="https://github.com/user-attachments/assets/7803ac48-17e4-4c35-ab79-0c9680731e0f" />
+
+
+4. In your IDE, open **NewsViewModel.cs**
+5. In **NewsViewModel**, set a Breakpoint on Line 25
+6. In **NewsViewModel**, set a Breakpoint on Line 35
+7. In your IDE, Build + Debug **HackerNews.csproj**
 > **Note:** Be sure to debug (not "run") the app, and be sure to use the Debug build configuration
 
 7. In your IDE, confirm the program pauses execution when it hits the Breakpoint on Line 25
