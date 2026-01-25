@@ -160,7 +160,7 @@ public CustomTask ContinueWith(Action action)
   return task;
 }
 ```
-> **Note:** `ExecutionContext` stores the state of the calling thread, including its SychronizationContext, CultureInfo and IPrincipal (security information)
+> **Note:** `ExecutionContext` stores the state of the calling thread, including its CultureInfo and IPrincipal (security information)
 
 3. In **CustomTask**, let's streamline the existing `void SetResult()` and `void SetException(Exception)` methods by creating a new method called `void CompleteTask(Exception?)`:
 ```cs
