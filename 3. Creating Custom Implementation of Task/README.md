@@ -324,7 +324,7 @@ readonly struct CustomTaskAwaiter : INotifyCompletion
 ```cs
 public CustomTaskAwaiter GetAwaiter() => new(this);
 ```
-5. In your IDE, open the file **CreatingTaskFromScratch/Program**
+5. In your IDE, open the file **/CreatingTaskFromScratch/Program**
 6. In **Program**, replace **.Wait()** with **await**:
 
 ```cs
