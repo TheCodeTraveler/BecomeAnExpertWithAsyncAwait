@@ -88,7 +88,7 @@ public NewsViewModel(IDispatcher dispatcher, HackerNewsAPIService hackerNewsApiS
     _hackerNewsApiService = hackerNewsApiService;
 
     //ToDo Refactor
-    Refresh(CancellationToken.None).SafeFireAndForget(ex => Trace.WriteLine(ex);
+    Refresh(CancellationToken.None).SafeFireAndForget(ex => Trace.WriteLine(ex));
 }
 ```
 
