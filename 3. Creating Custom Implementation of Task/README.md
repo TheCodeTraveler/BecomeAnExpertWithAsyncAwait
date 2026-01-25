@@ -115,7 +115,7 @@ using CreatingTaskFromScratch;
 
 Console.WriteLine($"Starting Thread Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
+CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}"));
 
 Console.ReadLine();
 ```
@@ -239,11 +239,11 @@ using CreatingTaskFromScratch;
 
 Console.WriteLine($"Starting Thread Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
 
 Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
 ```
 5. In your IDE, Build + Run the program
 6. In your IDE, in the Console output, confirm that the **Second CustomTask Id** is the same as the **Starting Thread Id**
@@ -274,15 +274,15 @@ using CreatingTaskFromScratch;
 
 Console.WriteLine($"Starting Thread Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
 
 CustomTask.Delay(TimeSpan.FromSeconds(1)).Wait();
 
-Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}");
+Console.WriteLine($"Second {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}");
 
 CustomTask.Delay(TimeSpan.FromSeconds(1)).Wait();
 
-CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
 ```
 5. In your IDE, Build + Run the program
 6. Confirm that the Program no longer finishes executing near-instantly thanks to **CustomTask.Delay(TimeSpan)**
@@ -337,11 +337,11 @@ await CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {E
 
 await CustomTask.Delay(TimeSpan.FromSeconds(1));
 
-Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}");
+Console.WriteLine($"Second {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}");
 
 await CustomTask.Delay(TimeSpan.FromSeconds(1));
 
-await CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
+await CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}"));
 ```
 >**Note:** The .NET Compiler uses [Duck Typing](https://en.wikipedia.org/wiki/Duck_typing) to enable the **await** keyword. Any object can be await'd as long as it contains the methof **public INotifyCompletion GetAwaiter()**.
 7. In your IDE, Build + Run the program
