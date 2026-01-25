@@ -38,6 +38,7 @@ jobs:
     - name: Display .NET Info
       run: 'dotnet --info'  
 
-    - name: Build All Solutions
-      shell: pwsh
-      run: ./BuildAllSolutions.ps1
+    - name: Build HackerNews
+      run: |
+        cd "4. .NET Internals/4. SynchronizationContext"
+        dotnet build
