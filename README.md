@@ -4,6 +4,9 @@ In this workshop, we will dive deep into how .NET implements asynchronous progra
 
 Join me as we uncover the ways that the .NET compiler modifies each of our async methods. We'll learn how to build a custom implementation of `Task` from scratch and use it with the built-in async/await keywords. Then we'll dive deep into the .NET source code to understand the importance of internal framework tools like SynchronizationContext, ExecutionContext, Principal, ThreadStatic and more!
 
+<img width="125" height="125" alt="qr-code" src="https://github.com/user-attachments/assets/6c94fc5c-c71d-4471-9cfb-5026824a6ec5" />
+
+
 ## Agenda
 0. [Install Prerequisites](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/0.%20Prerequisites#0-install-prerequisites)
 1. [(Presentation) Thread Switching + Compiler Generated Code](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/blob/main/1.%20Thread%20Switching%20and%20Compiler%20Generatoed%20Code/ThreadSwitchingAndCompilerGeneratedCode.pptx)
