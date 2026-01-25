@@ -248,7 +248,7 @@ CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: 
 5. In your IDE, Build + Run the program
 6. In your IDE, in the Console output, confirm that the **Second CustomTask Id** is the same as the **Starting Thread Id**
 7. In your IDE, in the Console output, confirm that the **First CustomTask Id** and **Third Thread Id** are background threads (aka not Thread 1)
-> **Note:** **First CustomTask Id** and **Third Thread Id** may use the same background thread because **ThreadPool.QueueUserWorkItem** grabs any Thread that is available in the Thread Pool and the Thread used for **First CustomTask Id** may be reused for **Third CustomTask Id**
+> **Note:** **First CustomTask Thread Id** and **Third CustomTask Thread Id** may use the same background thread because **ThreadPool.QueueUserWorkItem** grabs any Thread that is available in the Thread Pool and the Thread used for **First CustomTask Id** may be reused for **Third CustomTask Id**
 
 ## 5. Add **.Delay(TimeSpan)**
 
