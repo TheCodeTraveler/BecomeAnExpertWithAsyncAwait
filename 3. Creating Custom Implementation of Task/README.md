@@ -200,7 +200,6 @@ CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environ
 ```
 6. In your IDE, Build + Run the program
 7. In your IDE, in the Console output, confirm that the **First CustomTask** ID is the same as **Second CustomTask** ID
-> **Note:** The **First CustomTask Thread** ID is the same as **Second CustomTask Thread** ID because we captured the Thread's **ExecutionContext** in **.ContinueWith(Action)**
 
 ## 4. Add **Wait()**
 
