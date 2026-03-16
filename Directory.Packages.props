@@ -9,7 +9,7 @@
     <PackageVersion Include="CommunityToolkit.Maui.Markup" Version="7.0.0"/>
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.2.0" />
-    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.30" />
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.50" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="9.0.2" />
   </ItemGroup>
 </Project>
