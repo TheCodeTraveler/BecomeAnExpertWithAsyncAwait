@@ -1,195 +1,206 @@
 # .NET Internals
-In this section, we'll dive deep into the internal data structures that .NET uses to implement asynchronous programming
+
+In this section, we will inspect the internal data that .NET uses to flow asynchronous state across threads.
 
 ## 1. ThreadStatic
 
-1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/1. Thread Static/**
-2. In the **1. Thread Static** folder, open **ThreadStaticExample.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
+1. Using File Explorer (Windows) or Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/1. Thread Static**.
+1. In the **1. Thread Static** folder, open **ThreadStaticExample.slnx** in your IDE.
+1. Open **Program.cs**.
+1. Note the `[ThreadStatic]` attribute on `static int _threadSpecificValue`.
 
-<img width="1071" height="667" alt="image" src="https://github.com/user-attachments/assets/387c6743-46f5-4814-9e0e-5c860c0b7402" />
+   `ThreadStatic` keeps the value of `_threadSpecificValue` isolated to the current thread.
 
-2. In your IDE, open **Program.cs**
-3. In **Program.cs**, note the **[ThreadStatic]** attribute on the field **static int _threadSpecificValue**
-> **Note:** `[ThreadStatic]` will keep the value of **_threadSpecificValue** on its specific Thread
+1. Note the local variables `Thread thread1` and `Thread thread2`.
 
-4. In **Program.cs**, note the local variables **Thread thread1** and **Thread thread2**
-> **Note:** **thread1** and **thread2** will run **static void ThreadMethod()**, setting a thread-specific value to **_threadSpecificValue** when we call **Thread.Start()**
-> **Note:** **Thread.Join()** blocks the calling Thread until it has completed
+   Both threads run `ThreadMethod()`. Each thread assigns its own value to `_threadSpecificValue` when `Thread.Start()` is called. `Thread.Join()` blocks the calling thread until the target thread completes.
 
-5. In your IDE, build + run **ThreadSpecificExample.csproj**
-6. In your IDE, note the results in the **Console** output:
-> Main thread - threadSpecificValue: 100
->
-> Thread 5 - threadSpecificValue: 5 // A background thread with a different threadSpecificValue
->
-> Thread 8 - threadSpecificValue: 47 // A second background thread with a second different threadSpecificValue
->
-> Main thread - threadSpecificValue: 100 // Returning to the main thread to see it maintained its original threadSpecificValue
+1. Build and run **ThreadStaticExample.csproj**.
+1. Confirm that the console output follows this shape:
 
-## 2. IPrincipal (aka "Security Context")
+```console
+Main thread - threadSpecificValue: 100
+Thread 4 _threadSpecificValue: 51
+Thread 5 _threadSpecificValue: 72
+Main thread after threads finished - threadSpecificValue: 100
+```
 
-1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/2. Principal/**
-2. In the **2. Principal** folder, open **PrincipalExample.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
+Your background thread IDs and random values will differ. The important result is that the main thread keeps its value of `100` before and after the background threads run.
 
-<img width="1080" height="678" alt="image" src="https://github.com/user-attachments/assets/b001faac-8a49-4f7c-b68b-b582031f4c16" />
+## 2. IPrincipal, Aka Security Context
 
-3. In your IDE, open **Program.cs**
-4. In **Program.cs**, note the Login Controller:
+1. Using File Explorer (Windows) or Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/2. Principal**.
+1. In the **2. Principal** folder, open **PrincipalExample.slnx** in your IDE.
+1. Open **Program.cs**.
+1. Note the login controller route:
 
 ```cs
 app.MapControllerRoute(
-		name: "login",
-		pattern: "{controller=Account}/{action=Login}/{id?}")
-	.WithStaticAssets();
+    name: "login",
+    pattern: "{controller=Account}/{action=Login}/{id?}")
+    .WithStaticAssets();
 ```
 
-5. In your IDE, open **AccountController.cs**
-6. In **AccountController.cs** set a Breakpoint on Line 24:
+1. Open **PrincipalExample/Controllers/AccountController.cs**.
+1. Set a breakpoint on the `SignInAsync` statement:
+
 ```cs
-await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal).ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None);`
-```
-> **Note:** We are using **.ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None)** to ensure that we switch Threads and do not return to the calling Thread
-
-7. In **AccountController.cs** set a Breakpoint on Line 26:
-```cs
-return RedirectToAction("Index", "Home");
+await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal).ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None);
 ```
 
-8. In your IDE, Build + Debug **PrincipalExample.csproj**
-> **Note:** Be sure to debug (not "run") the app, and be sure to use the Debug build configuration
+`ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None` forces the continuation to yield and avoids returning to the calling thread.
 
-9. In your browser, navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login)
-10. In your IDE, confirm the program pauses execution when it hits the Breakpoint on Line 24:
-```cs
-await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal).ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None);`
-```
-11. In your IDE, using the debugging tools, note the current Thread ID
-12. In your IDE, using the debugging tools, note the Property values in **HttpContext**
-13. In your IDE, using the debugging tools, note that the **User** object contains the two **Claims** we passed into our **ClaimsIdentity**
-> **Warning:** Do not hard-code username and role **Claims** like this in production apps
-
-14. In your IDE, using the debugging tools, resume execution of the program
-15. In your IDE, confirm the code has hit the Breakpoint on Line 26:
+1. Set a second breakpoint on the redirect statement:
 
 ```cs
 return RedirectToAction("Index", "Home");
 ```
 
-16. In your IDE, using the debugging tools, note the current Thread ID
-> **Note:** The current Thread ID should be different than the Thread ID noted above in **Step 11**
+1. Build and debug **PrincipalExample.csproj**.
 
-17. In your IDE, using the debugging tools, note the Property values in **HttpContext**
-> **Note:** The Property values in **HttpContext** should be the same as noted above on **Step 13**
-> 
-> **Warning:** In .NET Framework 4 and earlier, .NET did not preserve **HttpContext** when switching Threads
+   Be sure to debug the app, not only run it, and use the Debug build configuration.
 
-18. In your IDE, using the debugging tools, note that the **User** object contains the two **Claims** we passed into our **ClaimsIdentity**
+1. In your browser, navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
+1. Confirm the program pauses on the `SignInAsync` breakpoint.
+1. In the debugger, note the current managed thread ID.
+1. In the debugger, inspect `HttpContext`.
+1. Confirm the `principal` local variable contains the two claims passed into the `ClaimsIdentity`.
+
+   Do not hard-code username and role claims like this in production apps.
+
+1. Resume execution.
+1. Confirm the program pauses on the redirect breakpoint.
+1. In the debugger, note the current managed thread ID again.
+
+   The current thread ID should be different from the thread ID recorded at the `SignInAsync` breakpoint.
+
+1. Inspect `HttpContext` again.
+
+   The `HttpContext` values should still be available after the thread switch. In .NET Framework 4 and earlier, .NET did not preserve `HttpContext` when switching threads.
 
 ## 3. ExecutionContext
 
-1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/3. ExecutionContext/**
-2. In the **3. ExecutionContext** folder, open **ExecutionContextExample.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
-<img width="1072" height="696" alt="image" src="https://github.com/user-attachments/assets/947cdc25-8015-407d-b665-509593686f67" />
+1. Using File Explorer (Windows) or Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/3. ExecutionContext**.
+1. In the **3. ExecutionContext** folder, open **ExecutionContextExample.slnx** in your IDE.
+1. Open **Program.cs**.
+1. Note the `AsyncLocal<T>` field:
 
-3. In your IDE, open **Program.cs**
-4. In **Program**, note the **AsyncLocal<T>** field on line 9
-> **Note:** **AsyncLocal<T>** will pass along its value from Thread to Thread thanks to the **ExecutionContext** (unlike **[ThreadLocal]** which stays on the specific Thread)
+```cs
+static readonly AsyncLocal<string> _asyncLocalData = new();
+```
 
-5. In **Program**, set a Breakpoint on Line 22
-6. In **Program**, set a Breakpoint on Line 33
-7. In **Program**, set a Breakpoint on Line 37
-8. In **Program**, set a Breakpoint on Line 50
-9. In **Program**, set a Breakpoint on Line 54
-10. In **Program**, set a Breakpoint on Line 63
-11. In your IDE, Build + Debug **ExecutionContextExample.csproj**
-> **Note:** Be sure to debug (not "run") the app, and be sure to use the Debug build configuration
+`AsyncLocal<T>` flows its value from thread to thread through `ExecutionContext`. This is different from `ThreadStatic`, which keeps data isolated to one physical thread.
 
-12. In your IDE, confirm the program pauses execution when it hits the Breakpoint on Line 22
-13. In your IDE, confirm the Console output:
-> Thread ID: 1
->
-> Culture: Spanish (Spain)
->
-> Principal: System.Security.Claims.ClaimsPrincipal
->
-> AsyncLocalData: Initial Value
+1. Set a breakpoint on the first `PrintThreadValues();` call after `_asyncLocalData.Value = "Initial Value";`.
+1. Set a breakpoint on the `PrintThreadValues();` call after `Console.WriteLine("Background Thread after assigning values");`.
+1. Set a breakpoint on the `PrintThreadValues();` call inside `ExecutionContext.Run(...)`.
+1. Set a breakpoint on the `PrintThreadValues();` call after `Console.WriteLine("Main Thread Values");`.
+1. Set a breakpoint on the `PrintThreadValues();` call inside the first `Task.Run(...)`.
+1. Set a breakpoint on the `PrintThreadValues();` call inside the `Task.Run(...)` after `ExecutionContext.SuppressFlow();`.
+1. Build and debug **ExecutionContextExample.csproj**.
 
-14. In your IDE, using the debugging tools, resume execution of the program
-15. In your IDE, confirm the code has hit the Breakpoint on Line 33
-16. In your IDE, confirm the Console output:
-> Thread ID: 6
->
-> Culture: English (United Kingdom)
->
-> Principal: ExecutionContext.CustomPrincipal
->
-> AsyncLocalData: AsyncLocalData in Thread
+   Be sure to debug the app, not only run it, and use the Debug build configuration.
 
-17. In your IDE, using the debugging tools, resume execution of the program
-18. In your IDE, confirm the code has hit the Breakpoint on Line 37
-19. In your IDE, confirm the Console output:
-> Thread ID: 6 // Same Background Thread as the previous breakpoint
->
-> Culture: Spanish (Spain) // Same value as Thread 1 because we passed in captured **ExecutionContext**
->
-> Principal: System.Security.Claims.ClaimsPrincipal // Same value as Thread 1 because we passed in captured **ExecutionContext**
->
-> AsyncLocalData: Initial Value // Same value as Thread 1 because we passed in captured **ExecutionContext**
+1. Confirm the program pauses at the first breakpoint.
+1. Confirm the console output includes:
 
-18. In your IDE, using the debugging tools, resume execution of the program
-19. In your IDE, confirm the code has hit the Breakpoint on Line 50
-20. In your IDE, confirm the Console output:
-> Thread ID: 1
->
-> Culture: Spanish (Spain)
->
-> Principal: System.Security.Claims.ClaimsPrincipal
->
-> AsyncLocalData: Initial Value
+```console
+Thread ID: 1
+Culture: Spanish (Spain)
+Principal: System.Security.Claims.ClaimsPrincipal
+AsyncLocalData: Initial Value
+```
 
-21. In your IDE, using the debugging tools, resume execution of the program
-22. In your IDE, confirm the code has hit the Breakpoint on Line 54
-23. In your IDE, confirm the Console output:
-> Thread ID: 10 // Background thread
->
-> Culture: Spanish (Spain) // Same value as Thread 1 because async/await automatically flows along the **ExecutionContext*
->
-> Principal: System.Security.Claims.ClaimsPrincipal // Same value as Thread 1 because async/await automatically flows along the **ExecutionContext*
->
-> AsyncLocalData: Initial Value // Same value as Thread 1 because async/await automatically flows along the **ExecutionContext*
+1. Resume execution.
+1. Confirm the program pauses after `Background Thread after assigning values`.
+1. Confirm the console output includes:
 
-24. In your IDE, using the debugging tools, resume execution of the program
-25. In your IDE, confirm the code has hit the Breakpoint on Line 63
-26. In your IDE, confirm the Console output:
-> Thread ID: 6 // Background Thread
->
-> Culture: English (United States) // Default value for your computer because we suppressed the flow of the **ExecutionContext**
->
-> Principal: // Default value is empty because we suppressed the flow of the **ExecutionContext**
->
-> AsyncLocalData: Initial Value // Default value is empty because we suppressed the flow of the **ExecutionContext**
+```console
+Thread ID: 4
+Culture: English (United Kingdom)
+Principal: ExecutionContextExample.CustomPrincipal
+AsyncLocalData: AsyncLocalData in Thread
+```
+
+1. Resume execution.
+1. Confirm the program pauses inside `ExecutionContext.Run(...)`.
+1. Confirm the console output includes:
+
+```console
+Thread ID: 4
+Culture: Spanish (Spain)
+Principal: System.Security.Claims.ClaimsPrincipal
+AsyncLocalData: Initial Value
+```
+
+The same background thread now sees the main thread's culture, principal, and async-local value because the captured `ExecutionContext` was supplied to `ExecutionContext.Run(...)`.
+
+1. Resume execution.
+1. Confirm the program pauses after `Main Thread Values`.
+1. Confirm the console output includes:
+
+```console
+Thread ID: 1
+Culture: Spanish (Spain)
+Principal: System.Security.Claims.ClaimsPrincipal
+AsyncLocalData: Initial Value
+```
+
+1. Resume execution.
+1. Confirm the program pauses inside the first `Task.Run(...)`.
+1. Confirm the console output includes:
+
+```console
+Thread ID: 5
+Culture: Spanish (Spain)
+Principal: System.Security.Claims.ClaimsPrincipal
+AsyncLocalData: Initial Value
+```
+
+`Task.Run(...)` uses a background thread, but async/await automatically flows `ExecutionContext`, so the culture, principal, and async-local value are preserved.
+
+1. Resume execution.
+1. Confirm the program pauses inside the `Task.Run(...)` after `ExecutionContext.SuppressFlow();`.
+1. Confirm the console output includes:
+
+```console
+Thread ID: 7
+Culture: English (United States)
+Principal:
+AsyncLocalData:
+```
+
+Your background thread ID may differ. The important result is that the culture returns to the machine default, `Principal` is empty, and `AsyncLocalData` is empty because `ExecutionContext` flow was suppressed.
 
 ## 4. SynchronizationContext
 
-1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/4. SynchronizationContext/**
-2. In the **4. SynchronizationContext** folder, open **SynchronizationContext.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
+1. Using File Explorer (Windows) or Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/4. .NET Internals/4. SynchronizationContext**.
+1. In the **4. SynchronizationContext** folder, open **HackerNews.slnx** in your IDE.
+1. Open **HackerNews/Components/Pages/News.razor.cs**.
+1. Set a breakpoint on this line inside `RefreshAsync(CancellationToken token)`:
 
-<img width="1032" height="670" alt="image" src="https://github.com/user-attachments/assets/7803ac48-17e4-4c35-ab79-0c9680731e0f" />
+```cs
+var synchronizationContext = SynchronizationContext.Current;
+```
 
+1. Set a second breakpoint inside the `await foreach` loop:
 
-4. In your IDE, open **NewsViewModel.cs**
-5. In **NewsViewModel**, set a Breakpoint on Line 25
-6. In **NewsViewModel**, set a Breakpoint on Line 35
-7. In your IDE, Build + Debug **HackerNews.csproj**
-> **Note:** Be sure to debug (not "run") the app, and be sure to use the Debug build configuration
+```cs
+var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
+```
 
-7. In your IDE, confirm the program pauses execution when it hits the Breakpoint on Line 25
-8. In your IDE, using the debugging tools, confirm **thread.ManagedThreadId** is **1**
-9. In your IDE, using the debugging tools, confirm **thread._synchronizationContext** is not **null**
-> **Note:** **thread._synchronizationContext** will be **UIKitSynchronizationContext** when running on iOS, **AndroidSynchronizationContext** when running on Android and **DispatcherQueueSynchronizationContext** when running on Windows
+1. Build and debug **HackerNews.csproj**.
 
-10. In your IDE, using the debugging tools, resume execution of the program
-11. In your IDE, confirm the code has hit the Breakpoint on Line 35
-12. In your IDE, using the debugging tools, confirm **threadAfterConfigureAwaitFalse._synchronizationContext** is **null**
-> **Note:** **.ConfigureAwait(false)** and **.ConfigureAwait(ConfigureAwaitOptions.None)** set the **SynchronizationContext** to **null**
+   Be sure to debug the app, not only run it, and use the Debug build configuration.
 
+1. Open [http://localhost:5004](http://localhost:5004).
+1. Confirm the program pauses on the first breakpoint.
+1. In the debugger, confirm `synchronizationContext` is not `null`.
+
+   In Blazor Server, the synchronization context is a renderer/circuit synchronization context. It is not a native UI thread, and the managed thread ID does not have to be `1`.
+
+1. Resume execution.
+1. Confirm the code hits the second breakpoint.
+1. In the debugger, confirm `synchronizationContextAfterConfigureAwaitFalse` is `null`.
+
+   `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` do not resume on the captured synchronization context. The sample uses `InvokeAsync(...)` after `ConfigureAwait(false)` to marshal UI state updates back through Blazor's renderer.

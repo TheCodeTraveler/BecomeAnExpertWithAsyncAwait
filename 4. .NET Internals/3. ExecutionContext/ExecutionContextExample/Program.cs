@@ -24,7 +24,7 @@ public static class Program
 		var thread = new Thread(() =>
 		{
 			CultureInfo.CurrentCulture = new CultureInfo("en-UK");
-			Thread.CurrentPrincipal = new CustomPrinciple();
+			Thread.CurrentPrincipal = new CustomPrincipal();
 			_asyncLocalData.Value = "AsyncLocalData in Thread";
 
 			Console.WriteLine("Background Thread after assigning values");
@@ -74,7 +74,7 @@ public static class Program
 	}
 }
 
-sealed class CustomPrinciple() : GenericPrincipal(new CustomIdentity(), null)
+sealed class CustomPrincipal() : GenericPrincipal(new CustomIdentity(), null)
 {
 	sealed class CustomIdentity : IIdentity
 	{

@@ -1,20 +1,23 @@
 # Creating Custom Implementation of Task
 
-In this section, we will create our own custom await'able `CustomTask` 
+In this section, we will create our own custom awaitable `CustomTask`.
 
 ## 1. Open **CreatingTaskFromScratch.slnx** in IDE
 
 1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/3. Creating Custom Implementation of Task/1. Start**
-2. In the **1. Start** folder, open **CreatingTaskFromScratch.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
+2. In the **1. Start** folder, open **CreatingTaskFromScratch.slnx** in your IDE (Visual Studio on Windows or JetBrains Rider on macOS)
 
 <img width="1028" height="671" alt="image" src="https://github.com/user-attachments/assets/a8495399-19a4-4fca-9eaf-a07a293be206" />
 
 ## 2. Recreating **Task.Run(Action)**
 
-1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
-2. In **CustomTask**, add the following fields:
+1. In your IDE, open **CreatingTaskFromScratch/CustomTask.cs**.
+2. Replace the contents of **CustomTask.cs** with this code:
 
 ```cs
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+
 namespace CreatingTaskFromScratch;
 
 sealed class CustomTask
@@ -22,15 +25,18 @@ sealed class CustomTask
 	readonly Lock _lock = new();
 
 	bool _completed;
-	Exception? _exception;
 	Action? _action;
+  Exception? _exception;
 	ExecutionContext? _context;
 }
 ```
 
-3. In **CustomTask**, add the following properties:
+3. Replace the contents of **CustomTask.cs** with this updated version that adds the `IsCompleted` property:
 
 ```cs
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+
 namespace CreatingTaskFromScratch;
 
 sealed class CustomTask
@@ -38,8 +44,8 @@ sealed class CustomTask
 	readonly Lock _lock = new();
 
 	bool _completed;
-	Exception? _exception;
 	Action? _action;
+  Exception? _exception;
 	ExecutionContext? _context;
 	
 	public bool IsCompleted
@@ -56,7 +62,7 @@ sealed class CustomTask
 ```
 > **Note:** The `lock` is required in `IsCompleted` to avoid Race Conditions where one Thread may read its value while another Thread simultaneously modifies its value
 
-4. In **CustomTask**, add `public void SetResult()` and `public void SetException(Exception)`:
+4. In **CustomTask.cs**, inside the `CustomTask` class and directly below the `IsCompleted` property, add `public void SetResult()` and `public void SetException(Exception)`:
 
 ```cs
 public void SetResult()
@@ -77,12 +83,13 @@ public void SetException(Exception exception)
     if (_completed)
       throw new InvalidOperationException($"{nameof(CustomTask)} already completed. Cannot set exception of a completed {nameof(CustomTask)}");
     
+    _completed = true;
     _exception = exception;
   }
 }
 ```
 
-5. In **CustomTask**, add `public static CustomTask Run(Action)`:
+5. In **CustomTask.cs**, inside the `CustomTask` class and directly below `SetException(Exception)`, add `public static CustomTask Run(Action)`:
 
 ```cs
 public static CustomTask Run(Action action)
@@ -107,8 +114,8 @@ public static CustomTask Run(Action action)
 ```
 > **Note:** `ThreadPool.QueueUserWorkItem()` queues a method for execution. The method executes when a thread pool thread becomes available.
 
-6. In your IDE, open the file **/CreatingTaskFromScratch/Program**
-7. In **Program**, implement `CustomTask.Run()`:
+6. In your IDE, open **CreatingTaskFromScratch/Program.cs**.
+7. Replace the contents of **Program.cs** with this code:
 
 ```cs
 using CreatingTaskFromScratch;
@@ -120,13 +127,18 @@ CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread Id: {
 Console.ReadLine();
 ```
 > **Note:** We add `Console.ReadLine();` because we cannot yet `await CustomTask.Run()`
-8. In your IDE, Build + Run the program
+8. In your IDE, Build + Run the program, or run this command from **3. Creating Custom Implementation of Task/1. Start**:
+
+```console
+dotnet run --project CreatingTaskFromScratch/CreatingTaskFromScratch.csproj
+```
+
 9. In your IDE, in the Console output, confirm that the **Starting Thread** ID and the **First CustomTask Thread Id** are different
 
 ## 3. Add **.ContinueWith()**
 
-1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
-2. In **CustomTask**, add `public CustomTask ContinueWith(Action)`:
+1. In your IDE, open **CreatingTaskFromScratch/CustomTask.cs**.
+2. In **CustomTask.cs**, inside the `CustomTask` class and directly below `Run(Action)`, add `public CustomTask ContinueWith(Action)`:
 
 ```cs
 public CustomTask ContinueWith(Action action)
@@ -162,7 +174,7 @@ public CustomTask ContinueWith(Action action)
 ```
 > **Note:** `ExecutionContext` stores the state of the calling thread, including its CultureInfo and IPrincipal (security information)
 
-3. In **CustomTask**, let's streamline the existing `void SetResult()` and `void SetException(Exception)` methods by creating a new method called `void CompleteTask(Exception?)`:
+3. In **CustomTask**, replace the existing `void SetResult()` and `void SetException(Exception)` methods with the following two expression-bodied methods, and then add the new helper method `void CompleteTask(Exception?)` directly below them:
 ```cs
 public void SetResult() => CompleteTask(null);
 
@@ -192,19 +204,19 @@ void CompleteTask(Exception? exception)
   }
 }
 ```
-4. In your IDE, open the file **/CreatingTaskFromScratch/Program**
-5. In **Program**, append `.ContinueWith()` to the existing call to `CustomTask.Run()`:
+4. In your IDE, open **CreatingTaskFromScratch/Program.cs**.
+5. Replace the `CustomTask.Run(...)` statement in **Program.cs** with this statement:
 ```cs
-CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"))
-	.ContinueWith(() => Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
+CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}"))
+  .ContinueWith(() => Console.WriteLine($"Second {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}"));
 ```
-6. In your IDE, Build + Run the program
-7. In your IDE, in the Console output, confirm that the **First CustomTask Thread Id** is the same as **Second CustomTask Thread Id**
+6. In your IDE, Build + Run the program.
+7. In your IDE, in the Console output, confirm that the **First CustomTask Thread Id** is the same as **Second CustomTask Thread Id**.
 
 ## 4. Add **Wait()**
 
-1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
-2. In **CustomTask**, add `public void Wait()`:
+1. In your IDE, open **CreatingTaskFromScratch/CustomTask.cs**.
+2. In **CustomTask.cs**, inside the `CustomTask` class and directly below `Run(Action)`, add `public void Wait()`:
 ```cs
 public void Wait()
 {
@@ -231,18 +243,18 @@ public void Wait()
 >
 > **Note:** **ManualResetEventSlim.Wait()** is a blocking call
 
-3. In your IDE, open the file **/CreatingTaskFromScratch/Program**
-4. In **Program**, re-write the logic using **.Wait()**, removing the need for **Console.ReadLine()**:
+3. In your IDE, open **CreatingTaskFromScratch/Program.cs**.
+4. Replace the contents of **Program.cs** with this code, which uses **.Wait()** instead of **Console.ReadLine()**:
 ```cs
 using CreatingTaskFromScratch;
 
 Console.WriteLine($"Starting Thread Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}")).Wait();
 
 Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}")).Wait();
 ```
 5. In your IDE, Build + Run the program
 6. In your IDE, in the Console output, confirm that the **Second CustomTask Thread Id** is the same as the **Starting Thread Id**
@@ -251,8 +263,8 @@ CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: 
 
 ## 5. Add **.Delay(TimeSpan)**
 
-1. In your IDE, open the file **/CreatingTaskFromScratch/CustomTask**
-2. In **CustomTask**, add **public static CustomTask Delay(TimeSpan)**:
+1. In your IDE, open **CreatingTaskFromScratch/CustomTask.cs**.
+2. In **CustomTask.cs**, inside the `CustomTask` class and directly below `IsCompleted`, add **public static CustomTask Delay(TimeSpan)**:
 
 ```cs
 public static CustomTask Delay(TimeSpan delay)
@@ -266,22 +278,22 @@ public static CustomTask Delay(TimeSpan delay)
 ```
 > **Note:** Passing **Timeout.InfiniteTimeSpan** into **Timer.Change()** disables the periodic function of **Timer**
 
-3. In your IDE, open the file **/CreatingTaskFromScratch/Program**
-4. In **Program**, add a call to **CustomTask.Delay(TimeSpan)**:
+3. In your IDE, open **CreatingTaskFromScratch/Program.cs**.
+4. Replace the contents of **Program.cs** with this code, which adds calls to **CustomTask.Delay(TimeSpan)**:
 ```cs
 using CreatingTaskFromScratch;
 
 Console.WriteLine($"Starting Thread Id: {Environment.CurrentManagedThreadId}");
 
-CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}")).Wait();
 
 CustomTask.Delay(TimeSpan.FromSeconds(1)).Wait();
 
-Console.WriteLine($"Second {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}");
+Console.WriteLine($"Second {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}");
 
 CustomTask.Delay(TimeSpan.FromSeconds(1)).Wait();
 
-CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}")).Wait();
+CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread Id: {Environment.CurrentManagedThreadId}")).Wait();
 ```
 5. In your IDE, Build + Run the program
 6. Confirm that the Program no longer finishes executing near-instantly thanks to **CustomTask.Delay(TimeSpan)**
@@ -293,7 +305,7 @@ CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: 
 <img width="1064" height="304" alt="Screenshot 2026-01-23 at 1 59 37 PM" src="https://github.com/user-attachments/assets/d8e03b9c-9d5e-4c61-8ef0-07d40bab31e3" />
 
 
-2. In **CustomTaskAwaiter**, create **readonly struct CustomTaskAwaiter**:
+2. In **CustomTaskAwaiter.cs**, paste this code:
 
 ```cs
 using System.Runtime.CompilerServices;
@@ -318,14 +330,14 @@ readonly struct CustomTaskAwaiter : INotifyCompletion
 	public void GetResult() => _task.Wait();
 }
 ```
-3. In your IDE, open the file **CreatingTaskFromScratch/CustomTask**
-4. In **CustomTask** add the method **public CustomTaskAwaiter GetAwaiter()**:
+3. In your IDE, open **CreatingTaskFromScratch/CustomTask.cs**.
+4. In **CustomTask.cs**, inside the `CustomTask` class and directly above `SetResult()`, add **public CustomTaskAwaiter GetAwaiter()**:
 
 ```cs
 public CustomTaskAwaiter GetAwaiter() => new(this);
 ```
-5. In your IDE, open the file **/CreatingTaskFromScratch/Program**
-6. In **Program**, replace **.Wait()** with **await**:
+5. In your IDE, open **CreatingTaskFromScratch/Program.cs**.
+6. Replace the contents of **Program.cs** with this code, which replaces **.Wait()** with **await**:
 
 ```cs
 using CreatingTaskFromScratch;
@@ -336,11 +348,11 @@ await CustomTask.Run(() => Console.WriteLine($"First {nameof(CustomTask)} Id: {E
 
 await CustomTask.Delay(TimeSpan.FromSeconds(1));
 
-Console.WriteLine($"Second {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}");
+Console.WriteLine($"Second {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}");
 
 await CustomTask.Delay(TimeSpan.FromSeconds(1));
 
-await CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Thread  Id: {Environment.CurrentManagedThreadId}"));
+await CustomTask.Run(() => Console.WriteLine($"Third {nameof(CustomTask)} Id: {Environment.CurrentManagedThreadId}"));
 ```
->**Note:** The .NET Compiler uses [Duck Typing](https://en.wikipedia.org/wiki/Duck_typing) to enable the **await** keyword. Any object can be await'd as long as it contains the methof **public INotifyCompletion GetAwaiter()**.
+> **Note:** The .NET Compiler uses [Duck Typing](https://en.wikipedia.org/wiki/Duck_typing) to enable the **await** keyword. Any object can be awaited as long as it exposes a `GetAwaiter()` method whose awaiter implements the expected awaiter pattern.
 7. In your IDE, Build + Run the program

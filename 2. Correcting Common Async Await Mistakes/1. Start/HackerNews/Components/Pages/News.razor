@@ -1,0 +1,75 @@
+@page "/"
+@inherits NewsPageBase
+
+<PageTitle>Top Stories</PageTitle>
+
+<section class="news-page">
+	<header class="hero-panel">
+		<div class="hero-copy">
+			<p class="eyebrow">Hacker News</p>
+			<h1>Top stories</h1>
+			<p class="hero-summary">Fresh links from the front page, ranked by score and ready to scan.</p>
+		</div>
+
+		<div class="hero-actions">
+			<div class="status-tile" aria-live="polite">
+				<span class="status-value">@TopStoryCollection.Count</span>
+				<span class="status-label">of @StoriesConstants.NumberOfStories stories loaded</span>
+			</div>
+
+			<button class="refresh-button" type="button" disabled="@IsListRefreshing" @onclick="RefreshAsync">
+				<span class="refresh-icon" aria-hidden="true"></span>
+				@(IsListRefreshing ? "Refreshing" : "Refresh")
+			</button>
+		</div>
+	</header>
+
+	@if (RefreshErrorMessage is not null)
+	{
+		<div class="error-panel" role="alert">
+			<strong>Refresh failed</strong>
+			<p>@RefreshErrorMessage</p>
+		</div>
+	}
+
+	@if (TopStoryCollection.Count is 0 && IsListRefreshing)
+	{
+		<div class="story-list loading-list" aria-label="Loading top stories" aria-busy="true">
+			@for (var index = 0; index < 8; index++)
+			{
+				<div class="story-card skeleton-card">
+					<span class="story-rank">@(index + 1)</span>
+					<div class="story-content">
+						<span class="skeleton-line title-line"></span>
+						<span class="skeleton-line meta-line"></span>
+					</div>
+				</div>
+			}
+		</div>
+	}
+	else
+	{
+		<div class="story-list" aria-live="polite">
+			@for (var index = 0; index < TopStoryCollection.Count; index++)
+			{
+				var story = TopStoryCollection[index];
+
+				<article class="story-card" @key="story.Id">
+					<span class="story-rank">@(index + 1)</span>
+					<div class="story-content">
+					@if (string.IsNullOrWhiteSpace(story.Url))
+					{
+						<span class="story-title">@story.Title</span>
+					}
+					else
+					{
+						<a class="story-title" href="@story.Url" target="_blank" rel="noopener noreferrer">@story.Title</a>
+					}
+
+						<p class="story-meta">@story.Description</p>
+					</div>
+				</article>
+			}
+		</div>
+	}
+</section>
