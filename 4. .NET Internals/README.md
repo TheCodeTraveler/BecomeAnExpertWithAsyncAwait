@@ -201,6 +201,6 @@ var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Curr
 
 1. Resume execution.
 1. Confirm the code hits the second breakpoint.
-1. In the debugger, confirm `synchronizationContextAfterConfigureAwaitFalse` is `null`.
+1. In the debugger, observe `synchronizationContextAfterConfigureAwaitFalse`. It is commonly `null` after an asynchronous continuation, but it may remain non-null if the awaited operation completed synchronously.
 
-   `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` do not resume on the captured synchronization context. The sample uses `InvokeAsync(...)` after `ConfigureAwait(false)` to marshal UI state updates back through Blazor's renderer.
+   `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` avoid capturing the synchronization context when a continuation is scheduled. The sample uses `InvokeAsync(...)` to marshal UI state updates back through Blazor's renderer.
