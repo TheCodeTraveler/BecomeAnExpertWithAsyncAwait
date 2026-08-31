@@ -48,7 +48,7 @@ app.MapControllerRoute(
 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal).ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None);
 ```
 
-`ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None` forces the continuation to yield and avoids returning to the calling thread.
+`ConfigureAwaitOptions.ForceYielding` forces an asynchronous continuation, while `ConfigureAwaitOptions.None` avoids capturing a synchronization context. The continuation may still run on the same physical thread.
 
 1. Set a second breakpoint on the redirect statement:
 
