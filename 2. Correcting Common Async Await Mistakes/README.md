@@ -160,18 +160,14 @@ async IAsyncEnumerable<StoryModel> GetTopStories(int storyCount, [EnumeratorCanc
     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(storyCount);
 
     var topStoryIds = await GetTopStoryIDs(token).ConfigureAwait(false);
-    var getTopStoryTaskList = topStoryIds.Select(id => GetStory(id, token)).ToList();
+    var storyIds = topStoryIds.Take(storyCount).ToList();
+    var getTopStoryTaskList = storyIds.Select(id => GetStory(id, token)).ToList();
 
     foreach (var topStoryTask in getTopStoryTaskList)
     {
         token.ThrowIfCancellationRequested();
 
         yield return await topStoryTask.ConfigureAwait(false);
-
-        if (--storyCount <= 0)
-        {
-            break;
-        }
     }
 }
 ```
