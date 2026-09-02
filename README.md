@@ -4,7 +4,7 @@
 
 In this workshop, we will dive deep into how .NET implements asynchronous programming under the hood to become experts using async/await!
 
-Join me as we uncover the ways that the .NET compiler modifies each of our async methods. We'll learn how to build a custom implementation of `Task` from scratch and use it with the built-in async/await keywords. Then we'll dive deep into the .NET source code to understand the importance of internal framework tools like SynchronizationContext, ExecutionContext, Principal, ThreadStatic and more!
+Join me as we uncover the ways that the .NET compiler modifies each of our async methods. We'll learn how to build a custom implementation of `Task` from scratch and use it with the built-in async/await keywords. Then we'll dive deep into the .NET source code to understand the importance of internal framework tools like `SynchronizationContext`, `ExecutionContext`, `Principal`, `ThreadStatic`, and more. The interactive UI samples use Blazor so attendees can run them in a browser with only the .NET SDK installed.
 
 ![QR code](https://github.com/user-attachments/assets/6c94fc5c-c71d-4471-9cfb-5026824a6ec5)
 
@@ -57,12 +57,10 @@ This workshop is designed for two 7-hour days. The active material is approximat
 
 ## Additional Resources
 
-Join me in these [DomeTrain](https://dometrain.com) courses where we'll learn everything you need to know to master asynchronous programming using async await in C# and .NET
+Join me in these [DomeTrain](https://dometrain.com) courses where we'll learn everything you need to know to master asynchronous programming using async await in C# and .NET.
 
 [![Asynchronous Programming](https://github.com/user-attachments/assets/e3ce2f9b-7fb5-4103-9b00-46d1aea5c977)](https://dometrain.com/course/from-zero-to-hero-asynchronous-programming-in-csharp/)
 
 [![Parallel Programming](https://github.com/user-attachments/assets/8567ec85-83d2-493b-bd9e-0a6dd42af60d)](https://dometrain.com/course/from-zero-to-hero-parallel-programming-in-csharp/)
 
-[![Maui Getting Started](https://github.com/user-attachments/assets/d6de6109-476a-4fd7-8bbc-d24b0df207ed)](https://dometrain.com/course/getting-started-dotnet-maui/)
-
-[![Maui Deep Dive](https://github.com/user-attachments/assets/d3194a4d-508e-44f2-8552-e86a2434c6b5)](https://dometrain.com/course/deep-dive-dotnet-maui/)
+Blazor documentation: [https://learn.microsoft.com/aspnet/core/blazor/](https://learn.microsoft.com/aspnet/core/blazor/)

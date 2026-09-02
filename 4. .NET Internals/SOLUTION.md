@@ -30,6 +30,15 @@ The exact background thread IDs and random values will differ. The important obs
 
 ## 2. Principal
 
+Open **2. Principal/PrincipalExample/Program.cs** and inspect the login controller route:
+
+```cs
+app.MapControllerRoute(
+    name: "login",
+    pattern: "{controller=Account}/{action=Login}/{id?}")
+    .WithStaticAssets();
+```
+
 Open **2. Principal/PrincipalExample/Controllers/AccountController.cs**.
 
 Set a breakpoint on the sign-in await:
@@ -48,7 +57,7 @@ Debug **PrincipalExample.csproj** and navigate to [http://localhost:5000/Account
 
 At the first breakpoint, record the managed thread ID and inspect `HttpContext`, `principal`, and its claims. Resume execution. At the second breakpoint, record the thread ID again and inspect `HttpContext` again.
 
-The thread should change, but the request context and claims remain available. That is the security-context lesson: modern .NET preserves this data across the async continuation.
+The current thread ID should change, but the request context and claims remain available. That is the security-context lesson: modern .NET preserves this data across the async continuation.
 
 ## 3. ExecutionContext
 
@@ -116,22 +125,24 @@ The exact thread ID may differ. The important observation is that the culture re
 
 ## 4. SynchronizationContext
 
-Open **4. SynchronizationContext/HackerNews/ViewModels/NewsViewModel.cs**.
+Open **4. SynchronizationContext/HackerNews/Components/Pages/News.razor.cs**.
 
-Set a breakpoint before the first await in `Refresh(CancellationToken token)`:
+Set a breakpoint before the first await in `RefreshAsync(CancellationToken token)`:
 
 ```cs
-var thread = Thread.CurrentThread;
+var synchronizationContext = SynchronizationContext.Current;
 ```
 
 Set another breakpoint after `ConfigureAwait(false)` resumes inside the `await foreach` loop:
 
 ```cs
-var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
+var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
 ```
 
-Debug **HackerNews.csproj** and trigger the refresh flow.
+Debug **HackerNews.csproj** and open [http://localhost:5004](http://localhost:5004).
 
-At the first breakpoint, inspect the current thread and synchronization context details. In .NET MAUI, the captured synchronization context is platform-specific, so the exact type depends on the debug target.
+At the first breakpoint, inspect the current thread and `synchronizationContext`. In Blazor Server, the synchronization context is a renderer/circuit synchronization context. It is not a native UI thread, and the managed thread ID does not have to be `1`.
 
-At the second breakpoint, inspect the continuation thread. The key observation is that `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` do not resume on the captured synchronization context.
+At the second breakpoint, inspect the continuation thread and `synchronizationContextAfterConfigureAwaitFalse`. It is commonly `null` after an asynchronous continuation, but it may remain non-null if the awaited operation completed synchronously.
+
+The key observation is that `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` avoid capturing the synchronization context when a continuation is scheduled. The sample uses `InvokeAsync(...)` to marshal UI state updates back through Blazor's renderer.

@@ -21,7 +21,7 @@ Recommended time: 25 to 35 minutes.
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
 1. Open **2. Principal/PrincipalExample.slnx**.
-2. Open **PrincipalExample/Controllers/AccountController.cs**.
+2. Open **PrincipalExample/Program.cs** and **PrincipalExample/Controllers/AccountController.cs**.
 3. Set breakpoints around the `SignInAsync(...)` await and the redirect that follows it.
 4. Debug the app and navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
 5. Record the managed thread ID, `HttpContext`, and claims before and after the await.
@@ -49,10 +49,10 @@ Recommended time: 25 to 35 minutes.
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
 1. Open **4. SynchronizationContext/HackerNews.slnx**.
-2. Open **HackerNews/ViewModels/NewsViewModel.cs**.
+2. Open **HackerNews/Components/Pages/News.razor.cs**.
 3. Set breakpoints before and after `ConfigureAwait(false)` in the refresh flow.
-4. Debug the app and trigger a refresh.
-5. Inspect the current thread before the await and after the continuation.
+4. Debug the app and open [http://localhost:5004](http://localhost:5004).
+5. Inspect the current thread and `SynchronizationContext` before the await and after the continuation.
 6. Explain why the continuation after `ConfigureAwait(false)` is not running on the captured synchronization context.
 
 ## 5. Review the Solution
