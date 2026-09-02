@@ -116,7 +116,7 @@ sealed class CustomTask
 		{
 			if (_completed)
 				throw new InvalidOperationException(
-					"DomeTrainTask already completed. Cannot set result of a completed DomeTrainTask");
+					$"{nameof(CustomTask)} already completed. Cannot complete an already completed {nameof(CustomTask)}");
 
 			_completed = true;
 			_exception = exception;

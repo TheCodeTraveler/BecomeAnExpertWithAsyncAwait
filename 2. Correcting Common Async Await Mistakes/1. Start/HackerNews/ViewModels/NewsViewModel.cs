@@ -96,6 +96,6 @@ partial class NewsViewModel : BaseViewModel
 		}
 	}
 
-	bool IsDataRecent(TimeSpan timeSpan) => TopStoryCollection.Any() 
-	                                        && (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) > timeSpan;
+	bool IsDataRecent(TimeSpan timeSpan) => TopStoryCollection.Any()
+											&& (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) > timeSpan;
 }
