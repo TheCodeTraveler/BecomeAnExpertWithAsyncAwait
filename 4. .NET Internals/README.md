@@ -105,7 +105,7 @@ static readonly AsyncLocal<string> _asyncLocalData = new();
 1. Confirm the console output includes:
 
 ```console
-Thread ID: 1
+Thread ID: <main-thread-id>
 Culture: Spanish (Spain)
 Principal: System.Security.Claims.ClaimsPrincipal
 AsyncLocalData: Initial Value
@@ -116,7 +116,7 @@ AsyncLocalData: Initial Value
 1. Confirm the console output includes:
 
 ```console
-Thread ID: 4
+Thread ID: <explicit-background-thread-id>
 Culture: English (United Kingdom)
 Principal: ExecutionContextExample.CustomPrincipal
 AsyncLocalData: AsyncLocalData in Thread
@@ -127,20 +127,20 @@ AsyncLocalData: AsyncLocalData in Thread
 1. Confirm the console output includes:
 
 ```console
-Thread ID: 4
+Thread ID: <explicit-background-thread-id>
 Culture: Spanish (Spain)
 Principal: System.Security.Claims.ClaimsPrincipal
 AsyncLocalData: Initial Value
 ```
 
-The same background thread now sees the main thread's culture, principal, and async-local value because the captured `ExecutionContext` was supplied to `ExecutionContext.Run(...)`.
+The same explicit background thread now sees the main thread's culture, principal, and async-local value because the captured `ExecutionContext` was supplied to `ExecutionContext.Run(...)`.
 
 1. Resume execution.
 1. Confirm the program pauses after `Main Thread Values`.
 1. Confirm the console output includes:
 
 ```console
-Thread ID: 1
+Thread ID: <main-thread-id>
 Culture: Spanish (Spain)
 Principal: System.Security.Claims.ClaimsPrincipal
 AsyncLocalData: Initial Value
@@ -151,7 +151,7 @@ AsyncLocalData: Initial Value
 1. Confirm the console output includes:
 
 ```console
-Thread ID: 5
+Thread ID: <task-run-thread-id>
 Culture: Spanish (Spain)
 Principal: System.Security.Claims.ClaimsPrincipal
 AsyncLocalData: Initial Value
@@ -164,13 +164,13 @@ AsyncLocalData: Initial Value
 1. Confirm the console output includes:
 
 ```console
-Thread ID: 7
-Culture: English (United States)
+Thread ID: <suppressed-task-run-thread-id>
+Culture: <machine-default-culture>
 Principal:
 AsyncLocalData:
 ```
 
-Your background thread ID may differ. The important result is that the culture returns to the machine default, `Principal` is empty, and `AsyncLocalData` is empty because `ExecutionContext` flow was suppressed.
+Your managed thread IDs and machine default culture may differ. The important result is that the culture returns to the machine default, `Principal` is empty, and `AsyncLocalData` is empty because `ExecutionContext` flow was suppressed.
 
 ## 4. SynchronizationContext
 
