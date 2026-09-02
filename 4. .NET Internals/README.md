@@ -96,7 +96,7 @@ static readonly AsyncLocal<string> _asyncLocalData = new();
 1. Set a breakpoint on the `PrintThreadValues();` call inside `ExecutionContext.Run(...)`.
 1. Set a breakpoint on the `PrintThreadValues();` call after `Console.WriteLine("Main Thread Values");`.
 1. Set a breakpoint on the `PrintThreadValues();` call inside the first `Task.Run(...)`.
-1. Set a breakpoint on the `PrintThreadValues();` call inside the `Task.Run(...)` after `ExecutionContext.SuppressFlow();`.
+1. Set a breakpoint on the `PrintThreadValues();` call inside the `Task.Run(...)` created inside the `using (ExecutionContext.SuppressFlow())` block.
 1. Build and debug **ExecutionContextExample.csproj**.
 
    Be sure to debug the app, not only run it, and use the Debug build configuration.
@@ -160,7 +160,7 @@ AsyncLocalData: Initial Value
 `Task.Run(...)` uses a background thread, but async/await automatically flows `ExecutionContext`, so the culture, principal, and async-local value are preserved.
 
 1. Resume execution.
-1. Confirm the program pauses inside the `Task.Run(...)` after `ExecutionContext.SuppressFlow();`.
+1. Confirm the program pauses inside the `Task.Run(...)` created inside the `using (ExecutionContext.SuppressFlow())` block.
 1. Confirm the console output includes:
 
 ```console
@@ -170,7 +170,9 @@ Principal:
 AsyncLocalData:
 ```
 
-Your background thread ID may differ. The important result is that the culture returns to the machine default, `Principal` is empty, and `AsyncLocalData` is empty because `ExecutionContext` flow was suppressed.
+Your background thread ID may differ. The important result is that the culture returns to the machine default, `Principal` is empty, and `AsyncLocalData` is empty because `ExecutionContext` flow was suppressed while the task was created.
+
+`ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. The safe pattern is to create the task inside the `using` block, leave the block so flow is restored on the current thread, and only then await the task.
 
 ## 4. SynchronizationContext
 

@@ -53,14 +53,17 @@ public static class Program
 			PrintThreadValues();
 		});
 
-		// Prevent async/await from automatically flowing the ExecutionContext
-		ExecutionContext.SuppressFlow();
-
-		await Task.Run(() =>
+		Task suppressedExecutionContextTask;
+		using (ExecutionContext.SuppressFlow())
 		{
-			Console.WriteLine("Print Values from Task.Run() With Execution Context Suppressed");
-			PrintThreadValues();
-		});
+			suppressedExecutionContextTask = Task.Run(() =>
+			{
+				Console.WriteLine("Print Values from Task.Run() With Execution Context Suppressed");
+				PrintThreadValues();
+			});
+		}
+
+		await suppressedExecutionContextTask;
 	}
 
 	static void PrintThreadValues()
