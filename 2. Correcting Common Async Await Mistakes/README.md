@@ -210,7 +210,8 @@ async Task RefreshAsync(CancellationToken token)
     }
     catch (Exception e)
     {
-        await InvokeAsync(() => RefreshErrorMessage = e.ToString());
+        Logger.LogError(e, "Failed to refresh Hacker News top stories.");
+        await InvokeAsync(() => RefreshErrorMessage = "Unable to refresh top stories. Check your connection and try again.");
     }
     finally
     {
@@ -233,6 +234,8 @@ async Task RefreshAsync(CancellationToken token)
     }
 }
 ```
+
+> **Note:** Log the full exception on the server, but show users a generic actionable message. Blazor Server UI state is sent to the browser, so `e.ToString()` would expose implementation details and stack traces to every connected client.
 
 ## 8. Returning `Task`
 

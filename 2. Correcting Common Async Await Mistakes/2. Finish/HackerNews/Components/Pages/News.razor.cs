@@ -11,6 +11,9 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	[Inject]
 	public required HackerNewsAPIService HackerNewsApiService { get; init; }
 
+	[Inject]
+	public required ILogger<NewsPageBase> Logger { get; init; }
+
 	protected List<StoryModel> TopStoryCollection { get; } = [];
 	protected bool IsListRefreshing { get; set; }
 	protected string? RefreshErrorMessage { get; set; }
@@ -55,7 +58,8 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		}
 		catch (Exception e)
 		{
-			await InvokeAsync(() => RefreshErrorMessage = e.ToString());
+			Logger.LogError(e, "Failed to refresh Hacker News top stories.");
+			await InvokeAsync(() => RefreshErrorMessage = "Unable to refresh top stories. Check your connection and try again.");
 		}
 		finally
 		{
