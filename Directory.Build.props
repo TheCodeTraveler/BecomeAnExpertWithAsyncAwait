@@ -22,13 +22,6 @@
     <!-- Unit Test Specific -->
     <EnableNUnitRunner>true</EnableNUnitRunner>
 
-    <!-- MAUI Specific -->
-    <MauiXamlInflator>SourceGen</MauiXamlInflator>
-    <MauiPackageVersion>10.0.30</MauiPackageVersion>
-    <MauiStrictXamlCompilation>true</MauiStrictXamlCompilation>
-    <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
-    <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
-
     <!-- WarningsAsErrors
      CS0419: Ambiguous reference in cref attribute
      CS0618: Is obsolete

@@ -1,128 +1,214 @@
 # 0. Install Prerequisites
 
-This workshop requires the following tools:
+This workshop is designed to run on Windows or macOS with no mobile workloads, no emulators, and no platform SDKs. The UI samples are Blazor Web Apps and run in a browser.
 
-* Visual Studio (Windows) or Jet Brains Rider (macOS)
-* .NET 10
-* .NET MAUI
+By the end of this setup, every attendee should be able to run these commands from the repository root:
 
-## 1a. Install IDE (Windows)
+```console
+dotnet --version
+dotnet build "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews.slnx"
+dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews/HackerNews.csproj"
+```
 
-1. On a Windows PC, open a browser and navigate to [https://visualstudio.microsoft.com/downloads/](https://visualstudio.microsoft.com/downloads/)
-2. In the browser, download Visual Studio Community (or install Professional/Enterprise if you have a license)
+## 1. Install or Open an Editor
 
-## 1b. Install IDE (macOS)
+Use any editor that can open C# files:
 
-1. On a Mac, open a browser and navigate to [https://www.jetbrains.com/rider/download/?section=mac](https://www.jetbrains.com/rider/download/?section=mac)
-2. In the browser, download Jet Brains Rider
+* [Visual Studio](https://visualstudio.microsoft.com/downloads/) on Windows
+* [JetBrains Rider](https://www.jetbrains.com/rider/download/) on Windows or macOS
+* [Visual Studio Code](https://code.visualstudio.com/) with the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension
 
-## 2a. Update IDE (Winodws)
+If your work laptop blocks installing IDEs, you can still complete the workshop from a terminal and any editor that is already approved by your organization.
 
-1. On a Windows PC, press the Winodws button to launch the Start Menu
-2. In the Start Menu, at the top, locate the Search Bar
-3. In the Search Bar, type `Visual Studio Installer`
-4. In the Start Menu, in the search results, open the app by selecting **Visual Studio Installer**
-![Visual Studio Installer](https://github.com/user-attachments/assets/35717cbc-ea79-42de-9589-d313273c1dc5)
+## 2. Install .NET 10 SDK
 
-5. In the **Visual Studio Installer** app, select the **Update All** button
+You need the .NET SDK, not just the runtime. Choose one install path below.
 
-> **Note**: If the **Update All** button does not appear, Visual Studio is up-to-date. You may continue to Step 3
- ![Update All](https://github.com/user-attachments/assets/c2dc0051-a09a-4ca3-b530-0ee9f23c9998)
+After installing, open a new terminal and verify:
 
-1. Stand by until Visual Studio has finished updating
+```console
+dotnet --list-sdks
+```
 
-## 3. Install the Latest Version of .NET 10
+Confirm that the output includes `10.0.100` or later. If `dotnet` is not found, close and reopen your terminal. If it is still not found, use the no-admin install steps below and run the PATH commands shown there.
 
-1. Open a browser and nvigate to [https://dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
-2. In the browser, locate the `Installers` column for the latest release of .NET:
-![Install .NET](https://github.com/user-attachments/assets/babbbb15-f801-48ae-b431-8e20eb4b2911)
+## 2a. Windows: Install with Visual Studio Installer
 
-3. Under the `Installers` column, click the link that corresponds to your computer's Operating System and CPU Architecture
-4. Stand by while the `dotnet-sdk` downlods
-5. Once the `dotnet-sdk` download has completed, launch the downloaded file
-6. In the `Install Microsoft .NET` window, click continue and follow the prompts until the installation has successfully completd
-![Install .NET](https://github.com/user-attachments/assets/99ca5ce7-3c4d-4628-97e5-d3e2d244b283)
+Use this path if you already use Visual Studio or your company manages installs through Visual Studio Installer.
 
-## 4a. Install the Latest Version of .NET MAUI (Windows)
+1. Open **Visual Studio Installer**.
+2. Select **Modify** on your Visual Studio installation.
+3. Select the **ASP.NET and web development** workload.
+4. Open **Individual components** and confirm that **.NET 10 SDK** is selected.
+5. Select **Modify** or **Install**.
+6. Open a new PowerShell window and run:
 
-1. Open the [Command Prompt](https://learn.microsoft.com/answers/questions/5637237/how-to-open-command-prompt-in-windows-11)
-2. In the Command Prompt, type `dotnet workload install maui && dotnet workload update`
-3. On the Windows Command Prompt, hit **Enter**
-4. Stand by while the latest version of .NET MAUI is being installed
+```powershell
+dotnet --list-sdks
+```
 
-## 4b. Install the Latest Version of .NET MAUI (macOS)
+## 2b. Windows: Install with the .NET SDK Installer
 
-1. On macOS, open the [Terminal](https://support.apple.com/guide/terminal/open-or-quit-terminal-apd5265185d-f365-44cb-8b09-71a064a42125/mac)
-2. In the Terminal, type `sudo dotnet workload install maui; sudo dotnet workload update`
-3. In the Terminal, hit **Enter**
-4. In the Terminal, enter your macOS login Password
-5. Stand by while the latest version of .NET MAUI is being installed
+Use this path if you can download and run installers.
 
-## 5. Ensure .NET MAUI App Builds + Runs Successfully
+1. Open [https://dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
+2. Download the **SDK** installer for Windows x64 or Windows Arm64, matching your laptop.
+3. Run the installer.
+4. Open a new PowerShell window and run:
 
-1. Using File Explorer (Windows) / Finder (macOS), navigate to **BecomeAnExpertWithAsyncAwait/2. Correcting Common Async Await Mistakes/2. Finish**
-2. In the **2. Finish** folder, open **HackerNews.slnx** in your IDE (Visual Studio on Windows or Jet Brains Rider on macOS)
+```powershell
+dotnet --list-sdks
+```
 
-<img width="1032" height="674" alt="Screenshot 2026-01-22 at 2 51 36 PM" src="https://github.com/user-attachments/assets/8a714e01-2bb6-40cc-83ff-5b389566499b" />
+## 2c. Windows: Install from the Command Line
 
-### 5a. Build/Run the App on Windows (Windows)
+Use this path if your organization allows command-line package installation.
 
-1. In **Visual Studio**, in the toolbar, select the Target Framework dropdown menu (see screenshot below)
-> **Note:** Your Target Framework dropdown may be titled **HackerNews**, or it may be titled **Windows Machine** or it may be titled **Android Emulator**
+```powershell
+winget install Microsoft.DotNet.SDK.10
+```
 
-3. In the Target Framework dropdown menu, select **Framework (net10.0-windows10.0.19041.0)**
-4. In the **Framework (net10.0-windows10.0.19041.0)** menu, select **net10.0-windows10.0.19041.0**
-<img width="1116" height="242" alt="Screenshot 2026-01-25 at 4 15 44 PM" src="https://github.com/user-attachments/assets/113d87d8-a22c-42a6-83b8-afe9071e8830" />
+Then open a new PowerShell window and verify:
 
-5. In **Visual Studio**, select the play button next the the Target Framework Drop Down menu to build + run the app
-<img width="663" height="64" alt="Screenshot 2026-01-25 at 4 18 51 PM" src="https://github.com/user-attachments/assets/c01c5f7e-019b-4f26-b993-c6902339fcb4" />
+```powershell
+dotnet --list-sdks
+```
 
-6. Verify that the **HackerNews** app launches on Windows
+## 2d. Windows: No-Admin or Locked-Down Install
 
-<img width="1291" height="762" alt="Screenshot 2026-01-25 at 4 39 38 PM" src="https://github.com/user-attachments/assets/8d9b59da-0d18-48d4-8cb8-3ecc890b94fc" />
+Use this path if installers require admin approval or are blocked by IT. It installs .NET into your user profile.
 
+```powershell
+mkdir $env:USERPROFILE\.dotnet -Force
+Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile $env:TEMP\dotnet-install.ps1
+powershell -ExecutionPolicy Bypass -File $env:TEMP\dotnet-install.ps1 -Channel 10.0 -InstallDir $env:USERPROFILE\.dotnet
+$env:DOTNET_ROOT = "$env:USERPROFILE\.dotnet"
+$env:PATH = "$env:DOTNET_ROOT;$env:DOTNET_ROOT\tools;$env:PATH"
+dotnet --list-sdks
+```
 
-### 5b. Build/Run the App on Android (macOS)
+Those PATH changes apply to the current PowerShell window. If IT blocks changing your permanent user PATH, run the `$env:DOTNET_ROOT` and `$env:PATH` lines again each time you open a new terminal for the workshop.
 
-1. In **Jet Brains Rider**, using the macOS Menu Bar, navigate to **JetBrains Rider -> Settings**
+## 2e. macOS: Install with the .NET SDK Installer
 
-<img width="376" height="302" alt="image" src="https://github.com/user-attachments/assets/f06c3819-fe72-46dc-bd7c-cf9fd38d75a7" />
+Use this path if you can install `.pkg` files.
 
-2. In the Jet Brains Rider **Settings Menu**, on the left-hand menu, select **Plugins**
-3. In the **Plugins** window, at the top of the window, select **Marketplace**
+1. Open [https://dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
+2. Download the **SDK** installer for macOS Arm64 on Apple Silicon, or macOS x64 on Intel.
+3. Run the installer.
+4. Open a new Terminal window and run:
 
-<img width="1462" height="1162" alt="Screenshot 2026-01-22 at 3 11 56 PM" src="https://github.com/user-attachments/assets/662c025c-8559-4b1f-ab42-59d706e10f97" />
+```console
+dotnet --list-sdks
+```
 
-4. In the **Plugins** window, in the **search bar**, type `Rider Android Support`
-5. In the **Plugins** window, in the search results, locate the **Rider Android Support** plugin
-6. On the **Rider Android Support** plugin, click **Install**
+## 2f. macOS: Install from the Command Line
 
-> **Note:** If **Rider Android Support** is already installed, skip this step
+Use this path if your organization allows Homebrew.
 
-<img width="1462" height="1162" alt="Screenshot 2026-01-22 at 3 14 54 PM" src="https://github.com/user-attachments/assets/ee5fe44f-f405-423a-a9fa-e43477e539f1" />
+```console
+brew install --cask dotnet-sdk
+dotnet --list-sdks
+```
 
-7. Stand by while the **Rider Android Support** plugin is installed
-8. After the **Rider Android Support** has installed, click **Restart IDE**
-9. Stand by until Jet Brains Rider restarts
-10. After Jet Brains Rider has restarted, open **HackerNews.slnx**
-11. In Jet Brains Rider, on the top-right corner of the toolbar, click the **HackerNews** startup project drop-down menu
+If Homebrew is not approved, use the no-admin install steps below.
 
-<img width="633" height="280" alt="image" src="https://github.com/user-attachments/assets/7ef7075c-978a-49f7-b0b8-b09913cec8b0" />
+## 2g. macOS: No-Admin or Locked-Down Install
 
-12. In the **HackerNews** startup project drop-down menu, select the Android icon
+Use this path if `.pkg` installers require admin approval or are blocked by IT. It installs .NET into your home folder.
 
-> **Note**: Alternatively, you may select the macOS or iOS icon if you have [Xcode](https://developer.apple.com/xcode/) installed
+```console
+mkdir -p "$HOME/.dotnet"
+curl -L https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+chmod +x /tmp/dotnet-install.sh
+/tmp/dotnet-install.sh --channel 10.0 --install-dir "$HOME/.dotnet"
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$DOTNET_ROOT:$DOTNET_ROOT/tools:$PATH"
+dotnet --list-sdks
+```
 
-13. In Jet Brains Rider, on the top-center of the toolbar, click the Android Device drop-down menu
+Those PATH changes apply to the current Terminal window. If IT blocks changing your shell profile, run the `export DOTNET_ROOT=...` and `export PATH=...` lines again each time you open a new terminal for the workshop.
 
-<img width="1212" height="357" alt="image" src="https://github.com/user-attachments/assets/dc4463ce-5e88-4741-ba66-9683f8a2dfe7" />
+## 3. Get the Workshop Code
 
-14. In the Android device drop-down menu, select an Android simulator targeting Android API 25 or higher
+If Git is installed, clone the repository:
 
-15. In Jet Brains Rider, on the top-right corner of the toolbar, click **Debug**
+```console
+git clone https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait.git
+cd BecomeAnExpertWithAsyncAwait
+```
 
-<img width="417" height="242" alt="image" src="https://github.com/user-attachments/assets/b1af904a-5190-4513-8277-beaa5a1d9592" />
+If Git is blocked or not installed:
 
-16. Confirm the app succesfully builds, launches, and runs
+1. Open the repository in a browser.
+2. Select **Code**.
+3. Select **Download ZIP**.
+4. Extract the ZIP file.
+5. Open a terminal in the extracted **BecomeAnExpertWithAsyncAwait** folder.
 
-<img width="737" height="1083" alt="image" src="https://github.com/user-attachments/assets/2d07f935-055e-4e21-b9aa-fb1c54fc2558" />
+## 4. Verify the Workshop Build
+
+From the repository root, run:
+
+```console
+dotnet build "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews.slnx"
+```
+
+The build should end with `Build succeeded`.
+
+Then run the Blazor sample:
+
+```console
+dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews/HackerNews.csproj"
+```
+
+Open [http://localhost:5002](http://localhost:5002). Confirm that the **HackerNews** Blazor app loads and displays top stories.
+
+To stop the app, return to the terminal and press **Ctrl+C**.
+
+## 5. Troubleshooting Checklist
+
+If `dotnet` is not found:
+
+* Close and reopen the terminal.
+* Run `dotnet --list-sdks` again.
+* If you used the no-admin install, rerun the PATH commands from that section in the same terminal window.
+
+If the build says the .NET SDK is missing:
+
+* Run `dotnet --list-sdks`.
+* Confirm that `10.0.100` or later is listed.
+* Confirm that you installed the SDK, not only the runtime.
+
+If `localhost:5002` does not load:
+
+* Confirm the `dotnet run` command is still running.
+* Read the terminal output and open the URL it prints.
+* If port `5002` is already in use, run:
+
+```console
+dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews/HackerNews.csproj" --urls http://localhost:5012
+```
+
+Then open [http://localhost:5012](http://localhost:5012).
+
+If your company blocks access to Hacker News:
+
+* The app can still build.
+* The live story list may show a refresh error until you are on a network that allows access to `https://hacker-news.firebaseio.com`.
+
+## 6. Maintainer Build Check
+
+The repository includes a script that formats and builds every solution:
+
+```powershell
+./BuildAllSolutions.ps1
+```
+
+On macOS or Linux, run it with PowerShell 7:
+
+```console
+pwsh ./BuildAllSolutions.ps1
+```
+
+If PowerShell 7 is not installed, you can still participate in the workshop. The maintainer script is only needed to validate every solution in the repository at once.
