@@ -23,6 +23,8 @@ Each hands-on section follows the same rhythm:
 
 Most coding challenges are designed for 30 to 45 minutes. Shorter investigation challenges in the .NET Internals section focus on debugger observations and discussion rather than large code changes.
 
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use AI Agents to understand the existing code, clarify concepts, interpret errors, and ask questions that help you decide what to do next. The goal is to practice the reasoning yourself.
+
 ## Schedule
 
 This workshop is designed for two 7-hour days. The active material is approximately 12 to 13.5 hours, with the remaining time reserved for setup drift, breaks, attendee questions, and deeper review when a topic needs more time.

@@ -31,6 +31,8 @@ Pay attention to these clues:
 
 Recommended time: 35 to 45 minutes.
 
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify async/await concepts, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
+
 Refactor **NewsViewModel.cs** so the refresh pipeline follows the async/await practices covered in this workshop.
 
 Requirements:

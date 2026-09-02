@@ -6,6 +6,8 @@ In this section, you will inspect the internal state that .NET uses to flow asyn
 
 Recommended time: 15 to 20 minutes.
 
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
+
 1. Open **1. Thread Static/ThreadStaticExample.slnx**.
 2. Open **ThreadStaticExample/Program.cs**.
 3. Before running the app, predict which values will be shared and which values will stay isolated to each thread.
@@ -15,6 +17,8 @@ Recommended time: 15 to 20 minutes.
 ## 2. Principal Challenge
 
 Recommended time: 25 to 35 minutes.
+
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
 1. Open **2. Principal/PrincipalExample.slnx**.
 2. Open **PrincipalExample/Controllers/AccountController.cs**.
@@ -26,6 +30,8 @@ Recommended time: 25 to 35 minutes.
 ## 3. ExecutionContext Challenge
 
 Recommended time: 30 to 45 minutes.
+
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
 1. Open **3. ExecutionContext/ExecutionContextExample.slnx**.
 2. Open **ExecutionContextExample/Program.cs**.
@@ -39,6 +45,8 @@ Recommended time: 30 to 45 minutes.
 ## 4. SynchronizationContext Challenge
 
 Recommended time: 25 to 35 minutes.
+
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
 1. Open **4. SynchronizationContext/HackerNews.slnx**.
 2. Open **HackerNews/ViewModels/NewsViewModel.cs**.

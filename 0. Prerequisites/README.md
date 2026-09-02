@@ -133,6 +133,8 @@ If your organization blocks emulator installation, use any approved physical dev
 
 Recommended time: 20 to 30 minutes.
 
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use AI Agents to interpret setup errors or understand what a command is checking, but run the verification steps yourself and record the actual result from your machine.
+
 Before continuing to the workshop exercises, prove your machine is ready:
 
 1. Open a fresh terminal.

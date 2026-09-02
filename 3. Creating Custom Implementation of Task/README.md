@@ -24,6 +24,8 @@ You are going to add just enough infrastructure to understand how task-like type
 
 Recommended time: 45 minutes.
 
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify task-like type concepts, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
+
 Implement `CustomTask` and update `Program.cs` so your custom type can be run, continued, waited, delayed, and awaited.
 
 Requirements:
