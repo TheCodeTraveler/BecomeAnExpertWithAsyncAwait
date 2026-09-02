@@ -10,7 +10,7 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	readonly CancellationTokenSource _disposeCancellationTokenSource = new();
 
 	[Inject]
-	HackerNewsAPIService HackerNewsApiService { get; set; } = null!;
+	public required HackerNewsAPIService HackerNewsApiService { get; init; }
 
 	protected List<StoryModel> TopStoryCollection { get; } = [];
 	protected bool IsListRefreshing { get; set; }
