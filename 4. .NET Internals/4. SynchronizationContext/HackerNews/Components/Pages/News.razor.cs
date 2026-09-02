@@ -36,9 +36,11 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 
 		try
 		{
+			var topStoryIds = await GetTopStoryIDs(token).ConfigureAwait(false);
+
 			await InvokeAsync(TopStoryCollection.Clear);
 
-			await foreach (var story in GetTopStories(StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
+			await foreach (var story in GetTopStories(topStoryIds, StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
 			{
 				var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
 				var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
@@ -82,11 +84,10 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		}
 	}
 
-	async IAsyncEnumerable<StoryModel> GetTopStories(int storyCount, [EnumeratorCancellation] CancellationToken token)
+	async IAsyncEnumerable<StoryModel> GetTopStories(IReadOnlyList<long> topStoryIds, int storyCount, [EnumeratorCancellation] CancellationToken token)
 	{
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(storyCount);
 
-		var topStoryIds = await GetTopStoryIDs(token).ConfigureAwait(false);
 		var storyIds = topStoryIds.Take(storyCount).ToList();
 		var getTopStoryTaskList = storyIds.Select(id => GetStory(id, token)).ToList();
 
