@@ -15,11 +15,11 @@ This workshop mixes short lectures, timed implementation challenges, group revie
 Each hands-on section follows the same rhythm:
 
 1. We introduce the topic together and connect it to the code you are about to change.
-1. You open the starter project and inspect the code that matters for the lesson.
-1. You pause for a timed challenge and implement the ideas that were just taught.
-1. We review attendee approaches together, including tradeoffs, questions, and common mistakes.
-1. We walk through the solution step by step as a group, re-iterating the key async/await concepts along the way.
-1. You compare your implementation with the completed sample and ask any remaining questions while the context is fresh.
+2. You open the starter project and inspect the code that matters for the lesson.
+3. You pause for a timed challenge and implement the ideas that were just taught.
+4. We review attendee approaches together, including tradeoffs, questions, and common mistakes.
+5. We walk through the solution step by step as a group, re-iterating the key async/await concepts along the way.
+6. You compare your implementation with the completed sample and ask any remaining questions while the context is fresh.
 
 Most coding challenges are designed for 30 to 45 minutes. Shorter investigation challenges in the .NET Internals section focus on debugger observations and discussion rather than large code changes.
 
@@ -30,20 +30,20 @@ This workshop is designed for two 7-hour days. The active material is approximat
 ### Day 1
 
 1. Setup verification and workshop orientation.
-1. Thread switching and compiler-generated code lecture.
-1. Correcting common async/await mistakes lecture.
-1. Correcting common async/await mistakes challenge.
-1. Group review of attendee approaches.
-1. Step-by-step solution walkthrough and Q&A.
+2. Thread switching and compiler-generated code lecture.
+3. Correcting common async/await mistakes lecture.
+4. Correcting common async/await mistakes challenge.
+5. Group review of attendee approaches.
+6. Step-by-step solution walkthrough and Q&A.
 
 ### Day 2
 
 1. Custom `Task` implementation lecture.
-1. Custom `Task` implementation challenge.
-1. Group review of attendee approaches.
-1. Step-by-step solution walkthrough and Q&A.
-1. .NET Internals investigations: `ThreadStatic`, `Principal`, `ExecutionContext`, and `SynchronizationContext`.
-1. Final review and Q&A.
+2. Custom `Task` implementation challenge.
+3. Group review of attendee approaches.
+4. Step-by-step solution walkthrough and Q&A.
+5. .NET Internals investigations: `ThreadStatic`, `Principal`, `ExecutionContext`, and `SynchronizationContext`.
+6. Final review and Q&A.
 
 ## Agenda
 

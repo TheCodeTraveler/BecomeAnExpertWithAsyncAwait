@@ -7,8 +7,8 @@ Complete this setup before the workshop starts. The goal is to prove that your m
 Use one of these options:
 
 1. Windows: install [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) or later.
-1. macOS: install [JetBrains Rider](https://www.jetbrains.com/rider/download/#section=mac) or another IDE that supports .NET 10 and .NET MAUI.
-1. Locked-down laptop: use any approved IDE or editor your company allows, then use the command-line steps below for verification.
+2. macOS: install [JetBrains Rider](https://www.jetbrains.com/rider/download/#section=mac) or another IDE that supports .NET 10 and .NET MAUI.
+3. Locked-down laptop: use any approved IDE or editor your company allows, then use the command-line steps below for verification.
 
 ## 2. Get the Workshop Files
 
@@ -28,17 +28,17 @@ Use one of these installation paths.
 ### Visual Studio Installer on Windows
 
 1. Open **Visual Studio Installer**.
-1. Select **Modify** on your Visual Studio installation.
-1. Install the **.NET desktop development** workload.
-1. Install the **Mobile development with .NET** workload if you plan to build the MAUI samples from the IDE.
-1. Apply the changes and restart Visual Studio.
+2. Select **Modify** on your Visual Studio installation.
+3. Install the **.NET desktop development** workload.
+4. Install the **Mobile development with .NET** workload if you plan to build the MAUI samples from the IDE.
+5. Apply the changes and restart Visual Studio.
 
 ### Manual Installer on Windows or macOS
 
 1. Open the [.NET 10 download page](https://dotnet.microsoft.com/download/dotnet/10.0).
-1. Download the latest .NET 10 SDK installer for your operating system and CPU architecture.
-1. Run the installer.
-1. Open a new terminal after the installer completes.
+2. Download the latest .NET 10 SDK installer for your operating system and CPU architecture.
+3. Run the installer.
+4. Open a new terminal after the installer completes.
 
 ### Command-Line Install Without Admin Rights
 
@@ -117,15 +117,15 @@ Open **2. Correcting Common Async Await Mistakes/2. Finish/HackerNews.slnx** in 
 On Windows:
 
 1. Select the Windows target framework.
-1. Start debugging.
-1. Confirm that the **HackerNews** app launches.
+2. Start debugging.
+3. Confirm that the **HackerNews** app launches.
 
 On macOS:
 
 1. Install Rider Android Support if Rider prompts for it.
-1. Select an Android emulator, Mac Catalyst, or iOS target that is available on your machine.
-1. Start debugging.
-1. Confirm that the **HackerNews** app launches.
+2. Select an Android emulator, Mac Catalyst, or iOS target that is available on your machine.
+3. Start debugging.
+4. Confirm that the **HackerNews** app launches.
 
 If your organization blocks emulator installation, use any approved physical device or ask your instructor which shared target to use during the workshop.
 
@@ -136,12 +136,12 @@ Recommended time: 20 to 30 minutes.
 Before continuing to the workshop exercises, prove your machine is ready:
 
 1. Open a fresh terminal.
-1. Navigate to the workshop repository root.
-1. Run `dotnet --version` and confirm it reports .NET 10.
-1. Run `dotnet workload list` and confirm the MAUI workload appears.
-1. Build the two console samples from step 6.
-1. Build or run the HackerNews sample from step 7.
-1. Write down any blocker, exact error message, operating system, IDE, and install path you used.
+2. Navigate to the workshop repository root.
+3. Run `dotnet --version` and confirm it reports .NET 10.
+4. Run `dotnet workload list` and confirm the MAUI workload appears.
+5. Build the two console samples from step 6.
+6. Build or run the HackerNews sample from step 7.
+7. Write down any blocker, exact error message, operating system, IDE, and install path you used.
 
 If every check passes, you are ready for the workshop.
 
