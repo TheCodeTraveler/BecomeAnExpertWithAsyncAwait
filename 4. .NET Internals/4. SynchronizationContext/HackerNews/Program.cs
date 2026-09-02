@@ -29,6 +29,7 @@ public static class Program
 			app.UseHttpsRedirection();
 		}
 
+		app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 		app.UseAntiforgery();
 
 		app.MapStaticAssets();
