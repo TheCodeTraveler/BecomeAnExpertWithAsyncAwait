@@ -33,18 +33,20 @@ Requirements:
 1. Track completion state safely across threads.
 2. Store exceptions and rethrow them without losing the original stack trace.
 3. Implement `Run(Action)` using the thread pool.
-4. Implement `ContinueWith(Action)` and preserve the caller's `ExecutionContext`.
-5. Implement `Wait()` with a blocking wait primitive.
-6. Implement `Delay(TimeSpan)` using `Timer`.
-7. Add a `CustomTaskAwaiter` that enables the `await` keyword.
-8. Update `Program.cs` so the final version uses `await` instead of `Wait()`.
+4. Implement `ContinueWith(Action)` and complete the returned `CustomTask` when the continuation succeeds or fails.
+5. Preserve the caller's `ExecutionContext` when a continuation is registered before the antecedent completes.
+6. Implement `Wait()` with a blocking wait primitive.
+7. Implement `Delay(TimeSpan)` using `Timer`.
+8. Add a `CustomTaskAwaiter` that enables the `await` keyword.
+9. Update `Program.cs` so the final version uses `await` instead of `Wait()`.
 
 Acceptance checks:
 
 1. **CreatingTaskFromScratch.slnx** builds.
 2. The program prints the starting thread ID and three `CustomTask` thread IDs.
 3. The continuation runs after the first task completes.
-4. The final code is ready to compare with **2. Finish/CreatingTaskFromScratch**.
+4. Chaining `ContinueWith(...)` on the task returned by `ContinueWith(...)` does not wait forever.
+5. The final code is ready to compare with **2. Finish/CreatingTaskFromScratch**.
 
 ## 4. Review the Solution
 

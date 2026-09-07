@@ -81,27 +81,29 @@ sealed class CustomTask
 		{
 			if (_completed)
 			{
-				ThreadPool.QueueUserWorkItem(_ =>
-				{
-					try
-					{
-						action();
-						task.SetResult();
-					}
-					catch (Exception e)
-					{
-						task.SetException(e);
-					}
-				});
+				ThreadPool.QueueUserWorkItem(_ => CompleteContinuationTask());
 			}
 			else
 			{
-				_action = action;
+				_action = CompleteContinuationTask;
 				_context = ExecutionContext.Capture();
 			}
 		}
 
 		return task;
+
+		void CompleteContinuationTask()
+		{
+			try
+			{
+				action();
+				task.SetResult();
+			}
+			catch (Exception e)
+			{
+				task.SetException(e);
+			}
+		}
 	}
 
 	public CustomTaskAwaiter GetAwaiter() => new(this);

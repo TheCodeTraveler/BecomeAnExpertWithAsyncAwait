@@ -60,7 +60,7 @@ public static CustomTask Run(Action action)
 
 ## 3. Add Continuations
 
-`ContinueWith(Action)` stores a continuation if the task has not completed yet. If the task is already complete, it queues the continuation immediately:
+`ContinueWith(Action)` returns a new `CustomTask` that represents the continuation work. That returned task must complete when the continuation succeeds, and it must store the continuation exception when the continuation fails.
 
 ```cs
 public CustomTask ContinueWith(Action action)
@@ -71,27 +71,29 @@ public CustomTask ContinueWith(Action action)
     {
         if (_completed)
         {
-            ThreadPool.QueueUserWorkItem(_ =>
-            {
-                try
-                {
-                    action();
-                    task.SetResult();
-                }
-                catch (Exception e)
-                {
-                    task.SetException(e);
-                }
-            });
+            ThreadPool.QueueUserWorkItem(_ => CompleteContinuationTask());
         }
         else
         {
-            _action = action;
+            _action = CompleteContinuationTask;
             _context = ExecutionContext.Capture();
         }
     }
 
     return task;
+
+    void CompleteContinuationTask()
+    {
+        try
+        {
+            action();
+            task.SetResult();
+        }
+        catch (Exception e)
+        {
+            task.SetException(e);
+        }
+    }
 }
 ```
 
@@ -107,7 +109,7 @@ public void SetResult() => CompleteTask(null);
 public void SetException(Exception exception) => CompleteTask(exception);
 ```
 
-The shared completion method marks the task complete, stores any exception, and invokes the continuation under the captured `ExecutionContext`:
+The shared completion method marks the antecedent task complete, stores any exception, and invokes the stored continuation wrapper under the captured `ExecutionContext`:
 
 ```cs
 void CompleteTask(Exception? exception)
