@@ -33,29 +33,43 @@
 	@if (PageError is not null)
 	{
 		<div class="warning-banner" role="alert">
-			<strong>A backend service failed:</strong> @PageError
+			<strong>The page load stopped.</strong>
+			<p>@PageError</p>
 		</div>
 	}
 
 	<div class="panel">
 		<h2>Page panels</h2>
-		<p class="panel-hint">Each panel is filled by its own backend service. The slowest service takes 1.2 seconds.</p>
+		<p class="panel-hint">Each panel is filled by its own backend service. The slowest service takes 1.2 seconds, and the recommendations service is down.</p>
 
 		<div class="result-grid">
 			@foreach (var panel in Panels)
 			{
-				<div class="result-card @(panel.Status switch { "ready" => "ok", "failed" => "bad", _ => "pending" })" @key="panel.Name">
+				<div class="result-card @(panel.Status switch { "ready" => "ok", "failed" => "bad", "skipped" => "bad", _ => "pending" })" @key="panel.Name">
 					<span class="result-label">@panel.Name</span>
 
-					@if (panel.Status is "waiting")
+					@switch (panel.Status)
 					{
-						<span class="result-value">--</span>
-						<span class="result-note">waiting</span>
-					}
-					else
-					{
-						<span class="result-note">@panel.Detail</span>
-						<span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
+						case "waiting":
+							<span class="result-value">--</span>
+							<span class="result-note">waiting</span>
+							break;
+
+						case "skipped":
+							<span class="result-value">--</span>
+							<span class="result-note">never requested</span>
+							break;
+
+						case "failed":
+							<span class="result-value">Unavailable</span>
+							<span class="result-note">@panel.Detail</span>
+							<span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
+							break;
+
+						default:
+							<span class="result-note">@panel.Detail</span>
+							<span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
+							break;
 					}
 				</div>
 			}

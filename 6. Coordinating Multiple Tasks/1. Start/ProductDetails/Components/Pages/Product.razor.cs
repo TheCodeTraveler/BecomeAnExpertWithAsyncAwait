@@ -75,7 +75,10 @@ public partial class ProductPageBase : ComponentBase
 		}
 		catch (HttpRequestException e)
 		{
-			PageError = e.Message;
+			PageError = $"{e.Message}. Every panel below it was never requested.";
+
+			// Anything still waiting when the load stopped will never arrive
+			MarkWaitingPanelsSkipped();
 		}
 		finally
 		{
@@ -84,6 +87,17 @@ public partial class ProductPageBase : ComponentBase
 			IsLoading = false;
 
 			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+		}
+	}
+
+	void MarkWaitingPanelsSkipped()
+	{
+		for (var index = 0; index < Panels.Count; index++)
+		{
+			if (Panels[index].Status is "waiting")
+			{
+				Panels[index] = Panels[index] with { Status = "skipped" };
+			}
 		}
 	}
 
