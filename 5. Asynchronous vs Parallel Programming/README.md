@@ -47,7 +47,7 @@ Pay attention to these clues:
 5. Reads can be wrong as well as writes. An `int` read can be stale, and a `decimal` read can catch a value halfway through an update.
 6. `InventoryLedger` uses `SemaphoreSlim` rather than `lock`, and that part is correct. `lock` cannot be held across an `await`.
 7. `SemaphoreSlim` is not reentrant. Ask which method takes the permit, and which method it calls next.
-8. `List<T>` and `Dictionary<TKey, TValue>` are not thread safe.
+8. `List<T>` and `Dictionary<TKey, TValue>` are not thread safe. A lock is all you need to make the one in this app safe. There are purpose built collections for this too, and we cover them this afternoon.
 
 ## 3. Challenge: Make the Shared Services Safe Under Load
 
@@ -56,6 +56,8 @@ Recommended time: 25 minutes.
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify parallel programming concepts, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
 
 Fix **OrderMetrics.cs**, **TaxRateProvider.cs**, and **InventoryLedger.cs** so the app is correct when 2,000 checkouts run through `Parallel.ForEachAsync`. Leave `CheckoutService`, the page, and the singleton registrations alone. The load is not the bug.
+
+Everything you need is in this section's toolbox: `Interlocked`, `lock` with the .NET 9 `Lock` type, `Lazy<T>`, and the `SemaphoreSlim` that is already in `InventoryLedger`. You do not need anything from `System.Collections.Concurrent`. Those types are the subject of Concurrent Collections this afternoon, and reaching for one here would hide the lesson rather than teach it.
 
 Requirements:
 
@@ -68,7 +70,7 @@ Requirements:
 7. Keep `TaxRateProvider.Reset()` working: after a reset, the next burst must build the table again, exactly once.
 8. Remove the deadlock in `InventoryLedger.ReserveStockAsync(...)` without losing the guarantee that the stock update and its audit entry happen under the same lock.
 9. Keep `WriteAuditEntryAsync(...)` callable on its own, by a caller that does not already hold the ledger lock.
-10. Guard `_auditTrail` so it is not read while it is being written.
+10. Guard `_auditTrail` with a lock so it is not read while it is being written.
 11. Keep `SemaphoreSlim` in `InventoryLedger`. `lock` cannot be held across an `await`, and the ledger awaits.
 
 Acceptance checks:
