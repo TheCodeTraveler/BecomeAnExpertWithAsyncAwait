@@ -138,11 +138,11 @@ sealed class CustomTask
 		{
 			if (context is null)
 			{
-				continuation.Invoke();
+				ThreadPool.UnsafeQueueUserWorkItem(static state => ((Action?)state)?.Invoke(), continuation);
 			}
 			else
 			{
-				ExecutionContext.Run(context, state => ((Action?)state)?.Invoke(), continuation);
+				ExecutionContext.Run(context, static state => ((Action?)state)?.Invoke(), continuation);
 			}
 		}
 	}

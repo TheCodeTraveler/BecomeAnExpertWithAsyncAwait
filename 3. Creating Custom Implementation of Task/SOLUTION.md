@@ -111,7 +111,7 @@ public void SetResult() => CompleteTask(null);
 public void SetException(Exception exception) => CompleteTask(exception);
 ```
 
-The shared completion method marks the antecedent task complete, stores any exception, and drains every registered continuation, running each under its captured `ExecutionContext`:
+The shared completion method marks the antecedent task complete, stores any exception, and drains every registered continuation, running each under the `ExecutionContext` that was captured when it was registered:
 
 ```cs
 void CompleteTask(Exception? exception)
@@ -137,17 +137,19 @@ void CompleteTask(Exception? exception)
     {
         if (context is null)
         {
-            continuation.Invoke();
+            ThreadPool.UnsafeQueueUserWorkItem(static state => ((Action?)state)?.Invoke(), continuation);
         }
         else
         {
-            ExecutionContext.Run(context, state => ((Action?)state)?.Invoke(), continuation);
+            ExecutionContext.Run(context, static state => ((Action?)state)?.Invoke(), continuation);
         }
     }
 }
 ```
 
 Copy the list and clear it inside the lock, then invoke outside the lock. Because `_completed` is already `true`, any continuation registered while draining takes the completed branch of `ContinueWith(...)` and is queued directly, so nothing is lost.
+
+The `context is null` branch is subtle. `ExecutionContext.Capture()` returns `null` only when the registering caller had `ExecutionContext.SuppressFlow()` active, which is that caller saying "do not carry my ambient state into this continuation." Invoking the continuation inline on the completing thread would violate that request in the opposite direction: the continuation would inherit whatever `AsyncLocal` values, culture, and principal the *completing* thread happens to have. `ThreadPool.UnsafeQueueUserWorkItem(...)` is the fix. Unlike `QueueUserWorkItem(...)`, the `Unsafe` variant does not capture the current `ExecutionContext`, so the continuation runs on a pool thread with the default context, matching what suppression asked for.
 
 > **Why not a concurrent collection?** A `ConcurrentQueue<T>` would make individual adds thread-safe, but the lock protects a bigger invariant: checking `_completed` and registering a continuation must happen atomically. Without the lock, a continuation could be enqueued just after `CompleteTask(...)` drained the queue, and it would never run. Since the lock is required either way, the plain `List<T>` is the simpler, correct container. .NET's real `Task` avoids the lock with `Interlocked.CompareExchange` on a single continuation field and a completion sentinel, which is far more complex than this workshop needs.
 
