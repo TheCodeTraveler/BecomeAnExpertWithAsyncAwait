@@ -10,12 +10,13 @@ The completed project is **2. Finish/CreatingTaskFromScratch**. Compare your imp
 
 ```cs
 readonly Lock _lock = new();
+readonly List<(Action Continuation, ExecutionContext? Context)> _continuations = [];
 
 bool _completed;
-Action? _action;
 Exception? _exception;
-ExecutionContext? _context;
 ```
+
+A real task can have more than one continuation: every `ContinueWith(...)`, every `Wait()`, and every `await` registers one. That is why the pending continuations are a list of continuation/context pairs instead of a single `Action` field.
 
 Expose completion through a locked property:
 
@@ -62,6 +63,8 @@ public static CustomTask Run(Action action)
 
 `ContinueWith(Action)` returns a new `CustomTask` that represents the continuation work. That returned task must complete when the continuation succeeds, and it must store the continuation exception when the continuation fails.
 
+The subtle bug is registering into a single `_action` field. Each registration before completion would replace the previous continuation, so two callers awaiting or waiting on the same `CustomTask` would leave the first continuation, and its returned task, permanently incomplete. Add every pending continuation to the list instead:
+
 ```cs
 public CustomTask ContinueWith(Action action)
 {
@@ -75,8 +78,7 @@ public CustomTask ContinueWith(Action action)
         }
         else
         {
-            _action = CompleteContinuationTask;
-            _context = ExecutionContext.Capture();
+            _continuations.Add((CompleteContinuationTask, ExecutionContext.Capture()));
         }
     }
 
@@ -97,7 +99,7 @@ public CustomTask ContinueWith(Action action)
 }
 ```
 
-Capturing `ExecutionContext` lets the continuation observe the caller's async-local state, culture, and principal.
+Capturing `ExecutionContext` with each continuation lets every continuation observe its own caller's async-local state, culture, and principal.
 
 ## 4. Complete the Task Once
 
@@ -109,11 +111,13 @@ public void SetResult() => CompleteTask(null);
 public void SetException(Exception exception) => CompleteTask(exception);
 ```
 
-The shared completion method marks the antecedent task complete, stores any exception, and invokes the stored continuation wrapper under the captured `ExecutionContext`:
+The shared completion method marks the antecedent task complete, stores any exception, and drains every registered continuation, running each under its captured `ExecutionContext`:
 
 ```cs
 void CompleteTask(Exception? exception)
 {
+    List<(Action Continuation, ExecutionContext? Context)> continuationsToRun;
+
     lock (_lock)
     {
         if (_completed)
@@ -124,20 +128,28 @@ void CompleteTask(Exception? exception)
         _completed = true;
         _exception = exception;
 
-        if (_action is not null)
+        continuationsToRun = [.. _continuations];
+        _continuations.Clear();
+    }
+
+    // Run outside the lock so continuations can safely interact with this task
+    foreach (var (continuation, context) in continuationsToRun)
+    {
+        if (context is null)
         {
-            if (_context is null)
-            {
-                _action.Invoke();
-            }
-            else
-            {
-                ExecutionContext.Run(_context, state => ((Action?)state)?.Invoke(), _action);
-            }
+            continuation.Invoke();
+        }
+        else
+        {
+            ExecutionContext.Run(context, state => ((Action?)state)?.Invoke(), continuation);
         }
     }
 }
 ```
+
+Copy the list and clear it inside the lock, then invoke outside the lock. Because `_completed` is already `true`, any continuation registered while draining takes the completed branch of `ContinueWith(...)` and is queued directly, so nothing is lost.
+
+> **Why not a concurrent collection?** A `ConcurrentQueue<T>` would make individual adds thread-safe, but the lock protects a bigger invariant: checking `_completed` and registering a continuation must happen atomically. Without the lock, a continuation could be enqueued just after `CompleteTask(...)` drained the queue, and it would never run. Since the lock is required either way, the plain `List<T>` is the simpler, correct container. .NET's real `Task` avoids the lock with `Interlocked.CompareExchange` on a single continuation field and a completion sentinel, which is far more complex than this workshop needs.
 
 ## 5. Wait and Rethrow Correctly
 

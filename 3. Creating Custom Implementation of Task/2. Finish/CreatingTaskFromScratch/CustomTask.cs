@@ -6,11 +6,10 @@ namespace CreatingTaskFromScratch;
 sealed class CustomTask
 {
 	readonly Lock _lock = new();
+	readonly List<(Action Continuation, ExecutionContext? Context)> _continuations = [];
 
 	bool _completed;
-	Action? _action;
 	Exception? _exception;
-	ExecutionContext? _context;
 
 	public bool IsCompleted
 	{
@@ -92,8 +91,7 @@ sealed class CustomTask
 			}
 			else
 			{
-				_action = CompleteContinuationTask;
-				_context = ExecutionContext.Capture();
+				_continuations.Add((CompleteContinuationTask, ExecutionContext.Capture()));
 			}
 		}
 
@@ -121,6 +119,8 @@ sealed class CustomTask
 
 	void CompleteTask(Exception? exception)
 	{
+		List<(Action Continuation, ExecutionContext? Context)> continuationsToRun;
+
 		lock (_lock)
 		{
 			if (_completed)
@@ -129,16 +129,20 @@ sealed class CustomTask
 			_completed = true;
 			_exception = exception;
 
-			if (_action is not null)
+			continuationsToRun = [.. _continuations];
+			_continuations.Clear();
+		}
+
+		// Run outside the lock so continuations can safely interact with this task
+		foreach (var (continuation, context) in continuationsToRun)
+		{
+			if (context is null)
 			{
-				if (_context is null)
-				{
-					_action.Invoke();
-				}
-				else
-				{
-					ExecutionContext.Run(_context, state => ((Action?)state)?.Invoke(), _action);
-				}
+				continuation.Invoke();
+			}
+			else
+			{
+				ExecutionContext.Run(context, state => ((Action?)state)?.Invoke(), continuation);
 			}
 		}
 	}

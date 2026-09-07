@@ -34,11 +34,12 @@ Requirements:
 2. Store exceptions and rethrow them without losing the original stack trace.
 3. Implement `Run(Action)` using the thread pool.
 4. Implement `ContinueWith(Action)` and complete the returned `CustomTask` when the continuation succeeds or fails.
-5. Preserve the caller's `ExecutionContext` when a continuation is registered before the antecedent completes.
-6. Implement `Wait()` with a blocking wait primitive.
-7. Implement `Delay(TimeSpan)` using `Timer`, keep the timer alive until it fires, and dispose it from the callback.
-8. Add a `CustomTaskAwaiter` that enables the `await` keyword.
-9. Update `Program.cs` so the final version uses `await` instead of `Wait()`.
+5. Support multiple pending continuations on the same `CustomTask` and run all of them when it completes.
+6. Preserve each caller's `ExecutionContext` when a continuation is registered before the antecedent completes.
+7. Implement `Wait()` with a blocking wait primitive.
+8. Implement `Delay(TimeSpan)` using `Timer`, keep the timer alive until it fires, and dispose it from the callback.
+9. Add a `CustomTaskAwaiter` that enables the `await` keyword.
+10. Update `Program.cs` so the final version uses `await` instead of `Wait()`.
 
 Acceptance checks:
 
@@ -46,7 +47,8 @@ Acceptance checks:
 2. The program prints the starting thread ID and three `CustomTask` thread IDs.
 3. The continuation runs after the first task completes.
 4. Chaining `ContinueWith(...)` on the task returned by `ContinueWith(...)` does not wait forever.
-5. The final code is ready to compare with **2. Finish/CreatingTaskFromScratch**.
+5. Two callers waiting on the same incomplete `CustomTask` both resume when it completes.
+6. The final code is ready to compare with **2. Finish/CreatingTaskFromScratch**.
 
 ## 4. Review the Solution
 
