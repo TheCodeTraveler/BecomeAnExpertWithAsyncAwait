@@ -4,11 +4,12 @@ This repository is the attendee-facing material for Brandon Minnick's two-day wo
 
 ## What lives where
 
-- Numbered top-level folders are workshop sections and must stay in teaching order: `0. Prerequisites`, `1. Thread Switching and Compiler Generated Code` (slides only), `2. Correcting Common Async Await Mistakes`, `3. .NET Internals`, `4. Creating Custom Implementation of Task`.
-- Each hands-on section has a `README.md` (attendee-facing challenge) and a `SOLUTION.md` (step-by-step walkthrough the host presents after the challenge and group review). Sections 2 and 4 have `1. Start` (intentionally imperfect) and `2. Finish` (completed) projects.
+- Numbered top-level folders are workshop sections and must stay in teaching order. Day 1 is asynchronous programming: `0. Prerequisites`, `1. Thread Switching and Compiler Generated Code` (slides only), `2. Correcting Common Async Await Mistakes`, `3. .NET Internals`, `4. Creating Custom Implementation of Task`. Day 2 is parallel programming: `5. Asynchronous vs Parallel Programming`, `6. Coordinating Multiple Tasks`, `7. Data Parallelism`, `8. Concurrent Collections`, `9. Channels`.
+- Each hands-on section has a `README.md` (attendee-facing challenge) and a `SOLUTION.md` (step-by-step walkthrough the host presents after the challenge and group review). Sections 2 and 4 through 9 have `1. Start` (intentionally imperfect) and `2. Finish` (completed) projects.
 - `3. .NET Internals/4. SynchronizationContext/HackerNews` is a copy of `2. Correcting Common Async Await Mistakes/2. Finish/HackerNews` plus debugger-inspection locals in `News.razor.cs`. Changes to one usually belong in the other.
 - Section numbers are embedded in paths in the root `README.md`, `.github/workflows/build.yml`, `.github/dependabot.yml`, and the module READMEs. When renaming or reordering sections, update all of them and grep for stale numbers before finishing.
 - Every sample is a Blazor Server, ASP.NET Core MVC, or console app on .NET 10. No MAUI, no mobile workloads, no emulators: attendees only have the .NET SDK, an editor, and a browser.
+- Samples must run offline. `8. Concurrent Collections` uses a simulated in-process market feed (`MarketDataService`) rather than a real quote API, so there is no API key to leak and no rate limit to hit in a room full of attendees.
 
 ## Non-negotiable rules
 
@@ -24,7 +25,7 @@ This repository is the attendee-facing material for Brandon Minnick's two-day wo
 
 - Full validation, required before finishing any code change: `pwsh ./BuildAllSolutions.ps1`. It runs `dotnet format whitespace` and then `dotnet build -c Release` for every `.slnx`. Keep the script on `dotnet format whitespace`: full `dotnet format` fails on the .NET 10 SDK and analyzer/code-style formatting would erase the intentional Start warnings.
 - Single solution: `dotnet build "<section>/<folder>/<Name>.slnx"`.
-- Run a web sample: `dotnet run --project "<path>/<Name>.csproj"`. Ports are fixed and referenced by the READMEs: Start HackerNews `5001`, Finish HackerNews `5002`, PrincipalExample `5000`, SynchronizationContext HackerNews `5004`.
+- Run a web sample: `dotnet run --project "<path>/<Name>.csproj"`. Ports are fixed and referenced by the READMEs: PrincipalExample `5000`, HackerNews Start `5001` / Finish `5002`, SynchronizationContext HackerNews `5004`, StockWatch Start `5005` / Finish `5006`, OrderPortal Start `5007` / Finish `5008`, ProductDetails Start `5009` / Finish `5010`, ImportPortal Start `5011` / Finish `5012`, TelemetryPipeline Start `5013` / Finish `5014`.
 - `Properties/launchSettings.json` is gitignored, but the HackerNews copies are force-tracked because `ASPNETCORE_ENVIRONMENT=Development` is required for `dotnet run` to serve `_framework/blazor.web.js`. Keep them tracked and keep the environment variable.
 
 ## Code conventions beyond .editorconfig
@@ -39,7 +40,7 @@ This repository is the attendee-facing material for Brandon Minnick's two-day wo
 ## Markdown conventions
 
 - Numbered lists use incrementing numbers (`1.`, `2.`, `3.`), never repeated `1.` markers.
-- Each challenge states a recommended time (coding challenges 30 to 45 minutes; .NET Internals investigations 15 to 45 minutes) and ends by pausing for group review before `SOLUTION.md`.
+- Each challenge states a recommended time and ends by pausing for group review before `SOLUTION.md`. The times are budgeted against the two-day schedule in the root `README.md`, which allots 345 minutes of active material per day plus a 60-minute setup block on Day 1. Coding challenges run 20 to 45 minutes; the .NET Internals investigations run 8 to 12 minutes each. If you change a challenge time, update the schedule table so both still add up.
 - Code snippets in `SOLUTION.md` must match the `2. Finish` source exactly.
 - Links into numbered folders need `%20`-encoded spaces. Verify that every changed link resolves.
 

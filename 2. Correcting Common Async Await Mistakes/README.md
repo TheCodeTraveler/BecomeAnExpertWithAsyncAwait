@@ -33,7 +33,7 @@ Pay attention to these clues:
 
 ## 3. Challenge: Refactor the Refresh Flow
 
-Recommended time: 35 to 45 minutes.
+Recommended time: 35 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify async/await concepts, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
 

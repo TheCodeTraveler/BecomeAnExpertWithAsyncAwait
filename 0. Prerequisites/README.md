@@ -2,6 +2,8 @@
 
 This workshop is designed to run on Windows or macOS with no mobile workloads, no emulators, and no platform SDKs. The UI samples are Blazor Web Apps and run in a browser.
 
+The first hour of Day 1 is reserved for this page. Work through it before you arrive if you can, and we will use that hour together to fix anything that did not go smoothly. You need three things: the .NET 10 SDK, an editor, and a clone of this repository that builds.
+
 By the end of this setup, every attendee should be able to run these commands from the repository root:
 
 ```console

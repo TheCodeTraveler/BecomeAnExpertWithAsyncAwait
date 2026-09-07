@@ -5,11 +5,11 @@ on:
     branches:
       - "main"
   pull_request:
-    branches: 
+    branches:
       - "*"
 
 jobs:
-  Blazor:
+  Build:
     strategy:
       matrix:
         os: [macos-15, windows-latest]
@@ -23,13 +23,10 @@ jobs:
       with:
         dotnet-version: '10.x' # Adjust to your required .NET SDK version
 
-    - name: Install .NET MAUI
-      run: 'dotnet workload install maui'
-
     - name: Display .NET Info
-      run: 'dotnet --info'  
+      run: 'dotnet --info'
 
-    - name: Build HackerNews
-      run: |
-        cd "3. .NET Internals/4. SynchronizationContext"
-        dotnet build
+    # Formats and builds every solution in the workshop
+    - name: Build All Solutions
+      shell: pwsh
+      run: ./BuildAllSolutions.ps1

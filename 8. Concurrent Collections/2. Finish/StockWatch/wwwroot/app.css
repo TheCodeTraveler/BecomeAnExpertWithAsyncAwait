@@ -1,0 +1,172 @@
+:root {
+	--canvas: #eef3f1;
+	--panel: #ffffff;
+	--panel-strong: #112a2d;
+	--ink: #18211f;
+	--muted: #62706d;
+	--line: #d7e0dd;
+	--accent: #f46a1f;
+	--teal: #0f766e;
+	--up: #0f8a52;
+	--down: #cf202f;
+	--shadow: 0 18px 55px rgb(28 45 42 / 14%);
+	color-scheme: light;
+	font-family: "Aptos", "Avenir Next", "Segoe UI", sans-serif;
+	background: var(--canvas);
+	color: var(--ink);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	overflow-x: clip;
+	background:
+		linear-gradient(135deg, rgb(15 118 110 / 14%), transparent 32%),
+		radial-gradient(circle at top right, rgb(244 106 31 / 16%), transparent 30%),
+		var(--canvas);
+}
+
+.shell {
+	min-height: 100vh;
+}
+
+.dashboard {
+	width: min(1120px, calc(100% - 32px));
+	margin: 0 auto;
+	padding: 32px 0 56px;
+}
+
+.hero-panel {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 28px;
+	align-items: end;
+	margin-bottom: 22px;
+	padding: 30px;
+	border: 1px solid rgb(36 35 31 / 10%);
+	border-radius: 8px;
+	background: linear-gradient(135deg, var(--panel-strong), #15463e 58%, #6f3b17);
+	box-shadow: var(--shadow);
+	color: #f8fffc;
+}
+
+.hero-copy {
+	max-width: 680px;
+}
+
+.eyebrow {
+	margin: 0 0 6px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: rgb(248 255 252 / 72%);
+}
+
+.hero-panel h1 {
+	margin: 0 0 10px;
+	font-size: clamp(1.9rem, 3vw, 2.6rem);
+	line-height: 1.1;
+}
+
+.hero-summary {
+	margin: 0;
+	color: rgb(248 255 252 / 80%);
+}
+
+.status-tile {
+	display: grid;
+	gap: 4px;
+	justify-items: end;
+	padding: 14px 18px;
+	border: 1px solid rgb(248 255 252 / 22%);
+	border-radius: 8px;
+	background: rgb(248 255 252 / 10%);
+}
+
+.status-value {
+	font-size: 1.9rem;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.status-label {
+	font-size: 0.82rem;
+	color: rgb(248 255 252 / 78%);
+}
+
+.ticker-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+	gap: 14px;
+}
+
+.ticker-card {
+	display: grid;
+	gap: 6px;
+	padding: 16px 18px;
+	border: 1px solid var(--line);
+	border-left: 4px solid var(--muted);
+	border-radius: 8px;
+	background: var(--panel);
+	box-shadow: 0 10px 26px rgb(28 45 42 / 8%);
+}
+
+.ticker-card.trend-up {
+	border-left-color: var(--up);
+}
+
+.ticker-card.trend-down {
+	border-left-color: var(--down);
+}
+
+.ticker-heading {
+	display: grid;
+	gap: 2px;
+}
+
+.ticker-symbol {
+	font-size: 1.05rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.ticker-company {
+	font-size: 0.8rem;
+	color: var(--muted);
+}
+
+.ticker-price {
+	font-size: 1.5rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.ticker-change {
+	font-size: 0.9rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--muted);
+}
+
+.trend-up .ticker-change {
+	color: var(--up);
+}
+
+.trend-down .ticker-change {
+	color: var(--down);
+}
+
+@media (max-width: 640px) {
+	.hero-panel {
+		grid-template-columns: 1fr;
+		align-items: start;
+	}
+
+	.status-tile {
+		justify-items: start;
+	}
+}
