@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    directory: "/4. .NET Internals/4. SynchronizationContext/"
+    directory: "/3. .NET Internals/4. SynchronizationContext/"
     schedule:
       interval: "weekly"
   - package-ecosystem: "dotnet-sdk"

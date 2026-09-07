@@ -4,7 +4,7 @@
 
 In this workshop, we will dive deep into how .NET implements asynchronous programming under the hood to become experts using async/await!
 
-Join me as we uncover the ways that the .NET compiler modifies each of our async methods. We'll learn how to build a custom implementation of `Task` from scratch and use it with the built-in async/await keywords. Then we'll dive deep into the .NET source code to understand the importance of internal framework tools like `SynchronizationContext`, `ExecutionContext`, `Principal`, `ThreadStatic`, and more. The interactive UI samples use Blazor so attendees can run them in a browser with only the .NET SDK installed.
+Join me as we uncover the ways that the .NET compiler modifies each of our async methods. We'll dive deep into the .NET source code to understand the importance of internal framework tools like `SynchronizationContext`, `ExecutionContext`, `Principal`, `ThreadStatic`, and more. Then we'll use that knowledge to build a custom implementation of `Task` from scratch and use it with the built-in async/await keywords. The interactive UI samples use Blazor so attendees can run them in a browser with only the .NET SDK installed.
 
 ![QR code](https://github.com/user-attachments/assets/6c94fc5c-c71d-4471-9cfb-5026824a6ec5)
 
@@ -40,11 +40,11 @@ This workshop is designed for two 7-hour days. The active material is approximat
 
 ### Day 2
 
-1. Custom `Task` implementation lecture.
-2. Custom `Task` implementation challenge.
-3. Group review of attendee approaches.
-4. Step-by-step solution walkthrough and Q&A.
-5. .NET Internals investigations: `ThreadStatic`, `Principal`, `ExecutionContext`, and `SynchronizationContext`.
+1. .NET Internals investigations: `ThreadStatic`, `Principal`, `ExecutionContext`, and `SynchronizationContext`.
+2. Custom `Task` implementation lecture.
+3. Custom `Task` implementation challenge.
+4. Group review of attendee approaches.
+5. Step-by-step solution walkthrough and Q&A.
 6. Final review and Q&A.
 
 ## Agenda
@@ -52,8 +52,8 @@ This workshop is designed for two 7-hour days. The active material is approximat
 0. [Install Prerequisites](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/0.%20Prerequisites#0-install-prerequisites)
 1. [(Presentation) Thread Switching + Compiler Generated Code](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/blob/main/1.%20Thread%20Switching%20and%20Compiler%20Generatoed%20Code/ThreadSwitchingAndCompilerGeneratedCode.pptx)
 2. [(Code) Correct Common Async Await Mistakes](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/2.%20Correcting%20Common%20Async%20Await%20Mistakes)
-3. [(Code) Creating Custom Implementation of Task](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/3.%20Creating%20Custom%20Implementation%20of%20Task)
-4. [(Presentation/Code) .NET Internals](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/4.%20.NET%20Internals)
+3. [(Presentation/Code) .NET Internals](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/3.%20.NET%20Internals)
+4. [(Code) Creating Custom Implementation of Task](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/4.%20Creating%20Custom%20Implementation%20of%20Task)
 
 ## Additional Resources
 

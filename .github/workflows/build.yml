@@ -40,5 +40,5 @@ jobs:
 
     - name: Build HackerNews
       run: |
-        cd "4. .NET Internals/4. SynchronizationContext"
+        cd "3. .NET Internals/4. SynchronizationContext"
         dotnet build

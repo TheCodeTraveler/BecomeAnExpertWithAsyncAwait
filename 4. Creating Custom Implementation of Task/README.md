@@ -4,7 +4,7 @@ In this section, you will build a minimal custom awaitable named `CustomTask`.
 
 ## 1. Open the Starter Project
 
-1. Using File Explorer on Windows or Finder on macOS, navigate to **BecomeAnExpertWithAsyncAwait/3. Creating Custom Implementation of Task/1. Start**.
+1. Using File Explorer on Windows or Finder on macOS, navigate to **BecomeAnExpertWithAsyncAwait/4. Creating Custom Implementation of Task/1. Start**.
 2. Open **CreatingTaskFromScratch.slnx** in your IDE.
 3. Build the project once so you can confirm the starter compiles.
 
@@ -18,7 +18,7 @@ dotnet build CreatingTaskFromScratch.slnx
 2. Open **CreatingTaskFromScratch/Program.cs**.
 3. Notice that `CustomTask` starts empty and `Program.cs` only prints the starting thread ID.
 
-You are going to add just enough infrastructure to understand how task-like types work with continuations, blocking waits, timers, `ExecutionContext`, and the `await` keyword.
+You are going to add just enough infrastructure to understand how task-like types work with continuations, blocking waits, timers, `ExecutionContext`, and the `await` keyword. This challenge builds on the .NET Internals section: the `ExecutionContext` flow you observed there is the same context your `CustomTask` must capture and restore when it runs continuations.
 
 ## 3. Challenge: Build an Awaitable CustomTask
 
