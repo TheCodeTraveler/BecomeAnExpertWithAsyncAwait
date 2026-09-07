@@ -116,7 +116,7 @@ Expected suppressed-flow output shape:
 ```console
 Print Values from Task.Run() With Execution Context Suppressed
 Thread ID: 7
-Culture: English (United States)
+Culture: <machine-default culture> (eg "English (United States)")
 Principal:
 AsyncLocalData:
 ```
