@@ -26,8 +26,8 @@ Every `Parallel` method has an overload that takes a `ParallelOptions`, so build
 ```cs
 var parallelOptions = new ParallelOptions
 {
-	CancellationToken = token,
-	MaxDegreeOfParallelism = Environment.ProcessorCount,
+    CancellationToken = token,
+    MaxDegreeOfParallelism = Environment.ProcessorCount,
 };
 ```
 
@@ -69,7 +69,7 @@ Before fixing the second stage, look at exactly what the starter did:
 // and any exception inside it is rethrown where nothing can catch it.
 Parallel.ForEach(orders, async order =>
 {
-	order.CustomerTier = await customerApi.GetCustomerTierAsync(order.Sku, token).ConfigureAwait(false);
+    order.CustomerTier = await customerApi.GetCustomerTierAsync(order.Sku, token).ConfigureAwait(false);
 });
 ```
 
@@ -89,15 +89,15 @@ var enrichStopwatch = Stopwatch.StartNew();
 
 var enrichOptions = new ParallelOptions
 {
-	CancellationToken = token,
-	MaxDegreeOfParallelism = 32,
+    CancellationToken = token,
+    MaxDegreeOfParallelism = 32,
 };
 
 await Parallel.ForEachAsync(
-	orders,
-	enrichOptions,
-	async (order, cancellationToken) =>
-		order.CustomerTier = await customerApi.GetCustomerTierAsync(order.Sku, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+    orders,
+    enrichOptions,
+    async (order, cancellationToken) =>
+        order.CustomerTier = await customerApi.GetCustomerTierAsync(order.Sku, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 
 enrichStopwatch.Stop();
 ```
@@ -120,17 +120,17 @@ One quiet side effect: the starter needed `await Task.CompletedTask.ConfigureAwa
 var reportStopwatch = Stopwatch.StartNew();
 
 var regionTotals = orders
-	.AsParallel()
-	.WithCancellation(token)
-	.WithDegreeOfParallelism(Environment.ProcessorCount)
-	.GroupBy(static order => order.Region)
-	.Select(static group => new RegionTotal(
-		group.Key,
-		group.Count(),
-		group.Sum(static order => order.Amount),
-		(long)group.Average(static order => order.RiskScore)))
-	.OrderBy(static total => total.Region)
-	.ToList();
+    .AsParallel()
+    .WithCancellation(token)
+    .WithDegreeOfParallelism(Environment.ProcessorCount)
+    .GroupBy(static order => order.Region)
+    .Select(static group => new RegionTotal(
+        group.Key,
+        group.Count(),
+        group.Sum(static order => order.Amount),
+        (long)group.Average(static order => order.RiskScore)))
+    .OrderBy(static total => total.Region)
+    .ToList();
 
 reportStopwatch.Stop();
 ```
@@ -147,12 +147,12 @@ The final `OrderBy` gives a deterministic order in the report even though PLINQ 
 
 ```cs
 return new ImportReport(
-	orders.Count(static order => order.RiskScore > 0),
-	orders.Count(static order => order.CustomerTier is not null),
-	validateStopwatch.Elapsed,
-	enrichStopwatch.Elapsed,
-	reportStopwatch.Elapsed,
-	regionTotals);
+    orders.Count(static order => order.RiskScore > 0),
+    orders.Count(static order => order.CustomerTier is not null),
+    validateStopwatch.Elapsed,
+    enrichStopwatch.Elapsed,
+    reportStopwatch.Elapsed,
+    regionTotals);
 ```
 
 Nothing about this line changed between Start and Finish, and that is the point. The counts are recomputed from the rows themselves rather than from a counter the loops maintained. The starter reported 0 enriched rows because 0 rows were enriched, not because the count was wrong. Once the enrichment stage really awaits its work, the same expression reports 4,000, and the card in the browser turns green.

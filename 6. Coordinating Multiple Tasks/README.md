@@ -28,7 +28,7 @@ The app runs at [http://localhost:5009](http://localhost:5009).
 2. Notice that `RecommendationsService.GetRecommendationsAsync(...)` always throws `HttpRequestException`. The flaky service is always the one you depend on.
 3. Open **ProductDetails/Components/Pages/Product.razor.cs** and find each `// ToDo Refactor` comment.
 4. Read `LoadProductAsync()` from top to bottom before you change anything.
-5. Open **ProductDetails/Components/Pages/Product.razor** and see how one card renders in each of its three states: `waiting`, `ready`, and `failed`.
+5. Open **ProductDetails/Components/Pages/Product.razor** and see how one card renders in each of its four states: `waiting`, `ready`, `failed`, and `skipped`.
 
 Now watch the app in the browser. The page loads once when it opens, and the **Load product page** button runs the same code again:
 
@@ -36,8 +36,8 @@ Now watch the app in the browser. The page loads once when it opens, and the **L
 2. Four cards then appear at the same instant, at the very end, instead of appearing as their services answer.
 3. The total page load tile reads **4.2s**.
 4. The per-card timings read 0.7s, 1.6s, 2.8s, and 3.4s. Those are running totals, and they add up to the sum of every service call.
-5. The Recommendations card never leaves `waiting`. It keeps showing `--` and the word `waiting` with an amber left edge.
-6. A yellow banner sits across the top of the page: "A backend service failed: Recommendations service returned 503 Service Unavailable".
+5. The Recommendations card shows `--` and the words `never requested` with a red left edge. Its service was next in line and never got called.
+6. A yellow banner sits across the top of the page: "The page load stopped. Recommendations service returned 503 Service Unavailable. Every panel below it was never requested."
 
 Pay attention to these clues:
 
@@ -75,7 +75,7 @@ Acceptance checks:
 2. The total page load tile reads about **1.2s** instead of 4.2s.
 3. Cards fill in one at a time as their services answer, rather than all appearing together at the end.
 4. The per-card timings read roughly 0.6s, 0.7s, 0.8s, 0.9s, and 1.2s. No card reports 1.6s, 2.8s, or 3.4s.
-5. The Recommendations card renders in the failure style with a red left edge and shows "Recommendations service returned 503 Service Unavailable".
+5. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with the reason underneath and its own timing, in the failure style with a red left edge. Every other panel is unaffected.
 6. The yellow banner across the top of the page is gone.
 7. Clicking **Load product page** again gives the same result every time.
 8. Your code is ready to compare with **2. Finish/ProductDetails**.

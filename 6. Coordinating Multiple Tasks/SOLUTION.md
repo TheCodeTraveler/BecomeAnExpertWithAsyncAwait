@@ -19,24 +19,24 @@ var pricing = await PricingService.GetPricingAsync(_sku, CancellationToken.None)
 SetPanel("Pricing", "ready", $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch.Elapsed);
 ```
 
-`await` does not start work. `InventoryService.GetInventoryAsync(...)` starts the work, and `await` only says "I have nothing else to do until this finishes." Putting both on one line means the pricing call cannot start until inventory has answered, and the reviews call cannot start until pricing has answered. The page costs 700 + 900 + 1200 + 600 + 800 milliseconds, which is the 4.2 seconds on the timing tile. The slowest single service is reviews at 1.2 seconds, so 3 of those 4.2 seconds are spent waiting for permission to begin.
+`await` does not start work. `InventoryService.GetInventoryAsync(...)` starts the work, and `await` only says "I have nothing else to do until this finishes." Putting both on one line means the pricing call cannot start until inventory has answered, and the reviews call cannot start until pricing has answered. The page costs 700ms + 900ms + 1200ms + 600ms + 800ms, totalling 4.2 seconds. The slowest single service is reviews at 1.2 seconds, so 3 of those 4.2 seconds are spent waiting for permission to begin.
 
 The second problem is at the bottom of the same method:
 
 ```cs
-	// ToDo Refactor: this service is down. Every call shares one try block,
-	// so its failure is the whole page's failure. Move it above Reviews and
-	// two more panels go blank. One flaky service should degrade one panel.
-	var recommendations = await RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-	SetPanel("Recommendations", "ready", string.Join(", ", recommendations.AlsoBought), stopwatch.Elapsed);
+    // ToDo Refactor: this service is down. Every call shares one try block,
+    // so its failure is the whole page's failure. Move it above Reviews and
+    // two more panels go blank. One flaky service should degrade one panel.
+    var recommendations = await RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
+    SetPanel("Recommendations", "ready", string.Join(", ", recommendations.AlsoBought), stopwatch.Elapsed);
 }
 catch (HttpRequestException e)
 {
-	PageError = e.Message;
+    PageError = e.Message;
 }
 ```
 
-One `try` block covers all five calls. When the recommendations service throws, control jumps straight to the `catch`, the page sets a page-level error, and the last `SetPanel(...)` never runs at all, so the Recommendations card is left saying `waiting`. Move that call above the reviews call and two more panels go blank. How much of the page dies has nothing to do with the failure and everything to do with where the call sits in the block.
+One `try` block covers all five calls. When the recommendations service throws, control jumps straight to the `catch`, the page sets a page-level error, and the last `SetPanel(...)` never runs at all, so the Recommendations card is marked `skipped` and reads `never requested`. Move that call above the reviews call and two more panels go blank. How much of the page dies has nothing to do with the failure and everything to do with where the call sits in the block.
 
 ## 2. Start Every Call Before You Await Any of Them
 
@@ -47,20 +47,20 @@ Replace the five sequential awaits with five calls that are all started before a
 // costs the slowest service, not the sum of all five.
 var panelTasks = new List<Task>
 {
-	TrackPanelAsync("Inventory", InventoryService.GetInventoryAsync(_sku, CancellationToken.None),
-		static inventory => $"{inventory.InStock} in stock at {inventory.Warehouse}", stopwatch),
+    TrackPanelAsync("Inventory", InventoryService.GetInventoryAsync(_sku, CancellationToken.None),
+        static inventory => $"{inventory.InStock} in stock at {inventory.Warehouse}", stopwatch),
 
-	TrackPanelAsync("Pricing", PricingService.GetPricingAsync(_sku, CancellationToken.None),
-		static pricing => $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch),
+    TrackPanelAsync("Pricing", PricingService.GetPricingAsync(_sku, CancellationToken.None),
+        static pricing => $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch),
 
-	TrackPanelAsync("Reviews", ReviewsService.GetReviewsAsync(_sku, CancellationToken.None),
-		static reviews => $"{reviews.AverageRating:F1} stars from {reviews.ReviewCount:N0} reviews", stopwatch),
+    TrackPanelAsync("Reviews", ReviewsService.GetReviewsAsync(_sku, CancellationToken.None),
+        static reviews => $"{reviews.AverageRating:F1} stars from {reviews.ReviewCount:N0} reviews", stopwatch),
 
-	TrackPanelAsync("Shipping", ShippingService.GetShippingAsync(_sku, CancellationToken.None),
-		static shipping => $"{shipping.Carrier}, arrives {shipping.EstimatedArrival:MMM d}", stopwatch),
+    TrackPanelAsync("Shipping", ShippingService.GetShippingAsync(_sku, CancellationToken.None),
+        static shipping => $"{shipping.Carrier}, arrives {shipping.EstimatedArrival:MMM d}", stopwatch),
 
-	TrackPanelAsync("Recommendations", RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None),
-		static recommendations => string.Join(", ", recommendations.AlsoBought), stopwatch),
+    TrackPanelAsync("Recommendations", RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None),
+        static recommendations => string.Join(", ", recommendations.AlsoBought), stopwatch),
 };
 ```
 
@@ -79,16 +79,16 @@ The wrapper is where the failure is contained:
 // instead of taking down the whole page.
 async Task TrackPanelAsync<T>(string name, Task<T> serviceCall, Func<T, string> describe, Stopwatch stopwatch)
 {
-	try
-	{
-		var result = await serviceCall.ConfigureAwait(false);
+    try
+    {
+        var result = await serviceCall.ConfigureAwait(false);
 
-		SetPanel(name, "ready", describe(result), stopwatch.Elapsed);
-	}
-	catch (HttpRequestException e)
-	{
-		SetPanel(name, "failed", e.Message, stopwatch.Elapsed);
-	}
+        SetPanel(name, "ready", describe(result), stopwatch.Elapsed);
+    }
+    catch (HttpRequestException e)
+    {
+        SetPanel(name, "failed", e.Message, stopwatch.Elapsed);
+    }
 }
 ```
 
@@ -105,11 +105,11 @@ Because every failure is handled inside the wrapper, the `Task` the wrapper retu
 // the moment its own service answers instead of waiting for the slowest.
 await foreach (var finishedPanel in Task.WhenEach(panelTasks))
 {
-	// Each task already recorded its own panel and swallowed its own
-	// failure, so awaiting here only observes completion.
-	await finishedPanel.ConfigureAwait(false);
+    // Each task already recorded its own panel and swallowed its own
+    // failure, so awaiting here only observes completion.
+    await finishedPanel.ConfigureAwait(false);
 
-	await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 }
 ```
 
@@ -135,23 +135,23 @@ Two more things fall away with it. The reset at the top of the method loses its 
 ```cs
 protected async Task LoadProductAsync()
 {
-	IsLoading = true;
-	TotalSeconds = null;
-	ResetPanels();
+    IsLoading = true;
+    TotalSeconds = null;
+    ResetPanels();
 
-	await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
-	var stopwatch = Stopwatch.StartNew();
+    var stopwatch = Stopwatch.StartNew();
 ```
 
 And the `finally` block is gone, because there is no `try` left for it to belong to:
 
 ```cs
-	stopwatch.Stop();
-	TotalSeconds = stopwatch.Elapsed.TotalSeconds;
-	IsLoading = false;
+    stopwatch.Stop();
+    TotalSeconds = stopwatch.Elapsed.TotalSeconds;
+    IsLoading = false;
 
-	await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 }
 ```
 
@@ -180,13 +180,13 @@ var pending = new List<Task>(panelTasks);
 
 while (pending.Count > 0)
 {
-	var finished = await Task.WhenAny(pending).ConfigureAwait(false);
+    var finished = await Task.WhenAny(pending).ConfigureAwait(false);
 
-	pending.Remove(finished);
+    pending.Remove(finished);
 
-	await finished.ConfigureAwait(false);
+    await finished.ConfigureAwait(false);
 
-	await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 }
 ```
 

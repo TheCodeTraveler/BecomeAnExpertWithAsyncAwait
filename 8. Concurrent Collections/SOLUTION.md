@@ -21,9 +21,9 @@ using System.Collections.Concurrent;
 Then change the field:
 
 ```cs
-	// ConcurrentDictionary is safe for many writers at once. AddOrUpdate is the
-	// atomic read-modify-write that replaces TryAdd followed by an indexer assignment.
-	readonly ConcurrentDictionary<string, StockQuoteModel> _latestQuotes = new();
+    // ConcurrentDictionary is safe for many writers at once. AddOrUpdate is the
+    // atomic read-modify-write that replaces TryAdd followed by an indexer assignment.
+    readonly ConcurrentDictionary<string, StockQuoteModel> _latestQuotes = new();
 ```
 
 ## 2. Make Each Update a Single Call
@@ -35,37 +35,37 @@ The starter code calls `TryAdd(...)`, and when that returns `false` it assigns t
 The counter has the same shape of bug: `_refreshCount++` is a read, an add, and a write, and `Interlocked.Increment(...)` collapses those three steps into one hardware operation.
 
 ```cs
-	async Task RefreshQuotes(CancellationToken token)
-	{
-		try
-		{
-			// Every symbol is fetched in parallel, so every write below
-			// happens on a different Thread Pool thread at the same time.
-			await Parallel.ForEachAsync(
-				MarketDataService.Symbols,
-				token,
-				async (symbol, cancellationToken) =>
-				{
-					var quote = await MarketDataService.GetStockQuote(symbol, cancellationToken).ConfigureAwait(false);
+    async Task RefreshQuotes(CancellationToken token)
+    {
+        try
+        {
+            // Every symbol is fetched in parallel, so every write below
+            // happens on a different Thread Pool thread at the same time.
+            await Parallel.ForEachAsync(
+                MarketDataService.Symbols,
+                token,
+                async (symbol, cancellationToken) =>
+                {
+                    var quote = await MarketDataService.GetStockQuote(symbol, cancellationToken).ConfigureAwait(false);
 
-					// Atomic: keep whichever quote is newer
-					_latestQuotes.AddOrUpdate(
-						symbol,
-						quote,
-						(_, existing) => quote.Timestamp > existing.Timestamp ? quote : existing);
+                    // Atomic: keep whichever quote is newer
+                    _latestQuotes.AddOrUpdate(
+                        symbol,
+                        quote,
+                        (_, existing) => quote.Timestamp > existing.Timestamp ? quote : existing);
 
-					// Atomic increment, safe from every thread
-					Interlocked.Increment(ref _refreshCount);
-				}).ConfigureAwait(false);
+                    // Atomic increment, safe from every thread
+                    Interlocked.Increment(ref _refreshCount);
+                }).ConfigureAwait(false);
 
-			// The continuation is off Blazor's renderer, so marshal the UI update back
-			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-		}
-		catch (OperationCanceledException) when (token.IsCancellationRequested)
-		{
-			// Expected when the component is disposed or a refresh times out
-		}
-	}
+            // The continuation is off Blazor's renderer, so marshal the UI update back
+            await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Expected when the component is disposed or a refresh times out
+        }
+    }
 ```
 
 The update delegate deserves a warning. Every method on `ConcurrentDictionary<TKey, TValue>` is thread safe, but `GetOrAdd(...)` and `AddOrUpdate(...)` are not atomic in the delegate they call. The delegate is invoked outside the dictionary's internal lock so unknown user code cannot block every thread touching that stripe of buckets, which means under contention it can run more than once. Keep it cheap and free of side effects. Comparing two timestamps and returning the winner can run twice with no harm. Writing to a database in there cannot.
@@ -77,7 +77,7 @@ The timestamp comparison matters for a second reason. When one 2 second tick run
 `Interlocked.Increment(...)` makes the writes atomic and publishes them. What it does not do is stop the JIT from hoisting a plain `_refreshCount` read into a register and never looking at the field again.
 
 ```cs
-	public int RefreshCount => Volatile.Read(ref _refreshCount);
+    public int RefreshCount => Volatile.Read(ref _refreshCount);
 ```
 
 `Volatile.Read(...)` forces a real acquire-ordered read of the field. In this component the `InvokeAsync(StateHasChanged)` hand-off already orders the render behind the writes, so this is defense in depth, but it costs nothing, and it tells the next person reading this property that the field is shared.
@@ -89,20 +89,20 @@ The timestamp comparison matters for a second reason. When one 2 second tick run
 `ConcurrentBag<T>` is built for this shape of work. It is unordered, it allows duplicates, and it gives each producing thread its own local storage so adds rarely contend at all.
 
 ```cs
-	IReadOnlyList<StockSymbolModel> GetSymbols()
-	{
-		// ConcurrentBag collects results from parallel workers without a lock
-		ConcurrentBag<StockSymbolModel> symbols = [];
+    IReadOnlyList<StockSymbolModel> GetSymbols()
+    {
+        // ConcurrentBag collects results from parallel workers without a lock
+        ConcurrentBag<StockSymbolModel> symbols = [];
 
-		Parallel.ForEach(MarketDataService.Symbols, symbol =>
-		{
-			_latestQuotes.TryGetValue(symbol, out var quote);
+        Parallel.ForEach(MarketDataService.Symbols, symbol =>
+        {
+            _latestQuotes.TryGetValue(symbol, out var quote);
 
-			symbols.Add(new StockSymbolModel(symbol, MarketDataService.GetCompanyName(symbol), quote));
-		});
+            symbols.Add(new StockSymbolModel(symbol, MarketDataService.GetCompanyName(symbol), quote));
+        });
 
-		return [.. symbols.OrderBy(static symbol => symbol.Symbol)];
-	}
+        return [.. symbols.OrderBy(static symbol => symbol.Symbol)];
+    }
 ```
 
 Unordered is fine here because the last line sorts the results anyway. If you needed indexing or `List<T>` semantics, a bag would be the wrong answer.
@@ -118,39 +118,39 @@ Nothing in the starter code orders `StartRefreshTimer()` against `StopRefreshTim
 You cannot use `lock` here, because the guarded work contains an `await` and a lock cannot be held across an `await`. `SemaphoreSlim` with a count of one is the asynchronous lock:
 
 ```cs
-	// SemaphoreSlim is the asynchronous lock guarding the timer field.
-	// `lock` cannot be held across an await, and DisposeAsync is awaited.
-	readonly SemaphoreSlim _timerSemaphore = new(1, 1);
+    // SemaphoreSlim is the asynchronous lock guarding the timer field.
+    // `lock` cannot be held across an await, and DisposeAsync is awaited.
+    readonly SemaphoreSlim _timerSemaphore = new(1, 1);
 ```
 
 Wait on it before touching the field, and release it in a `finally` so a throw inside the guarded body cannot strand every later caller:
 
 ```cs
-	async ValueTask StartRefreshTimer()
-	{
-		await _timerSemaphore.WaitAsync(_disposeCancellationTokenSource.Token).ConfigureAwait(false);
+    async ValueTask StartRefreshTimer()
+    {
+        await _timerSemaphore.WaitAsync(_disposeCancellationTokenSource.Token).ConfigureAwait(false);
 
-		try
-		{
-			// Call the unguarded version: SemaphoreSlim is not reentrant, so
-			// calling StopRefreshTimer() here would deadlock against this same semaphore.
-			await DisposeRefreshTimer().ConfigureAwait(false);
+        try
+        {
+            // Call the unguarded version: SemaphoreSlim is not reentrant, so
+            // calling StopRefreshTimer() here would deadlock against this same semaphore.
+            await DisposeRefreshTimer().ConfigureAwait(false);
 
-			_refreshTimer = new Timer(async _ =>
-			{
-				using var refreshCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_disposeCancellationTokenSource.Token);
-				refreshCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
+            _refreshTimer = new Timer(async _ =>
+            {
+                using var refreshCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_disposeCancellationTokenSource.Token);
+                refreshCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
-				await RefreshQuotes(refreshCancellationTokenSource.Token).ConfigureAwait(false);
-			});
+                await RefreshQuotes(refreshCancellationTokenSource.Token).ConfigureAwait(false);
+            });
 
-			_refreshTimer.Change(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
-		}
-		finally
-		{
-			_timerSemaphore.Release();
-		}
-	}
+            _refreshTimer.Change(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            _timerSemaphore.Release();
+        }
+    }
 ```
 
 ## 6. Split Out the Unguarded Core
@@ -160,29 +160,29 @@ Wait on it before touching the field, and release it in a `finally` so a throw i
 That is why `StartRefreshTimer()` above does not call `StopRefreshTimer()`. The disposal moves into its own unguarded helper, and both public methods call it while they already hold the semaphore:
 
 ```cs
-	async ValueTask StopRefreshTimer()
-	{
-		await _timerSemaphore.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+    async ValueTask StopRefreshTimer()
+    {
+        await _timerSemaphore.WaitAsync(CancellationToken.None).ConfigureAwait(false);
 
-		try
-		{
-			await DisposeRefreshTimer().ConfigureAwait(false);
-		}
-		finally
-		{
-			_timerSemaphore.Release();
-		}
-	}
+        try
+        {
+            await DisposeRefreshTimer().ConfigureAwait(false);
+        }
+        finally
+        {
+            _timerSemaphore.Release();
+        }
+    }
 
-	// Must only be called while the semaphore is already held
-	async ValueTask DisposeRefreshTimer()
-	{
-		if (_refreshTimer is not null)
-		{
-			await _refreshTimer.DisposeAsync().ConfigureAwait(false);
-			_refreshTimer = null;
-		}
-	}
+    // Must only be called while the semaphore is already held
+    async ValueTask DisposeRefreshTimer()
+    {
+        if (_refreshTimer is not null)
+        {
+            await _refreshTimer.DisposeAsync().ConfigureAwait(false);
+            _refreshTimer = null;
+        }
+    }
 ```
 
 Notice the two different tokens. `StartRefreshTimer()` waits with the dispose token, so a component being torn down stops waiting immediately. `StopRefreshTimer()` waits with `CancellationToken.None`, because it is called from `DisposeAsync()` after that token has already been cancelled, and cleanup still has to run.
@@ -192,17 +192,17 @@ Notice the two different tokens. `StartRefreshTimer()` waits with the dispose to
 `SemaphoreSlim` owns a wait handle, so dispose it with the rest of the component state:
 
 ```cs
-	public async ValueTask DisposeAsync()
-	{
-		await _disposeCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+    public async ValueTask DisposeAsync()
+    {
+        await _disposeCancellationTokenSource.CancelAsync().ConfigureAwait(false);
 
-		await StopRefreshTimer().ConfigureAwait(false);
+        await StopRefreshTimer().ConfigureAwait(false);
 
-		_disposeCancellationTokenSource.Dispose();
-		_timerSemaphore.Dispose();
+        _disposeCancellationTokenSource.Dispose();
+        _timerSemaphore.Dispose();
 
-		GC.SuppressFinalize(this);
-	}
+        GC.SuppressFinalize(this);
+    }
 ```
 
 The order matters, and it is worth being precise about what it buys you. Cancelling first is what actually stops work that is already running, because the token inside the timer callback is linked to this one. Stopping the timer next means no new refresh starts. Disposing the cancellation source and the semaphore last means nothing disappears while the callback is still using it.

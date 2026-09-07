@@ -1,0 +1,10 @@
+{
+  // Workshop docs are prose that attendees read in a browser, not wrapped source.
+  // MD013 flags every paragraph in every README and SOLUTION, including the ones
+  // written long before this file existed, so line length is not enforced here.
+  "MD013": false,
+
+  // Hard tabs stay off. Sample code is tab indented per .editorconfig, but the
+  // fenced snippets in SOLUTION.md use four spaces so they render consistently.
+  "MD010": true
+}
