@@ -133,17 +133,23 @@ sealed class CustomTask
 			_continuations.Clear();
 		}
 
-		// Run outside the lock so continuations can safely interact with this task
-		foreach (var (continuation, context) in continuationsToRun)
+		// Always queue (never inline) to avoid long ContinueWith chains recursively executing through CompleteTask.
+		// UnsafeQueueUserWorkItem skips capturing this thread's context; the registrar's context is restored inside the work item.
+		foreach (var pending in continuationsToRun)
 		{
-			if (context is null)
+			ThreadPool.UnsafeQueueUserWorkItem(static state =>
 			{
-				ThreadPool.UnsafeQueueUserWorkItem(static state => ((Action?)state)?.Invoke(), continuation);
-			}
-			else
-			{
-				ExecutionContext.Run(context, static state => ((Action?)state)?.Invoke(), continuation);
-			}
+				var (continuation, context) = state;
+
+				if (context is null)
+				{
+					continuation.Invoke();
+				}
+				else
+				{
+					ExecutionContext.Run(context, static s => ((Action?)s)?.Invoke(), continuation);
+				}
+			}, pending, preferLocal: false);
 		}
 	}
 }
