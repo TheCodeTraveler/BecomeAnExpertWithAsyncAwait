@@ -135,7 +135,7 @@ var regionTotals = orders
 reportStopwatch.Stop();
 ```
 
-The query body did not change at all. `AsParallel()` moves it from `Enumerable` to `ParallelEnumerable`, which partitions the source, runs the operators on each partition, and merges the results. `WithCancellation(token)` lets the query stop at a partition boundary if the import is cancelled.
+The query body did not change at all. `AsParallel()` moves it from `Enumerable` to `ParallelEnumerable`, which partitions the source, runs the operators on each partition, and merges the results. `WithCancellation(token)` lets the query stop if the import is cancelled. PLINQ checks the token as it works through elements rather than waiting for a partition to finish, so cancellation surfaces promptly and arrives as an `OperationCanceledException`.
 
 `WithDegreeOfParallelism` makes the ceiling explicit rather than implicit. PLINQ already defaults to `Environment.ProcessorCount`, so passing that value changes nothing at runtime, it documents the decision. This is the knob you turn *down* below the processor count inside a server that has other requests to serve, so that one report does not claim the whole machine.
 
