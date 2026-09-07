@@ -166,7 +166,25 @@ Open [http://localhost:5002](http://localhost:5002). Confirm that the **HackerNe
 
 To stop the app, return to the terminal and press **Ctrl+C**.
 
-## 5. Troubleshooting Checklist
+## 5. Setup Verification Challenge
+
+Recommended time: 20 to 30 minutes.
+
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use AI Agents to interpret setup errors or understand what a command is checking, but run the verification steps yourself and record the actual result from your machine.
+
+Before continuing to the workshop exercises, prove your machine is ready:
+
+1. Open a fresh terminal.
+2. Navigate to the workshop repository root.
+3. Run `dotnet --version` and confirm it reports .NET 10.
+4. Build the completed HackerNews sample from step 4.
+5. Run the completed HackerNews sample from step 4.
+6. Open the local URL and confirm that the app displays top stories.
+7. Write down any blocker, exact error message, operating system, editor, and install path you used.
+
+If every check passes, you are ready for the workshop.
+
+## 6. Troubleshooting Checklist
 
 If `dotnet` is not found:
 
@@ -197,7 +215,7 @@ If your company blocks access to Hacker News:
 * The app can still build.
 * The live story list may show a refresh error until you are on a network that allows access to `https://hacker-news.firebaseio.com`.
 
-## 6. Maintainer Build Check
+## 7. Maintainer Build Check
 
 The repository includes a script that formats and builds every solution:
 

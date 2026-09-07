@@ -6,11 +6,10 @@ namespace CreatingTaskFromScratch;
 sealed class CustomTask
 {
 	readonly Lock _lock = new();
+	readonly List<(Action Continuation, ExecutionContext? Context)> _continuations = [];
 
 	bool _completed;
-	Action? _action;
 	Exception? _exception;
-	ExecutionContext? _context;
 
 	public bool IsCompleted
 	{
@@ -27,7 +26,14 @@ sealed class CustomTask
 	{
 		CustomTask task = new();
 
-		new Timer(_ => task.SetResult()).Change(delay, Timeout.InfiniteTimeSpan);
+		Timer? timer = null;
+		timer = new Timer(_ =>
+		{
+			timer?.Dispose();
+			task.SetResult();
+		});
+
+		timer.Change(delay, Timeout.InfiniteTimeSpan);
 
 		return task;
 	}
@@ -81,27 +87,28 @@ sealed class CustomTask
 		{
 			if (_completed)
 			{
-				ThreadPool.QueueUserWorkItem(_ =>
-				{
-					try
-					{
-						action();
-						task.SetResult();
-					}
-					catch (Exception e)
-					{
-						task.SetException(e);
-					}
-				});
+				ThreadPool.QueueUserWorkItem(_ => CompleteContinuationTask());
 			}
 			else
 			{
-				_action = action;
-				_context = ExecutionContext.Capture();
+				_continuations.Add((CompleteContinuationTask, ExecutionContext.Capture()));
 			}
 		}
 
 		return task;
+
+		void CompleteContinuationTask()
+		{
+			try
+			{
+				action();
+				task.SetResult();
+			}
+			catch (Exception e)
+			{
+				task.SetException(e);
+			}
+		}
 	}
 
 	public CustomTaskAwaiter GetAwaiter() => new(this);
@@ -112,6 +119,8 @@ sealed class CustomTask
 
 	void CompleteTask(Exception? exception)
 	{
+		List<(Action Continuation, ExecutionContext? Context)> continuationsToRun;
+
 		lock (_lock)
 		{
 			if (_completed)
@@ -120,17 +129,27 @@ sealed class CustomTask
 			_completed = true;
 			_exception = exception;
 
-			if (_action is not null)
+			continuationsToRun = [.. _continuations];
+			_continuations.Clear();
+		}
+
+		// Always queue (never inline) to avoid long ContinueWith chains recursively executing through CompleteTask.
+		// UnsafeQueueUserWorkItem skips capturing this thread's context; the registrar's context is restored inside the work item.
+		foreach (var pending in continuationsToRun)
+		{
+			ThreadPool.UnsafeQueueUserWorkItem(static state =>
 			{
-				if (_context is null)
+				var (continuation, context) = state;
+
+				if (context is null)
 				{
-					_action.Invoke();
+					continuation.Invoke();
 				}
 				else
 				{
-					ExecutionContext.Run(_context, state => ((Action?)state)?.Invoke(), _action);
+					ExecutionContext.Run(context, static s => ((Action?)s)?.Invoke(), continuation);
 				}
-			}
+			}, pending, preferLocal: false);
 		}
 	}
 }
