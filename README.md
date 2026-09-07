@@ -53,7 +53,7 @@ This workshop is designed for two 7-hour days. The active material is approximat
 1. [(Presentation) Thread Switching + Compiler Generated Code](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/blob/main/1.%20Thread%20Switching%20and%20Compiler%20Generatoed%20Code/ThreadSwitchingAndCompilerGeneratedCode.pptx)
 2. [(Code) Correct Common Async Await Mistakes](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/2.%20Correcting%20Common%20Async%20Await%20Mistakes)
 3. [(Presentation/Code) .NET Internals](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/3.%20.NET%20Internals)
-4. [(Code) Creating Custom Implementation of Task](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/4.%20Creating%20Custom%20Implementation%20of%20Task)
+4. [(Presentation/Code) Creating Custom Implementation of Task](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/4.%20Creating%20Custom%20Implementation%20of%20Task)
 
 ## Additional Resources
 
