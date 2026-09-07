@@ -27,7 +27,14 @@ sealed class CustomTask
 	{
 		CustomTask task = new();
 
-		new Timer(_ => task.SetResult()).Change(delay, Timeout.InfiniteTimeSpan);
+		Timer? timer = null;
+		timer = new Timer(_ =>
+		{
+			timer?.Dispose();
+			task.SetResult();
+		});
+
+		timer.Change(delay, Timeout.InfiniteTimeSpan);
 
 		return task;
 	}

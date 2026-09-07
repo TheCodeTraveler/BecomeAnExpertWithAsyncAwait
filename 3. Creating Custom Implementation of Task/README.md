@@ -36,7 +36,7 @@ Requirements:
 4. Implement `ContinueWith(Action)` and complete the returned `CustomTask` when the continuation succeeds or fails.
 5. Preserve the caller's `ExecutionContext` when a continuation is registered before the antecedent completes.
 6. Implement `Wait()` with a blocking wait primitive.
-7. Implement `Delay(TimeSpan)` using `Timer`.
+7. Implement `Delay(TimeSpan)` using `Timer`, keep the timer alive until it fires, and dispose it from the callback.
 8. Add a `CustomTaskAwaiter` that enables the `await` keyword.
 9. Update `Program.cs` so the final version uses `await` instead of `Wait()`.
 
