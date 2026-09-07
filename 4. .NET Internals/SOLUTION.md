@@ -57,7 +57,7 @@ Debug **PrincipalExample.csproj** and navigate to [http://localhost:5000/Account
 
 At the first breakpoint, record the managed thread ID and inspect `HttpContext`, `principal`, and its claims. Resume execution. At the second breakpoint, record the thread ID again and inspect `HttpContext` again.
 
-The current thread ID should change, but the request context and claims remain available. That is the security-context lesson: modern .NET preserves this data across the async continuation.
+The continuation is forced to run asynchronously, but it may use either the same or a different managed thread. The controller and its local `principal` remain available across the await; observing those values alone does not demonstrate `ExecutionContext`-based security-context flow.
 
 ## 3. ExecutionContext
 

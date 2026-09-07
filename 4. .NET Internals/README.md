@@ -53,7 +53,7 @@ Recommended time: 25 to 35 minutes.
 3. Set breakpoints before and after `ConfigureAwait(false)` in the refresh flow.
 4. Debug the app and open [http://localhost:5004](http://localhost:5004).
 5. Inspect the current thread and `SynchronizationContext` before the await and after the continuation.
-6. Explain why the continuation after `ConfigureAwait(false)` is not running on the captured synchronization context.
+6. Explain why `ConfigureAwait(false)` avoids capturing Blazor's synchronization context when a continuation is scheduled, and why synchronous completion may leave the current context unchanged.
 
 ## 5. Review the Solution
 
