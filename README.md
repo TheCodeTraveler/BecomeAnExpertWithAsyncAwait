@@ -16,7 +16,7 @@ Each hands-on section follows the same rhythm:
 
 1. We introduce the topic together and connect it to the code you are about to change.
 2. You open the starter project and inspect the code that matters for the lesson.
-3. You pause for a timed challenge and implement the ideas that were just taught.
+3. You attempt a timed challenge to implement the ideas that were just taught.
 4. We review attendee approaches together, including tradeoffs, questions, and common mistakes.
 5. We walk through the solution step by step as a group, re-iterating the key async/await concepts along the way.
 6. You compare your implementation with the completed sample and ask any remaining questions while the context is fresh.

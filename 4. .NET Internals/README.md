@@ -22,10 +22,10 @@ Recommended time: 25 to 35 minutes.
 
 1. Open **2. Principal/PrincipalExample.slnx**.
 2. Open **PrincipalExample/Program.cs** and **PrincipalExample/Controllers/AccountController.cs**.
-3. Set breakpoints around the `SignInAsync(...)` await and the redirect that follows it.
+3. Before running, predict which of these will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed: `Thread.CurrentPrincipal`, `IHttpContextAccessor.HttpContext`, the controller's `HttpContext` property, and the `principal` local variable.
 4. Debug the app and navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
-5. Record the managed thread ID, `HttpContext`, and claims before and after the await.
-6. Explain why the security context remains available after the continuation runs.
+5. Read the three `AccountController` log lines and compare them with your predictions.
+6. Explain which values are carried by `ExecutionContext` and which are simply object references that were never on a thread in the first place.
 
 ## 3. ExecutionContext Challenge
 
