@@ -24,7 +24,7 @@ public static class Program
 		var thread = new Thread(() =>
 		{
 			CultureInfo.CurrentCulture = new CultureInfo("en-UK");
-			Thread.CurrentPrincipal = new CustomPrinciple();
+			Thread.CurrentPrincipal = new CustomPrincipal();
 			_asyncLocalData.Value = "AsyncLocalData in Thread";
 
 			Console.WriteLine("Background Thread after assigning values");
@@ -53,14 +53,17 @@ public static class Program
 			PrintThreadValues();
 		});
 
-		// Prevent async/await from automatically flowing the ExecutionContext
-		ExecutionContext.SuppressFlow();
-
-		await Task.Run(() =>
+		Task suppressedExecutionContextTask;
+		using (ExecutionContext.SuppressFlow())
 		{
-			Console.WriteLine("Print Values from Task.Run() With Execution Context Suppressed");
-			PrintThreadValues();
-		});
+			suppressedExecutionContextTask = Task.Run(() =>
+			{
+				Console.WriteLine("Print Values from Task.Run() With Execution Context Suppressed");
+				PrintThreadValues();
+			});
+		}
+
+		await suppressedExecutionContextTask;
 	}
 
 	static void PrintThreadValues()
@@ -74,7 +77,7 @@ public static class Program
 	}
 }
 
-sealed class CustomPrinciple() : GenericPrincipal(new CustomIdentity(), null)
+sealed class CustomPrincipal() : GenericPrincipal(new CustomIdentity(), null)
 {
 	sealed class CustomIdentity : IIdentity
 	{

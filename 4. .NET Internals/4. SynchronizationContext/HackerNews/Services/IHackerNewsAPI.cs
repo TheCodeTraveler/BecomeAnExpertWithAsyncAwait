@@ -4,7 +4,7 @@ using Refit;
 
 namespace HackerNews;
 
-interface IHackerNewsAPI
+public interface IHackerNewsAPI
 {
 	[Get("/topstories.json?print=pretty")]
 	Task<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken token);

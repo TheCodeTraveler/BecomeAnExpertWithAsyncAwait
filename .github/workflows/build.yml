@@ -12,7 +12,7 @@ env:
   Xcode_Version: 26.2
 
 jobs:
-  mobile:
+  Blazor:
     strategy:
       matrix:
         os: [macos-15, windows-latest]
