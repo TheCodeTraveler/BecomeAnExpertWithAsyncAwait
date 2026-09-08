@@ -64,8 +64,9 @@ Requirements:
 8. Report `QueueDepth` from the queue itself instead of a list count.
 9. Write a private consumer method that reads the queue until it is complete and saves each event to `EventStore`.
 10. Change `DrainAsync` so it runs several consumers over the same reader and waits for all of them. Add a consumer count constant. 8 is a good starting point.
-11. Add a public method that marks the queue complete, so a graceful shutdown can drain the backlog. Do not call it from `RunBurstAsync`. Completing the queue closes it for good, and the next burst would throw `ChannelClosedException`. Nothing in this app calls it yet. It is there for the shutdown path.
-12. Delete the polling loop, the `Task.Delay` inside it, the `List<TelemetryEvent>`, the `Reset()` method, and the call to `Reset()` at the top of `RunBurstAsync`.
+11. Add a public method that marks the queue complete. Do not call it from `RunBurstAsync`. Completing the queue closes it for good, and the next burst would throw `ChannelClosedException`. It belongs on the shutdown path, which is next.
+12. Wire that method into **Services/TelemetryProcessor.cs** so shutting the app down drains the backlog instead of throwing it away. Override `StopAsync`, complete the queue before you call the base implementation, and stop passing `stoppingToken` into the read loop. Cancelling that loop is exactly what abandons the queued readings.
+13. Delete the polling loop, the `Task.Delay` inside it, the `List<TelemetryEvent>`, the `Reset()` method, and the call to `Reset()` at the top of `RunBurstAsync`.
 
 Acceptance checks. Restart the app, then click **Receive 400 events** once:
 
@@ -75,7 +76,7 @@ Acceptance checks. Restart the app, then click **Receive 400 events** once:
 4. **Burst duration** reads 0.00s. The button no longer spins.
 5. **Written to store** starts near zero, with the rest of the burst waiting in the queue.
 6. Click **Refresh counters** once a second. The written count climbs, the waiting count falls, and about two seconds after the burst it reads 400 written with 0 waiting.
-7. Press Ctrl+C in the terminal. The app shuts down instead of hanging.
+7. Click **Receive 400 events** and then press Ctrl+C in the terminal straight away, while the queue still has items waiting. The app pauses for roughly two seconds before it exits, because it is finishing the backlog first. It shuts down instead of hanging, and it does not quit instantly either.
 8. There is no `List<TelemetryEvent>` and no `Task.Delay` left in the service.
 9. Your code is ready to compare with **2. Finish/TelemetryPipeline**.
 

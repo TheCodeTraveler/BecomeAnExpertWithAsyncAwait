@@ -32,7 +32,10 @@ The second problem is at the bottom of the same method:
 }
 catch (HttpRequestException e)
 {
-    PageError = e.Message;
+    PageError = $"{e.Message}. Every panel below it was never requested.";
+
+    // Anything still waiting when the load stopped will never arrive
+    MarkWaitingPanelsSkipped();
 }
 ```
 

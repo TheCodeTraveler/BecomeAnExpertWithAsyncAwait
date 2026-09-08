@@ -147,7 +147,7 @@ Completing does two things. It rejects every later write, with `WriteAsync` thro
 
 `TryComplete()` is used instead of `Complete()` because more than one code path could reasonably close this channel. It returns `false` when the channel is already complete rather than throwing.
 
-Nothing in the running app calls this during a burst, and that is deliberate. This pipeline is meant to stay open for the life of the process, and shutdown is handled by the `stoppingToken`. Call `CompleteWriting` from `RunBurstAsync` and the first burst still passes every acceptance check, but the second click of **Receive 400 events** throws, because the channel is closed for good. It is what you call when you do want a graceful drain: an admin endpoint that stops accepting new work, or a test that needs the consumers to finish so it can assert on the result.
+Nothing calls this during a burst, and that is deliberate. Call `CompleteWriting` from `RunBurstAsync` and the first burst still passes every acceptance check, but the second click of **Receive 400 events** throws, because the channel is closed for good. This is the method you call exactly once, when the app is going away, and that is the next step.
 
 ## 8. Report From the Channel
 
@@ -178,9 +178,9 @@ The stats now come from the channel and the atomic counters instead of a list:
 
 `Processed` and `QueueDepth` go into the record at the moment the burst returns, which is almost immediately. The **Written to store** card does not read that snapshot though. `Ingest.razor` binds it to `LiveProcessed` and `LiveQueueDepth`, and `Ingest.razor.cs` defines those as `Ingest.Processed` and `Ingest.QueueDepth`, so the card reads the singleton every time the page renders. That is why the card shows a full queue and an empty store the instant the burst returns, and why **Refresh counters** is what lets you watch it drain.
 
-## 9. The Consumer Already Had a Home
+## 9. Drain the Backlog on Shutdown
 
-`TelemetryProcessor` picks up a clarifying comment and nothing else:
+`TelemetryProcessor` is where completion finally gets used:
 
 ```cs
 namespace TelemetryPipeline;
@@ -189,21 +189,34 @@ namespace TelemetryPipeline;
 // to run a channel reader for the lifetime of the application.
 public sealed class TelemetryProcessor(TelemetryIngestService ingest) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
-        {
-            await ingest.DrainAsync(stoppingToken).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            // Expected on shutdown
-        }
+        // Deliberately not stoppingToken. Cancelling the read loop would abandon
+        // whatever is still queued, and every reading is supposed to reach the store.
+        // StopAsync closes the channel instead, which ends ReadAllAsync once it drains.
+        return ingest.DrainAsync(CancellationToken.None);
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        // Stop accepting new readings first, so the consumers can finish the backlog
+        ingest.CompleteWriting();
+
+        // Cancels stoppingToken, then waits for ExecuteAsync to return.
+        // The wait is bounded by the host's shutdown timeout, so a pipeline that
+        // cannot drain in time still lets the process exit.
+        await base.StopAsync(cancellationToken).ConfigureAwait(false);
     }
 }
 ```
 
-A `BackgroundService` is the standard place to run a channel reader in ASP.NET Core. The host starts `ExecuteAsync` when the app starts and cancels `stoppingToken` when it stops, which unwinds every `await foreach` and lets the process exit. The `when (stoppingToken.IsCancellationRequested)` filter means a real cancellation bug still surfaces instead of being swallowed.
+A `BackgroundService` is the standard place to run a channel reader in ASP.NET Core. The host starts `ExecuteAsync` when the app starts and calls `StopAsync` when it stops.
+
+The obvious version of this method takes the `stoppingToken` and passes it into `DrainAsync`, and it is wrong in a way that is easy to miss. `BackgroundService.StopAsync` cancels that token and then waits for `ExecuteAsync` to return. Cancelling is what tears down the `await foreach`, so every reading still sitting in the channel is thrown away. Measure it and the pipeline writes 0 of 400 on shutdown: the burst is accepted, the device is told everything is fine, and the readings never reach the store.
+
+So the read loop does not take the token at all. Shutdown is signalled by completing the channel instead. `ReadAllAsync` drains what is buffered and then ends on its own, `Task.WhenAll` returns, `ExecuteAsync` returns, and `base.StopAsync` sees the task finish. With completion wired in, the same run writes 400 of 400 and shutdown takes about two seconds instead of being instant.
+
+Two things keep this honest. `base.StopAsync` bounds its wait with the host's shutdown timeout, so a backlog that cannot drain in time does not hang the process forever. And completing the channel means a request still trying to accept a reading during shutdown gets a `ChannelClosedException`, which is the correct answer: the app is going away and cannot promise to store it.
 
 The registration in `Program.cs` did not change either:
 
