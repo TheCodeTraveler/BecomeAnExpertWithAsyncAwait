@@ -8,7 +8,7 @@ Every change lives in one file: **Components/Pages/Dashboard.razor.cs**. Nothing
 
 ## 1. Replace the Dictionary
 
-`Dictionary<TKey, TValue>` is fast because it assumes it will never be written by two threads at once. `Parallel.ForEachAsync(...)` hands it 60 writers. A concurrent resize can lose entries, corrupt a bucket chain, or throw.
+`Dictionary<TKey, TValue>` is fast because it assumes it will never be written by two threads at once. `Parallel.ForEachAsync(...)` refreshes all 60 symbols concurrently, so more than one writer can be in flight at once. A concurrent resize can lose entries, corrupt a bucket chain, or throw.
 
 `ConcurrentDictionary<TKey, TValue>` is the replacement. Reads are lock-free, and writes take a lock from a small striped lock array, one lock per processor by default and capped at 1024, rather than one lock over the whole collection, so threads writing different keys usually do not wait on each other.
 
@@ -21,8 +21,9 @@ using System.Collections.Concurrent;
 Then change the field:
 
 ```cs
-    // ConcurrentDictionary is safe for many writers at once. AddOrUpdate is the
-    // atomic read-modify-write that replaces TryAdd followed by an indexer assignment.
+    // ConcurrentDictionary is safe for many writers at once. AddOrUpdate replaces
+    // TryAdd followed by an indexer assignment with one thread-safe call, so no
+    // update can be lost between two separate operations.
     readonly ConcurrentDictionary<string, StockQuoteModel> _latestQuotes = new();
 ```
 
@@ -39,8 +40,8 @@ The counter has the same shape of bug: `_refreshCount++` is a read, an add, and 
     {
         try
         {
-            // Every symbol is fetched in parallel, so every write below
-            // happens on a different Thread Pool thread at the same time.
+            // Parallel.ForEachAsync runs these iterations concurrently, so more
+            // than one of the writes below can be in flight at once.
             await Parallel.ForEachAsync(
                 MarketDataService.Symbols,
                 token,
@@ -48,7 +49,9 @@ The counter has the same shape of bug: `_refreshCount++` is a read, an add, and 
                 {
                     var quote = await MarketDataService.GetStockQuote(symbol, cancellationToken).ConfigureAwait(false);
 
-                    // Atomic: keep whichever quote is newer
+                    // One call, so no update is lost. Not atomic, though: this delegate
+                    // runs outside the dictionary's lock and can run more than once, so
+                    // it only compares and returns. Keep side effects out of it.
                     _latestQuotes.AddOrUpdate(
                         symbol,
                         quote,
@@ -69,6 +72,10 @@ The counter has the same shape of bug: `_refreshCount++` is a read, an add, and 
 ```
 
 The update delegate deserves a warning. Every method on `ConcurrentDictionary<TKey, TValue>` is thread safe, but `GetOrAdd(...)` and `AddOrUpdate(...)` are not atomic in the delegate they call. The delegate is invoked outside the dictionary's internal lock so unknown user code cannot block every thread touching that stripe of buckets, which means under contention it can run more than once. Keep it cheap and free of side effects. Comparing two timestamps and returning the winner can run twice with no harm. Writing to a database in there cannot.
+
+It is worth seeing how far from atomic this gets. Hammer one key with 32 writers making 640,000 `AddOrUpdate(...)` calls between them, and the update delegate runs closer to 1.8 million times: it is re-entered on every lost race and retried. Not one update goes missing, and the final count is exactly 640,000. That is the distinction in one measurement. Thread safe means you never lose a write. Atomic would mean the read, the compare and the write happen as one indivisible step, and here they plainly do not.
+
+Contrast that with the line directly beneath it in the sample. `Interlocked.Increment(...)` really is atomic, which is why its comment says so.
 
 The timestamp comparison matters for a second reason. When one 2 second tick runs long, two refreshes overlap, and without the comparison a slow thread carrying an older quote could overwrite a newer one that already landed.
 

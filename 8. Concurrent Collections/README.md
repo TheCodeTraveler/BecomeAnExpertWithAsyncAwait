@@ -1,6 +1,6 @@
 # Concurrent Collections
 
-In this section, you will make the Blazor **StockWatch** dashboard safe for the 60 threads that write to it. StockWatch tracks 60 symbols, refreshes every one of them in parallel on a 2 second timer, and paints a card per symbol with the current price and the percent change since the previous close. It works, but it does not tell the truth: cards go missing, the header counter undercounts, and nothing in the build output warns you about any of it.
+In this section, you will make the Blazor **StockWatch** dashboard safe for the concurrent writes that land on it. StockWatch tracks 60 symbols, refreshes every one of them in parallel on a 2 second timer, and paints a card per symbol with the current price and the percent change since the previous close. It works, but it does not tell the truth: cards go missing, the header counter undercounts, and nothing in the build output warns you about any of it.
 
 The **1. Start** folder contains the intentionally imperfect code you will edit. The **2. Finish** folder contains the completed Blazor version.
 
@@ -27,7 +27,7 @@ The dashboard is at [http://localhost:5005](http://localhost:5005).
 ## 2. Inspect the Starting Code
 
 1. Open **StockWatch/Components/Pages/Dashboard.razor.cs** and find each `// ToDo Refactor` comment. There are five.
-2. Read `RefreshQuotes(CancellationToken)`. It calls `Parallel.ForEachAsync(...)` over all 60 symbols, so everything inside that lambda runs on many Thread Pool threads at the same time.
+2. Read `RefreshQuotes(CancellationToken)`. It calls `Parallel.ForEachAsync(...)` over all 60 symbols, so more than one of those refreshes can be in flight at once.
 3. Read `GetSymbols()`. The `Symbols` property calls it on every render, and it uses `Parallel.ForEach(...)` to build the list the grid loops over.
 4. Read `StartRefreshTimer()` and `StopRefreshTimer()`. Both read and write `_refreshTimer`, and nothing coordinates them.
 5. Open **StockWatch/Services/MarketDataService.cs**. It is a simulated in-process feed that behaves like a remote quote API, so the sample runs offline with no API key, no rate limit, and the same starting prices for every attendee. Notice that `GetStockQuote(...)` waits somewhere under 60 milliseconds before it returns, exactly like a remote call would.
@@ -44,7 +44,7 @@ Now watch what the browser actually does:
 
 Pay attention to these clues:
 
-1. `_latestQuotes` is a `Dictionary<string, StockQuoteModel>`, and `Parallel.ForEachAsync(...)` writes to it from many Thread Pool threads at once. `Dictionary<TKey, TValue>` supports one writer at a time.
+1. `_latestQuotes` is a `Dictionary<string, StockQuoteModel>`, and `Parallel.ForEachAsync(...)` refreshes all 60 symbols concurrently, so more than one write can be in flight at once. `Dictionary<TKey, TValue>` supports one writer at a time.
 2. Each write is a `TryAdd(...)` followed by an indexer assignment. That is two separate operations on shared state, and another thread can slip in between them.
 3. `_refreshCount++` looks like one operation. It is three: read the field, add one, write it back. Increments that interleave get lost.
 4. `RefreshCount` is read by Blazor's renderer on a different thread than the one that last wrote `_refreshCount`.
@@ -58,7 +58,7 @@ Recommended time: 25 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify concurrent collection concepts, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
 
-Refactor **Dashboard.razor.cs** so every shared field survives 60 threads writing to it at once.
+Refactor **Dashboard.razor.cs** so every shared field survives concurrent writes from all 60 symbol refreshes.
 
 Requirements:
 

@@ -5,8 +5,9 @@ namespace StockWatch.Components.Pages;
 
 public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 {
-	// ConcurrentDictionary is safe for many writers at once. AddOrUpdate is the
-	// atomic read-modify-write that replaces TryAdd followed by an indexer assignment.
+	// ConcurrentDictionary is safe for many writers at once. AddOrUpdate replaces
+	// TryAdd followed by an indexer assignment with one thread-safe call, so no
+	// update can be lost between two separate operations.
 	readonly ConcurrentDictionary<string, StockQuoteModel> _latestQuotes = new();
 
 	// SemaphoreSlim is the asynchronous lock guarding the timer field.
@@ -98,8 +99,8 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 	{
 		try
 		{
-			// Every symbol is fetched in parallel, so every write below
-			// happens on a different Thread Pool thread at the same time.
+			// Parallel.ForEachAsync runs these iterations concurrently, so more
+			// than one of the writes below can be in flight at once.
 			await Parallel.ForEachAsync(
 				MarketDataService.Symbols,
 				token,
@@ -107,7 +108,9 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 				{
 					var quote = await MarketDataService.GetStockQuote(symbol, cancellationToken).ConfigureAwait(false);
 
-					// Atomic: keep whichever quote is newer
+					// One call, so no update is lost. Not atomic, though: this delegate
+					// runs outside the dictionary's lock and can run more than once, so
+					// it only compares and returns. Keep side effects out of it.
 					_latestQuotes.AddOrUpdate(
 						symbol,
 						quote,

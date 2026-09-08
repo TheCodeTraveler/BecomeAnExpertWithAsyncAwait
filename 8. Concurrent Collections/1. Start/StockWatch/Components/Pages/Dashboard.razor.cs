@@ -5,7 +5,7 @@ namespace StockWatch.Components.Pages;
 public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 {
 	// ToDo Refactor: Dictionary is not thread safe. Every symbol is fetched in
-	// parallel, so many threads write to this at the same time.
+	// parallel, so more than one write to this can be in flight at once.
 	readonly Dictionary<string, StockQuoteModel> _latestQuotes = [];
 
 	readonly CancellationTokenSource _disposeCancellationTokenSource = new();
@@ -68,8 +68,8 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 	{
 		try
 		{
-			// Every symbol is fetched in parallel, so every write below
-			// happens on a different Thread Pool thread at the same time.
+			// Parallel.ForEachAsync runs these iterations concurrently, so more
+			// than one of the writes below can be in flight at once.
 			await Parallel.ForEachAsync(
 				MarketDataService.Symbols,
 				token,
@@ -100,8 +100,8 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 
 	IReadOnlyList<StockSymbolModel> GetSymbols()
 	{
-		// ToDo Refactor: List is not thread safe, and Parallel.ForEach calls
-		// Add from many threads at once. Items go missing or this throws.
+		// ToDo Refactor: List is not thread safe, and Parallel.ForEach can call
+		// Add from more than one worker at once. Items go missing or this throws.
 		List<StockSymbolModel> symbols = [];
 
 		Parallel.ForEach(MarketDataService.Symbols, symbol =>
