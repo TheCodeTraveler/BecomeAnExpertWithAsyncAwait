@@ -1,0 +1,70 @@
+@page "/"
+@inherits IngestPageBase
+
+<PageTitle>TelemetryPipeline</PageTitle>
+
+<section class="page">
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">TelemetryPipeline</p>
+            <h1>Device telemetry ingest</h1>
+            <p class="hero-summary">@EventCount.ToString("N0") devices post readings in a burst. Each reading has to reach the database, and each device gives up if the endpoint is slow.</p>
+        </div>
+
+        <div class="hero-actions">
+            <button class="action" type="button" disabled="@IsBusy" @onclick="RunBurstAsync">
+                @if (IsBusy)
+                {
+                    <span class="spinner" aria-hidden="true"></span>
+                }
+                @(IsBusy ? "Receiving" : $"Receive {EventCount} events")
+            </button>
+
+            <button class="action secondary" type="button" @onclick="RefreshAsync">
+                Refresh counters
+            </button>
+        </div>
+    </header>
+
+    @if (Stats is null && !IsBusy)
+    {
+        <div class="panel">
+            <h2>What to look for</h2>
+            <p class="panel-hint">Receive the burst and watch the average accept time. A device gives up after 20ms, so anything slower than that is a dropped reading in production.</p>
+        </div>
+    }
+
+    @if (Stats is not null)
+    {
+        <div class="panel">
+            <h2>Ingest results</h2>
+            <p class="panel-hint">Accepting an event should be fast. Processing it can take as long as it needs, as long as nothing is lost.</p>
+
+            <div class="result-grid">
+                <div class="result-card @(Stats.Accepted == EventCount ? "ok" : "bad")">
+                    <span class="result-label">Accepted</span>
+                    <span class="result-value">@Stats.Accepted.ToString("N0")</span>
+                    <span class="result-note">of @EventCount.ToString("N0")</span>
+                </div>
+
+                <div class="result-card @(Stats.AverageAcceptMilliseconds < 5 ? "ok" : "bad")">
+                    <span class="result-label">Average accept</span>
+                    <span class="result-value timing">@Stats.AverageAcceptMilliseconds.ToString("F1")ms</span>
+                    <span class="result-note">slowest @Stats.SlowestAcceptMilliseconds.ToString("F0")ms, devices retry past 20ms</span>
+                </div>
+
+                <div class="result-card">
+                    <span class="result-label">Burst duration</span>
+                    <span class="result-value timing">@Stats.TotalSeconds.ToString("F2")s</span>
+                    <span class="result-note">to accept every event</span>
+                </div>
+
+                <div class="result-card @(LiveProcessed == EventCount ? "ok" : "pending")">
+                    <span class="result-label">Written to store</span>
+                    <span class="result-value">@LiveProcessed.ToString("N0")</span>
+                    <span class="result-note">@LiveQueueDepth waiting in the queue</span>
+                </div>
+            </div>
+        </div>
+    }
+</section>

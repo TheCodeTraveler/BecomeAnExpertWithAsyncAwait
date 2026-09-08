@@ -1,0 +1,79 @@
+@page "/"
+@inherits CheckoutPageBase
+
+<PageTitle>OrderPortal</PageTitle>
+
+<section class="page">
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">OrderPortal</p>
+            <h1>Checkout load simulator</h1>
+            <p class="hero-summary">Concurrent checkout workers run against the same singleton services, like a burst of real traffic.</p>
+        </div>
+
+        <div class="hero-actions">
+            <button class="action" type="button" disabled="@IsBusy" @onclick="RunBurstAsync">
+                @if (IsBusy)
+                {
+                    <span class="spinner" aria-hidden="true"></span>
+                }
+                @(IsBusy ? "Running" : $"Run {OrderCount} checkouts")
+            </button>
+
+            <button class="action secondary" type="button" disabled="@IsBusy" @onclick="ReserveStockAsync">
+                Reserve stock
+            </button>
+        </div>
+    </header>
+
+    @if (Result is null && !IsBusy)
+    {
+        <div class="panel">
+            <h2>What to look for</h2>
+            <p class="panel-hint">Run the burst. Every card that turns red is a bug in a service that looked fine when one request hit it at a time. Then press Reserve stock and watch how long it takes.</p>
+        </div>
+    }
+
+    @if (Result is not null)
+    {
+        <div class="panel">
+            <h2>Checkout results</h2>
+            <p class="panel-hint">Every number below has a known correct value. Anything that does not match is a race condition.</p>
+
+            <div class="result-grid">
+                <div class="result-card @(Result.OrdersPlaced == OrderCount ? "ok" : "bad")">
+                    <span class="result-label">Orders recorded</span>
+                    <span class="result-value">@Result.OrdersPlaced</span>
+                    <span class="result-note">expected @OrderCount</span>
+                </div>
+
+                <div class="result-card @(Result.Revenue == ExpectedRevenue ? "ok" : "bad")">
+                    <span class="result-label">Revenue</span>
+                    <span class="result-value">@Result.Revenue.ToString("C0")</span>
+                    <span class="result-note">expected @ExpectedRevenue.ToString("C0")</span>
+                </div>
+
+                <div class="result-card @(Result.TaxRateBuilds == 1 ? "ok" : "bad")">
+                    <span class="result-label">Tax table builds</span>
+                    <span class="result-value">@Result.TaxRateBuilds</span>
+                    <span class="result-note">expected 1</span>
+                </div>
+
+                <div class="result-card">
+                    <span class="result-label">Elapsed</span>
+                    <span class="result-value timing">@Result.Elapsed.TotalSeconds.ToString("F2")s</span>
+                    <span class="result-note">@Result.TaxRateLookups tax lookups</span>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (StockMessage is not null)
+    {
+        <div class="panel">
+            <h2>Stock reservation</h2>
+            <p class="panel-hint">Reserving stock writes an audit entry while holding the ledger lock.</p>
+            <pre class="log">@StockMessage</pre>
+        </div>
+    }
+</section>

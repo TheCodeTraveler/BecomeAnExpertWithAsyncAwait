@@ -4,7 +4,7 @@ In this section, you will inspect the internal state that .NET uses to flow asyn
 
 ## 1. ThreadStatic Challenge
 
-Recommended time: 15 to 20 minutes.
+Recommended time: 8 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
@@ -16,7 +16,7 @@ Recommended time: 15 to 20 minutes.
 
 ## 2. Principal Challenge
 
-Recommended time: 25 to 35 minutes.
+Recommended time: 10 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
@@ -29,7 +29,7 @@ Recommended time: 25 to 35 minutes.
 
 ## 3. ExecutionContext Challenge
 
-Recommended time: 30 to 45 minutes.
+Recommended time: 12 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
@@ -44,7 +44,7 @@ Recommended time: 30 to 45 minutes.
 
 ## 4. SynchronizationContext Challenge
 
-Recommended time: 25 to 35 minutes.
+Recommended time: 10 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
