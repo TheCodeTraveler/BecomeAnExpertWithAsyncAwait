@@ -22,7 +22,7 @@ Each hands-on section follows the same rhythm:
 2. You open the starter project and inspect the code that matters for the lesson.
 3. You attempt a timed challenge to implement the ideas that were just taught.
 4. We review attendee approaches together, including tradeoffs, questions, and common mistakes.
-5. We walk through the solution step by step as a group, re-iterating the key concepts along the way.
+5. We walk through the solution step by step as a group, reiterating the key concepts along the way.
 6. You compare your implementation with the completed sample and ask any remaining questions while the context is fresh.
 
 Coding challenges run 20 to 45 minutes depending on how much code they ask you to write. The shorter investigation challenges in the .NET Internals section focus on debugger observations and discussion rather than large code changes.
