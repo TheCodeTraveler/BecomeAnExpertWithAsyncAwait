@@ -2,28 +2,41 @@ using System.Diagnostics;
 
 namespace OrderPortal;
 
-public sealed class CheckoutService(OrderMetrics metrics, TaxRateProvider taxRates, InventoryLedger ledger)
+public sealed class CheckoutService(OrderMetrics metrics, TaxRateProvider taxRates, InventoryLedger ledger) : IDisposable
 {
 	static readonly string[] _regions = ["US-CA", "US-NY", "US-TX", "US-WA"];
 	static readonly string[] _skus = ["SKU-1000", "SKU-2000", "SKU-3000"];
+
+	readonly SemaphoreSlim _burstSemaphore = new(1, 1);
+
+	public void Dispose() => _burstSemaphore.Dispose();
 
 	// Runs `orderCount` checkouts at the same time, the way a burst of real
 	// traffic would. Every checkout touches the same singleton services.
 	public async Task<CheckoutResult> RunCheckoutBurstAsync(int orderCount, CancellationToken token)
 	{
-		metrics.Reset();
-		taxRates.Reset();
+		await _burstSemaphore.WaitAsync(token).ConfigureAwait(false);
 
-		var stopwatch = Stopwatch.StartNew();
+		try
+		{
+			metrics.Reset();
+			taxRates.Reset();
 
-		await Parallel.ForEachAsync(
-			Enumerable.Range(0, orderCount),
-			token,
-			async (orderNumber, cancellationToken) => await PlaceOrderAsync(orderNumber, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+			var stopwatch = Stopwatch.StartNew();
 
-		stopwatch.Stop();
+			await Parallel.ForEachAsync(
+				Enumerable.Range(0, orderCount),
+				token,
+				async (orderNumber, cancellationToken) => await PlaceOrderAsync(orderNumber, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 
-		return new CheckoutResult(metrics.OrdersPlaced, metrics.Revenue, taxRates.Lookups, taxRates.Builds, stopwatch.Elapsed);
+			stopwatch.Stop();
+
+			return new CheckoutResult(metrics.OrdersPlaced, metrics.Revenue, taxRates.Lookups, taxRates.Builds, stopwatch.Elapsed);
+		}
+		finally
+		{
+			_burstSemaphore.Release();
+		}
 	}
 
 	async Task PlaceOrderAsync(int orderNumber, CancellationToken token)

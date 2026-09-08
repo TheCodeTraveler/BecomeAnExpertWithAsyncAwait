@@ -160,9 +160,21 @@ The lookup counter gets `Interlocked.Increment` for the same reason the order co
 
 That keeps the demo repeatable. Press the button a second time and the table is built exactly once again, not zero times and not once per core.
 
-`_rates` itself is swapped with a plain write, which is safe only because `Reset()` runs before a burst and never during one. Reference assignment is atomic, so you can never read a torn `Lazy<T>`, but agreeing on which `Lazy<T>` is a separate problem. If a reset could overlap a burst, two callers could each hold a different instance and the table would build twice. `Lazy<T>` guarantees one execution per instance, not one per field.
+`_rates` itself is swapped with a plain write, which is safe because `Reset()` can only run before a burst, never during one. Reference assignment is atomic, so you can never read a torn `Lazy<T>`, but agreeing on which `Lazy<T>` is a separate problem. If a reset could overlap a burst, two callers could each hold a different instance and the table would build twice. `Lazy<T>` guarantees one execution per instance, not one per field.
 
-The counters are read through `Volatile.Read`. `RunCheckoutBurstAsync(int, CancellationToken)` happens to await the burst to completion before it reads them, and that `await` is already a memory barrier, but these are public getters on a singleton and any thread can call them at any time. Nothing forces the compiler or the CPU to hand a reader the freshest value of a field another thread is writing, and `Volatile.Read` is how you say you want it:
+That "can only" is a guarantee rather than a hope, and it is worth seeing where it comes from. The Run button is disabled while a burst is running, but a disabled button only covers one browser tab, and `CheckoutService` is a singleton that every tab shares. So the burst takes a lock of its own:
+
+```cs
+// SemaphoreSlim rather than `lock`, because the burst is awaited.
+// The unit of exclusion is the whole run: reset, measure, then read.
+await _burstSemaphore.WaitAsync(token).ConfigureAwait(false);
+```
+
+`SemaphoreSlim` for the same reason `InventoryLedger` uses one: the burst awaits, and `lock` cannot be held across an `await`. Notice what is being guarded, though. `Interlocked` and `Lock` each protect a single update, but the invariant here spans reset, then measure, then read, so the exclusion has to span all three. Sometimes the right unit is not the field. It is the whole operation.
+
+This one is not part of your challenge. It is in **1. Start** and **2. Finish** alike, already correct, and it is why pressing Run in two tabs at once gives you two honest answers instead of two scrambled ones.
+
+The counters are read through `Volatile.Read`. `RunCheckoutBurstAsync(int, CancellationToken)` awaits the burst to completion before it reads them, and that `await` is already a memory barrier, but these are public getters on a singleton and any thread can call them at any time. Nothing forces the compiler or the CPU to hand a reader the freshest value of a field another thread is writing, and `Volatile.Read` is how you say you want it:
 
 ```cs
  public int Lookups => Volatile.Read(ref _lookups);
