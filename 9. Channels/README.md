@@ -40,7 +40,7 @@ Pay attention to these clues:
 2. `_processed++` happens in the accept path, so "Written to store" is counting the same work as "Accepted". The consumer is decoration.
 3. `_pending` is a `List<TelemetryEvent>` that the accept path writes while `DrainAsync` reads it. `List<T>` is not thread safe, so items can be lost and the list can throw.
 4. `_accepted++` and `_processed++` are not atomic, and `TelemetryIngestService` is a singleton shared by every browser session.
-5. `DrainAsync` polls. When the list is empty it sleeps for 25 milliseconds and looks again, forever, whether or not there is anything to do. That is busy-waiting.
+5. `DrainAsync` polls. When the list is empty it sleeps for 25 milliseconds and looks again, forever, whether or not there is anything to do. This periodic polling adds latency and wakes the loop even when no work exists.
 6. Nothing ever tells `DrainAsync` that the producer is finished. The only thing that stops it is cancellation at shutdown.
 7. Nothing limits how large `_pending` can grow. A big enough burst is an out of memory exception.
 
