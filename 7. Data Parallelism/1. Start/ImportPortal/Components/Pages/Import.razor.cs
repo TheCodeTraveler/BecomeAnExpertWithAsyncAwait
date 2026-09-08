@@ -20,14 +20,23 @@ public partial class ImportPageBase : ComponentBase
 
 		await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
+		ImportReport? report = null;
+
 		try
 		{
-			Report = await ImportService.RunImportAsync(RowCount, CancellationToken.None).ConfigureAwait(false);
+			report = await ImportService.RunImportAsync(RowCount, CancellationToken.None).ConfigureAwait(false);
 		}
 		finally
 		{
-			IsBusy = false;
-			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+			// The continuation is off Blazor's renderer, so every component
+			// state change goes back through it
+			await InvokeAsync(() =>
+			{
+				Report = report;
+				IsBusy = false;
+
+				StateHasChanged();
+			}).ConfigureAwait(false);
 		}
 	}
 }

@@ -82,10 +82,14 @@ public partial class ProductPageBase : ComponentBase
 		}
 
 		stopwatch.Stop();
-		TotalSeconds = stopwatch.Elapsed.TotalSeconds;
-		IsLoading = false;
 
-		await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+		await InvokeAsync(() =>
+		{
+			TotalSeconds = stopwatch.Elapsed.TotalSeconds;
+			IsLoading = false;
+
+			StateHasChanged();
+		}).ConfigureAwait(false);
 	}
 
 	// Wraps one backend call so a single failing service degrades one panel
@@ -96,11 +100,11 @@ public partial class ProductPageBase : ComponentBase
 		{
 			var result = await serviceCall.ConfigureAwait(false);
 
-			SetPanel(name, "ready", describe(result), stopwatch.Elapsed);
+			await SetPanelAsync(name, "ready", describe(result), stopwatch.Elapsed).ConfigureAwait(false);
 		}
 		catch (HttpRequestException e)
 		{
-			SetPanel(name, "failed", e.Message, stopwatch.Elapsed);
+			await SetPanelAsync(name, "failed", e.Message, stopwatch.Elapsed).ConfigureAwait(false);
 		}
 	}
 
@@ -112,13 +116,17 @@ public partial class ProductPageBase : ComponentBase
 		}
 	}
 
-	protected void SetPanel(string name, string status, string? detail, TimeSpan elapsed)
-	{
-		var index = Panels.FindIndex(panel => panel.Name == name);
-
-		if (index >= 0)
+	// All five wrappers write here at once, from whichever Thread Pool thread
+	// their own service finished on, while Product.razor renders Panels with a
+	// foreach. Marshalling the write keeps every mutation on the renderer.
+	protected Task SetPanelAsync(string name, string status, string? detail, TimeSpan elapsed) =>
+		InvokeAsync(() =>
 		{
-			Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
-		}
-	}
+			var index = Panels.FindIndex(panel => panel.Name == name);
+
+			if (index >= 0)
+			{
+				Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
+			}
+		});
 }

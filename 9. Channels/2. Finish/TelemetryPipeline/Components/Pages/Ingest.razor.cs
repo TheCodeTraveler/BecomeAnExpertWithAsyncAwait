@@ -24,14 +24,23 @@ public partial class IngestPageBase : ComponentBase
 
 		await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
+		PipelineStats? stats = null;
+
 		try
 		{
-			Stats = await Ingest.RunBurstAsync(EventCount, CancellationToken.None).ConfigureAwait(false);
+			stats = await Ingest.RunBurstAsync(EventCount, CancellationToken.None).ConfigureAwait(false);
 		}
 		finally
 		{
-			IsBusy = false;
-			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+			// The continuation is off Blazor's renderer, so every component
+			// state change goes back through it
+			await InvokeAsync(() =>
+			{
+				Stats = stats;
+				IsBusy = false;
+
+				StateHasChanged();
+			}).ConfigureAwait(false);
 		}
 	}
 

@@ -23,14 +23,23 @@ public partial class CheckoutPageBase : ComponentBase
 		IsBusy = true;
 		Result = null;
 
+		CheckoutResult? result = null;
+
 		try
 		{
-			Result = await CheckoutService.RunCheckoutBurstAsync(OrderCount, CancellationToken.None).ConfigureAwait(false);
+			result = await CheckoutService.RunCheckoutBurstAsync(OrderCount, CancellationToken.None).ConfigureAwait(false);
 		}
 		finally
 		{
-			IsBusy = false;
-			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+			// The continuation is off Blazor's renderer, so every component
+			// state change goes back through it
+			await InvokeAsync(() =>
+			{
+				Result = result;
+				IsBusy = false;
+
+				StateHasChanged();
+			}).ConfigureAwait(false);
 		}
 	}
 
@@ -45,24 +54,32 @@ public partial class CheckoutPageBase : ComponentBase
 		// plays that role so a deadlock does not wedge the app forever.
 		using var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
+		var message = "Could not reserve stock: not enough on hand.";
+
 		try
 		{
 			var reserved = await CheckoutService.ReserveStockAsync(0, timeoutCancellationTokenSource.Token).ConfigureAwait(false);
 
-			StockMessage = reserved
-				? "Reserved 1 of SKU-1000 and wrote the audit entry."
-				: "Could not reserve stock: not enough on hand.";
+			if (reserved)
+			{
+				message = "Reserved 1 of SKU-1000 and wrote the audit entry.";
+			}
 		}
 		catch (OperationCanceledException)
 		{
-			StockMessage = "Timed out after 5 seconds waiting for the ledger lock.\n"
+			message = "Timed out after 5 seconds waiting for the ledger lock.\n"
 				+ "No thread is blocked, because WaitAsync is awaited. The permit is simply never released.\n"
 				+ "Look at InventoryLedger.ReserveStockAsync and ask which lock it is waiting for.";
 		}
 		finally
 		{
-			IsBusy = false;
-			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+			await InvokeAsync(() =>
+			{
+				StockMessage = message;
+				IsBusy = false;
+
+				StateHasChanged();
+			}).ConfigureAwait(false);
 		}
 	}
 

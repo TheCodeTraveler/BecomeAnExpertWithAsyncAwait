@@ -56,37 +56,45 @@ public partial class ProductPageBase : ComponentBase
 			// each await waits for the previous one to finish. The page costs the
 			// sum of every latency instead of the slowest one.
 			var inventory = await InventoryService.GetInventoryAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-			SetPanel("Inventory", "ready", $"{inventory.InStock} in stock at {inventory.Warehouse}", stopwatch.Elapsed);
+			await SetPanelAsync("Inventory", "ready", $"{inventory.InStock} in stock at {inventory.Warehouse}", stopwatch.Elapsed).ConfigureAwait(false);
 
 			var pricing = await PricingService.GetPricingAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-			SetPanel("Pricing", "ready", $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch.Elapsed);
+			await SetPanelAsync("Pricing", "ready", $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch.Elapsed).ConfigureAwait(false);
 
 			var reviews = await ReviewsService.GetReviewsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-			SetPanel("Reviews", "ready", $"{reviews.AverageRating:F1} stars from {reviews.ReviewCount:N0} reviews", stopwatch.Elapsed);
+			await SetPanelAsync("Reviews", "ready", $"{reviews.AverageRating:F1} stars from {reviews.ReviewCount:N0} reviews", stopwatch.Elapsed).ConfigureAwait(false);
 
 			var shipping = await ShippingService.GetShippingAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-			SetPanel("Shipping", "ready", $"{shipping.Carrier}, arrives {shipping.EstimatedArrival:MMM d}", stopwatch.Elapsed);
+			await SetPanelAsync("Shipping", "ready", $"{shipping.Carrier}, arrives {shipping.EstimatedArrival:MMM d}", stopwatch.Elapsed).ConfigureAwait(false);
 
 			// ToDo Refactor: this service is down. Every call shares one try block,
 			// so its failure is the whole page's failure. Move it above Reviews and
 			// two more panels go blank. One flaky service should degrade one panel.
 			var recommendations = await RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-			SetPanel("Recommendations", "ready", string.Join(", ", recommendations.AlsoBought), stopwatch.Elapsed);
+			await SetPanelAsync("Recommendations", "ready", string.Join(", ", recommendations.AlsoBought), stopwatch.Elapsed).ConfigureAwait(false);
 		}
 		catch (HttpRequestException e)
 		{
-			PageError = $"{e.Message}. Every panel below it was never requested.";
+			// The continuation is off Blazor's renderer, so these writes go back through it
+			await InvokeAsync(() =>
+			{
+				PageError = $"{e.Message}. Every panel below it was never requested.";
 
-			// Anything still waiting when the load stopped will never arrive
-			MarkWaitingPanelsSkipped();
+				// Anything still waiting when the load stopped will never arrive
+				MarkWaitingPanelsSkipped();
+			}).ConfigureAwait(false);
 		}
 		finally
 		{
 			stopwatch.Stop();
-			TotalSeconds = stopwatch.Elapsed.TotalSeconds;
-			IsLoading = false;
 
-			await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+			await InvokeAsync(() =>
+			{
+				TotalSeconds = stopwatch.Elapsed.TotalSeconds;
+				IsLoading = false;
+
+				StateHasChanged();
+			}).ConfigureAwait(false);
 		}
 	}
 
@@ -109,13 +117,17 @@ public partial class ProductPageBase : ComponentBase
 		}
 	}
 
-	protected void SetPanel(string name, string status, string? detail, TimeSpan elapsed)
-	{
-		var index = Panels.FindIndex(panel => panel.Name == name);
-
-		if (index >= 0)
+	// Product.razor renders Panels with a foreach, and every write here arrives
+	// from a service continuation rather than from the renderer. Writing straight
+	// to the List<T> would bump its version mid-render, so the write is marshalled.
+	protected Task SetPanelAsync(string name, string status, string? detail, TimeSpan elapsed) =>
+		InvokeAsync(() =>
 		{
-			Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
-		}
-	}
+			var index = Panels.FindIndex(panel => panel.Name == name);
+
+			if (index >= 0)
+			{
+				Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
+			}
+		});
 }

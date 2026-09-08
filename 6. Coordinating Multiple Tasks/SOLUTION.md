@@ -13,10 +13,10 @@ The starter awaits each service on the same line that starts it:
 // each await waits for the previous one to finish. The page costs the
 // sum of every latency instead of the slowest one.
 var inventory = await InventoryService.GetInventoryAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-SetPanel("Inventory", "ready", $"{inventory.InStock} in stock at {inventory.Warehouse}", stopwatch.Elapsed);
+await SetPanelAsync("Inventory", "ready", $"{inventory.InStock} in stock at {inventory.Warehouse}", stopwatch.Elapsed).ConfigureAwait(false);
 
 var pricing = await PricingService.GetPricingAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-SetPanel("Pricing", "ready", $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch.Elapsed);
+await SetPanelAsync("Pricing", "ready", $"{pricing.YourPrice:C} (list {pricing.ListPrice:C})", stopwatch.Elapsed).ConfigureAwait(false);
 ```
 
 `await` does not start work. `InventoryService.GetInventoryAsync(...)` starts the work, and `await` only says "I have nothing else to do until this finishes." Putting both on one line means the pricing call cannot start until inventory has answered, and the reviews call cannot start until pricing has answered. The page costs 700ms + 900ms + 1200ms + 600ms + 800ms, totalling 4.2 seconds. The slowest single service is reviews at 1.2 seconds, so 3 of those 4.2 seconds are spent waiting for permission to begin.
@@ -28,18 +28,22 @@ The second problem is at the bottom of the same method:
     // so its failure is the whole page's failure. Move it above Reviews and
     // two more panels go blank. One flaky service should degrade one panel.
     var recommendations = await RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
-    SetPanel("Recommendations", "ready", string.Join(", ", recommendations.AlsoBought), stopwatch.Elapsed);
+    await SetPanelAsync("Recommendations", "ready", string.Join(", ", recommendations.AlsoBought), stopwatch.Elapsed).ConfigureAwait(false);
 }
 catch (HttpRequestException e)
 {
-    PageError = $"{e.Message}. Every panel below it was never requested.";
+    // The continuation is off Blazor's renderer, so these writes go back through it
+    await InvokeAsync(() =>
+    {
+        PageError = $"{e.Message}. Every panel below it was never requested.";
 
-    // Anything still waiting when the load stopped will never arrive
-    MarkWaitingPanelsSkipped();
+        // Anything still waiting when the load stopped will never arrive
+        MarkWaitingPanelsSkipped();
+    }).ConfigureAwait(false);
 }
 ```
 
-One `try` block covers all five calls. When the recommendations service throws, control jumps straight to the `catch`, the page sets a page-level error, and the last `SetPanel(...)` never runs at all, so the Recommendations card is marked `skipped` and reads `never requested`. Move that call above the reviews call and two more panels go blank. How much of the page dies has nothing to do with the failure and everything to do with where the call sits in the block.
+One `try` block covers all five calls. When the recommendations service throws, control jumps straight to the `catch`, the page sets a page-level error, and the last `SetPanelAsync(...)` never runs at all, so the Recommendations card is marked `skipped` and reads `never requested`. Move that call above the reviews call and two more panels go blank. How much of the page dies has nothing to do with the failure and everything to do with where the call sits in the block.
 
 ## 2. Start Every Call Before You Await Any of Them
 
@@ -86,20 +90,44 @@ async Task TrackPanelAsync<T>(string name, Task<T> serviceCall, Func<T, string> 
     {
         var result = await serviceCall.ConfigureAwait(false);
 
-        SetPanel(name, "ready", describe(result), stopwatch.Elapsed);
+        await SetPanelAsync(name, "ready", describe(result), stopwatch.Elapsed).ConfigureAwait(false);
     }
     catch (HttpRequestException e)
     {
-        SetPanel(name, "failed", e.Message, stopwatch.Elapsed);
+        await SetPanelAsync(name, "failed", e.Message, stopwatch.Elapsed).ConfigureAwait(false);
     }
 }
 ```
 
-`TrackPanelAsync<T>` takes the panel name, the already-started `Task<T>`, and a `Func<T, string>` that knows how to describe that service's result. The `try` covers exactly one service call, so a failure can only reach one `SetPanel(...)`. A successful call marks the panel `"ready"`; a failed call marks it `"failed"` and puts the service's message on the card, which is what makes the Recommendations card render in the failure style.
+`TrackPanelAsync<T>` takes the panel name, the already-started `Task<T>`, and a `Func<T, string>` that knows how to describe that service's result. The `try` covers exactly one service call, so a failure can only reach one `SetPanelAsync(...)`. A successful call marks the panel `"ready"`; a failed call marks it `"failed"` and puts the service's message on the card, which is what makes the Recommendations card render in the failure style.
 
 Catch the exception you actually expect. `HttpRequestException` is what a failing HTTP dependency throws. A bare `catch (Exception)` here would also swallow programming errors you want to see.
 
 Because every failure is handled inside the wrapper, the `Task` the wrapper returns always completes successfully. That matters for the next step.
+
+One detail in the wrapper is worth stopping on. `SetPanelAsync(...)` is awaited, and it is awaited because it marshals its own write:
+
+```cs
+// All five wrappers write here at once, from whichever Thread Pool thread
+// their own service finished on, while Product.razor renders Panels with a
+// foreach. Marshalling the write keeps every mutation on the renderer.
+protected Task SetPanelAsync(string name, string status, string? detail, TimeSpan elapsed) =>
+    InvokeAsync(() =>
+    {
+        var index = Panels.FindIndex(panel => panel.Name == name);
+
+        if (index >= 0)
+        {
+            Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
+        }
+    });
+```
+
+The moment you start all five calls at once, this write stops being single-threaded. Every wrapper resumes on whatever Thread Pool thread its own service happened to finish on, and all five reach for the same `List<PanelState>`.
+
+Writing through the `List<T>` indexer increments the list's internal version counter, and `Product.razor` renders that same list with `@foreach`. A `List<T>` enumerator compares that version on every `MoveNext()`, so a background write landing in the middle of a render throws `InvalidOperationException: Collection was modified; enumeration operation may not execute`. It is a narrow window and you will not hit it on every run, which is exactly what makes it worth fixing on purpose rather than discovering in production.
+
+`InvokeAsync(...)` closes the window by putting the write on Blazor's renderer, where the render also runs. The renderer processes one work item at a time, so a write can no longer overlap a render. Note that it does not call `StateHasChanged()`. Recording the panel and repainting the page are two separate decisions here, and the next step is where the repaint belongs.
 
 ## 4. Stream the Completions With Task.WhenEach
 
@@ -120,7 +148,9 @@ await foreach (var finishedPanel in Task.WhenEach(panelTasks))
 
 `Task.WhenEach` yields the `Task`, not the result, which is why the body awaits `finishedPanel`. Step 3 already caught the only failure the wrapper can produce, so that `await` observes completion and nothing more.
 
-`InvokeAsync(StateHasChanged)` is what turns each completion into a repaint. Every `await` in this method uses `ConfigureAwait(false)`, so the continuation may not be on Blazor's renderer. `SetPanel(...)` only overwrites one entry in the component's own list, and each panel's write happens before its own task completes, so the render that follows always sees it. What has to go back through `InvokeAsync(...)` is the render itself, which is why `StateHasChanged` is wrapped and `SetPanel(...)` is not.
+`InvokeAsync(StateHasChanged)` is what turns each completion into a repaint, and putting it here rather than inside `SetPanelAsync(...)` is deliberate. Every `await` in this method uses `ConfigureAwait(false)`, so the continuation may not be on Blazor's renderer, and the render has to be marshalled for the same reason the panel write was.
+
+The ordering works out because `SetPanelAsync(...)` is awaited inside the wrapper. The panel write is already on the renderer and already done before that wrapper's task completes, so by the time `Task.WhenEach` hands the task back and this loop repaints, the new panel is there to draw. One repaint per completion, and each one draws exactly the panel that just arrived.
 
 ## 5. Stop the Page From Owning a Panel's Failure
 
@@ -151,10 +181,14 @@ And the `finally` block is gone, because there is no `try` left for it to belong
 
 ```cs
     stopwatch.Stop();
-    TotalSeconds = stopwatch.Elapsed.TotalSeconds;
-    IsLoading = false;
 
-    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await InvokeAsync(() =>
+    {
+        TotalSeconds = stopwatch.Elapsed.TotalSeconds;
+        IsLoading = false;
+
+        StateHasChanged();
+    }).ConfigureAwait(false);
 }
 ```
 
