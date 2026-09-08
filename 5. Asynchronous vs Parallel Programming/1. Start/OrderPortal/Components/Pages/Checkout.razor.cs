@@ -65,7 +65,7 @@ public partial class CheckoutPageBase : ComponentBase
 				message = "Reserved 1 of SKU-1000 and wrote the audit entry.";
 			}
 		}
-		catch (OperationCanceledException)
+		catch (OperationCanceledException) when (timeoutCancellationTokenSource.IsCancellationRequested)
 		{
 			message = "Timed out after 5 seconds waiting for the ledger lock.\n"
 				+ "No thread is blocked, because WaitAsync is awaited. The permit is simply never released.\n"
