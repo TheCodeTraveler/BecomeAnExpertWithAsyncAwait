@@ -11,7 +11,7 @@ public sealed class CheckoutService(OrderMetrics metrics, TaxRateProvider taxRat
 
 	public void Dispose() => _burstSemaphore.Dispose();
 
-	// Runs `orderCount` checkouts at the same time, the way a burst of real
+	// Runs `orderCount` checkouts with bounded concurrency, the way a burst of real
 	// traffic would. Every checkout touches the same singleton services.
 	public async Task<CheckoutResult> RunCheckoutBurstAsync(int orderCount, CancellationToken token)
 	{
