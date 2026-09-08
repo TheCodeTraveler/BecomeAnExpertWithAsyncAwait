@@ -12,7 +12,7 @@ public static class Program
 			.AddInteractiveServerComponents();
 
 		// Registered as singletons, so one instance is shared by every
-		// concurrent request. That ensures their state a shared resource.
+		// concurrent request. That ensures their state is a shared resource.
 		builder.Services.AddSingleton<OrderMetrics>();
 		builder.Services.AddSingleton<TaxRateProvider>();
 		builder.Services.AddSingleton<InventoryLedger>();
