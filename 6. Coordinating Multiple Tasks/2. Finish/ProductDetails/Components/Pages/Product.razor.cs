@@ -22,6 +22,9 @@ public partial class ProductPageBase : ComponentBase
 	[Inject]
 	public required RecommendationsService RecommendationsService { get; init; }
 
+	[Inject]
+	public required ILogger<ProductPageBase> Logger { get; init; }
+
 	public bool IsLoading { get; private set; }
 
 	public double? TotalSeconds { get; private set; }
@@ -74,7 +77,7 @@ public partial class ProductPageBase : ComponentBase
 		// the moment its own service answers instead of waiting for the slowest.
 		await foreach (var finishedPanel in Task.WhenEach(panelTasks))
 		{
-			// Each task already recorded its own panel and swallowed its own
+			// Each task already recorded its own panel and logged its own
 			// failure, so awaiting here only observes completion.
 			await finishedPanel.ConfigureAwait(false);
 
@@ -104,7 +107,11 @@ public partial class ProductPageBase : ComponentBase
 		}
 		catch (HttpRequestException e)
 		{
-			await SetPanelAsync(name, "failed", e.Message, stopwatch.Elapsed).ConfigureAwait(false);
+			// The full exception goes to the log, where it can be acted on. The card
+			// gets a fixed message the page owns, so no exception text reaches the browser.
+			Logger.LogError(e, "The {PanelName} service failed while loading the product page.", name);
+
+			await SetPanelAsync(name, "failed", "The service did not respond. Try again in a moment.", stopwatch.Elapsed).ConfigureAwait(false);
 		}
 	}
 

@@ -37,14 +37,14 @@ Now watch the app in the browser. The page loads once when it opens, and the **L
 3. The total page load tile reads **4.2s**.
 4. The per-card timings read 0.7s, 1.6s, 2.8s, and 3.4s. Those are running totals, and they add up to the sum of every service call.
 5. The Recommendations card shows `--` and the words `never requested` with a red left edge. Its service was next in line and never got called.
-6. A yellow banner sits across the top of the page: "The page load stopped. Recommendations service returned 503 Service Unavailable. Every panel below it was never requested."
+6. A yellow banner sits across the top of the page: "The page load stopped. A backend service did not respond. Every panel below it was never requested." The banner does not name the service. The terminal running the app does: the logged `HttpRequestException` reads "Recommendations service returned 503 Service Unavailable".
 
 Pay attention to these clues:
 
 1. Every `await` in `LoadProductAsync()` sits on the same line that starts the call, so the next service cannot start until the previous one has answered.
 2. The five services are injected separately and share no state, so nothing about the data forces this order.
 3. The slowest single service takes 1.2 seconds, and 1.2 is a lot smaller than 4.2.
-4. The method has five `SetPanel(...)` calls but only four of them are ever reached, because the call above the fifth one throws. `InvokeAsync(StateHasChanged)` only runs before the work starts and after all of it ends, so nothing repaints in between.
+4. The method has five `SetPanelAsync(...)` calls but only four of them are ever reached, because the call above the fifth one throws. `InvokeAsync(StateHasChanged)` only runs before the work starts and after all of it ends, so nothing repaints in between.
 5. One `catch (HttpRequestException)` covers all five calls, so the first failure skips everything after it.
 6. Move the recommendations call above the reviews call and two more cards go blank. How much of the page dies is decided by the shape of the code, not by the failure.
 
@@ -62,7 +62,7 @@ Requirements:
 2. Coordinate them with `Task.WhenAll`, `Task.WhenAny`, or `Task.WhenEach`.
 3. Keep the total page load at the cost of the slowest service, not the sum of all five.
 4. Give each call its own error handling so a failure is recorded against one card.
-5. Set the failing card's status to `"failed"` and put the service's message on that card.
+5. Set the failing card's status to `"failed"` and put a message the page owns on that card. Keep logging the full exception server-side the way the starter already does, and keep exception text out of the browser.
 6. Repaint the page as each service answers instead of once at the end.
 7. Keep each card's timing the elapsed time at which that service answered.
 8. Stop reporting a single card's failure as a failure of the whole page.
@@ -75,7 +75,7 @@ Acceptance checks:
 2. The total page load tile reads about **1.2s** instead of 4.2s.
 3. Cards fill in one at a time as their services answer, rather than all appearing together at the end.
 4. The per-card timings read roughly 0.6s, 0.7s, 0.8s, 0.9s, and 1.2s. No card reports 1.6s, 2.8s, or 3.4s.
-5. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with the reason underneath and its own timing, in the failure style with a red left edge. Every other panel is unaffected.
+5. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with a failure message and its own timing, in the failure style with a red left edge, and the terminal running the app carries the full `HttpRequestException`. Every other panel is unaffected.
 6. The yellow banner across the top of the page is gone.
 7. Clicking **Load product page** again gives the same result every time.
 8. Your code is ready to compare with **2. Finish/ProductDetails**.

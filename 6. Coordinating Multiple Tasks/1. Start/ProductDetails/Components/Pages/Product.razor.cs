@@ -22,6 +22,9 @@ public partial class ProductPageBase : ComponentBase
 	[Inject]
 	public required RecommendationsService RecommendationsService { get; init; }
 
+	[Inject]
+	public required ILogger<ProductPageBase> Logger { get; init; }
+
 	public bool IsLoading { get; private set; }
 
 	public double? TotalSeconds { get; private set; }
@@ -75,10 +78,14 @@ public partial class ProductPageBase : ComponentBase
 		}
 		catch (HttpRequestException e)
 		{
+			// The full exception goes to the log, where it can be acted on. The banner
+			// gets a fixed message the page owns, so no exception text reaches the browser.
+			Logger.LogError(e, "The product page load stopped because a backend service failed.");
+
 			// The continuation is off Blazor's renderer, so these writes go back through it
 			await InvokeAsync(() =>
 			{
-				PageError = $"{e.Message}. Every panel below it was never requested.";
+				PageError = "A backend service did not respond. Every panel below it was never requested.";
 
 				// Anything still waiting when the load stopped will never arrive
 				MarkWaitingPanelsSkipped();

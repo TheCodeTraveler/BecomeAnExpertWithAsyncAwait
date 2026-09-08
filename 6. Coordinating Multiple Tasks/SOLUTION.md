@@ -32,10 +32,14 @@ The second problem is at the bottom of the same method:
 }
 catch (HttpRequestException e)
 {
+    // The full exception goes to the log, where it can be acted on. The banner
+    // gets a fixed message the page owns, so no exception text reaches the browser.
+    Logger.LogError(e, "The product page load stopped because a backend service failed.");
+
     // The continuation is off Blazor's renderer, so these writes go back through it
     await InvokeAsync(() =>
     {
-        PageError = $"{e.Message}. Every panel below it was never requested.";
+        PageError = "A backend service did not respond. Every panel below it was never requested.";
 
         // Anything still waiting when the load stopped will never arrive
         MarkWaitingPanelsSkipped();
@@ -94,12 +98,16 @@ async Task TrackPanelAsync<T>(string name, Task<T> serviceCall, Func<T, string> 
     }
     catch (HttpRequestException e)
     {
-        await SetPanelAsync(name, "failed", e.Message, stopwatch.Elapsed).ConfigureAwait(false);
+        // The full exception goes to the log, where it can be acted on. The card
+        // gets a fixed message the page owns, so no exception text reaches the browser.
+        Logger.LogError(e, "The {PanelName} service failed while loading the product page.", name);
+
+        await SetPanelAsync(name, "failed", "The service did not respond. Try again in a moment.", stopwatch.Elapsed).ConfigureAwait(false);
     }
 }
 ```
 
-`TrackPanelAsync<T>` takes the panel name, the already-started `Task<T>`, and a `Func<T, string>` that knows how to describe that service's result. The `try` covers exactly one service call, so a failure can only reach one `SetPanelAsync(...)`. A successful call marks the panel `"ready"`; a failed call marks it `"failed"` and puts the service's message on the card, which is what makes the Recommendations card render in the failure style.
+`TrackPanelAsync<T>` takes the panel name, the already-started `Task<T>`, and a `Func<T, string>` that knows how to describe that service's result. The `try` covers exactly one service call, so a failure can only reach one `SetPanelAsync(...)`. A successful call marks the panel `"ready"`; a failed call logs the full exception server-side and marks the panel `"failed"` with a message the page owns. It is the `"failed"` status, not the text, that makes the Recommendations card render in the failure style: `Product.razor` maps `"failed"` to the `bad` card class. Notice that the wrapper knows which panel it is wrapping, so its log line can name the service the page-level `catch` never could.
 
 Catch the exception you actually expect. `HttpRequestException` is what a failing HTTP dependency throws. A bare `catch (Exception)` here would also swallow programming errors you want to see.
 
@@ -136,7 +144,7 @@ Writing through the `List<T>` indexer increments the list's internal version cou
 // the moment its own service answers instead of waiting for the slowest.
 await foreach (var finishedPanel in Task.WhenEach(panelTasks))
 {
-    // Each task already recorded its own panel and swallowed its own
+    // Each task already recorded its own panel and logged its own
     // failure, so awaiting here only observes completion.
     await finishedPanel.ConfigureAwait(false);
 
@@ -241,7 +249,7 @@ Open [http://localhost:5010](http://localhost:5010) and confirm each of these:
 
 1. Shipping lands first at 0.6s.
 2. Inventory follows at 0.7s.
-3. Recommendations fails at 0.8s, and its card turns red with the 503 message on it.
+3. Recommendations fails at 0.8s, and its card turns red with `Unavailable`, a failure message, and its own timing. The 503 itself is in the terminal running the app, not in the browser.
 4. Pricing lands at 0.9s.
 5. Reviews lands last at 1.2s.
 6. The total page load tile reads 1.2s.
