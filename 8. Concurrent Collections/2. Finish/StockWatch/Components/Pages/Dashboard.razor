@@ -4,38 +4,38 @@
 <PageTitle>StockWatch</PageTitle>
 
 <section class="dashboard">
-	<header class="hero-panel">
-		<div class="hero-copy">
-			<p class="eyebrow">StockWatch</p>
-			<h1>Market dashboard</h1>
-			<p class="hero-summary">Every symbol refreshes in parallel on Thread Pool threads.</p>
-		</div>
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">StockWatch</p>
+            <h1>Market dashboard</h1>
+            <p class="hero-summary">Every symbol refreshes in parallel on Thread Pool threads.</p>
+        </div>
 
-		<div class="status-tile" aria-live="polite">
-			<span class="status-value">@RefreshCount</span>
-			<span class="status-label">quotes applied</span>
-		</div>
-	</header>
+        <div class="status-tile" aria-live="polite">
+            <span class="status-value">@RefreshCount</span>
+            <span class="status-label">quotes applied</span>
+        </div>
+    </header>
 
-	<div class="ticker-grid" aria-live="polite">
-		@foreach (var symbol in Symbols)
-		{
-			<article class="ticker-card @symbol.TrendCssClass" @key="symbol.Symbol">
-				<div class="ticker-heading">
-					<span class="ticker-symbol">@symbol.Symbol</span>
-					<span class="ticker-company">@symbol.CompanyName</span>
-				</div>
+    <div class="ticker-grid" aria-live="polite">
+        @foreach (var symbol in Symbols)
+        {
+            <article class="ticker-card @symbol.TrendCssClass" @key="symbol.Symbol">
+                <div class="ticker-heading">
+                    <span class="ticker-symbol">@symbol.Symbol</span>
+                    <span class="ticker-company">@symbol.CompanyName</span>
+                </div>
 
-				@if (symbol.Quote is null)
-				{
-					<span class="ticker-price">--</span>
-				}
-				else
-				{
-					<span class="ticker-price">@symbol.Quote.CurrentPrice.ToString("C")</span>
-					<span class="ticker-change">@symbol.Quote.PercentChange.ToString("+0.00;-0.00;0.00")%</span>
-				}
-			</article>
-		}
-	</div>
+                @if (symbol.Quote is null)
+                {
+                    <span class="ticker-price">--</span>
+                }
+                else
+                {
+                    <span class="ticker-price">@symbol.Quote.CurrentPrice.ToString("C")</span>
+                    <span class="ticker-change">@symbol.Quote.PercentChange.ToString("+0.00;-0.00;0.00")%</span>
+                }
+            </article>
+        }
+    </div>
 </section>

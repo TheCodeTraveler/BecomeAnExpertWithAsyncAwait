@@ -4,75 +4,75 @@
 <PageTitle>ProductDetails</PageTitle>
 
 <section class="page">
-	<header class="hero-panel">
-		<div class="hero-copy">
-			<p class="eyebrow">ProductDetails</p>
-			<h1>Wireless Headphones</h1>
-			<p class="hero-summary">This page needs five independent backend services. Watch how long it takes and when each panel appears.</p>
-		</div>
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">ProductDetails</p>
+            <h1>Wireless Headphones</h1>
+            <p class="hero-summary">This page needs five independent backend services. Watch how long it takes and when each panel appears.</p>
+        </div>
 
-		<div class="hero-actions">
-			<button class="action" type="button" disabled="@IsLoading" @onclick="LoadProductAsync">
-				@if (IsLoading)
-				{
-					<span class="spinner" aria-hidden="true"></span>
-				}
-				@(IsLoading ? "Loading" : "Load product page")
-			</button>
+        <div class="hero-actions">
+            <button class="action" type="button" disabled="@IsLoading" @onclick="LoadProductAsync">
+                @if (IsLoading)
+                {
+                    <span class="spinner" aria-hidden="true"></span>
+                }
+                @(IsLoading ? "Loading" : "Load product page")
+            </button>
 
-			@if (TotalSeconds is not null)
-			{
-				<div class="status-tile">
-					<span class="status-value">@TotalSeconds.Value.ToString("F1")s</span>
-					<span class="status-label">total page load</span>
-				</div>
-			}
-		</div>
-	</header>
+            @if (TotalSeconds is not null)
+            {
+                <div class="status-tile">
+                    <span class="status-value">@TotalSeconds.Value.ToString("F1")s</span>
+                    <span class="status-label">total page load</span>
+                </div>
+            }
+        </div>
+    </header>
 
-	@if (PageError is not null)
-	{
-		<div class="warning-banner" role="alert">
-			<strong>The page load stopped.</strong>
-			<p>@PageError</p>
-		</div>
-	}
+    @if (PageError is not null)
+    {
+        <div class="warning-banner" role="alert">
+            <strong>The page load stopped.</strong>
+            <p>@PageError</p>
+        </div>
+    }
 
-	<div class="panel">
-		<h2>Page panels</h2>
-		<p class="panel-hint">Each panel is filled by its own backend service. The slowest service takes 1.2 seconds, and the recommendations service is down.</p>
+    <div class="panel">
+        <h2>Page panels</h2>
+        <p class="panel-hint">Each panel is filled by its own backend service. The slowest service takes 1.2 seconds, and the recommendations service is down.</p>
 
-		<div class="result-grid">
-			@foreach (var panel in Panels)
-			{
-				<div class="result-card @(panel.Status switch { "ready" => "ok", "failed" => "bad", "skipped" => "bad", _ => "pending" })" @key="panel.Name">
-					<span class="result-label">@panel.Name</span>
+        <div class="result-grid">
+            @foreach (var panel in Panels)
+            {
+                <div class="result-card @(panel.Status switch { "ready" => "ok", "failed" => "bad", "skipped" => "bad", _ => "pending" })" @key="panel.Name">
+                    <span class="result-label">@panel.Name</span>
 
-					@switch (panel.Status)
-					{
-						case "waiting":
-							<span class="result-value">--</span>
-							<span class="result-note">waiting</span>
-							break;
+                    @switch (panel.Status)
+                    {
+                        case "waiting":
+                            <span class="result-value">--</span>
+                            <span class="result-note">waiting</span>
+                            break;
 
-						case "skipped":
-							<span class="result-value">--</span>
-							<span class="result-note">never requested</span>
-							break;
+                        case "skipped":
+                            <span class="result-value">--</span>
+                            <span class="result-note">never requested</span>
+                            break;
 
-						case "failed":
-							<span class="result-value">Unavailable</span>
-							<span class="result-note">@panel.Detail</span>
-							<span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
-							break;
+                        case "failed":
+                            <span class="result-value">Unavailable</span>
+                            <span class="result-note">@panel.Detail</span>
+                            <span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
+                            break;
 
-						default:
-							<span class="result-note">@panel.Detail</span>
-							<span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
-							break;
-					}
-				</div>
-			}
-		</div>
-	</div>
+                        default:
+                            <span class="result-note">@panel.Detail</span>
+                            <span class="result-note timing">@(panel.Seconds?.ToString("F1"))s</span>
+                            break;
+                    }
+                </div>
+            }
+        </div>
+    </div>
 </section>

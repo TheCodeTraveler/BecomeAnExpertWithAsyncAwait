@@ -4,84 +4,84 @@
 <PageTitle>ImportPortal</PageTitle>
 
 <section class="page">
-	<header class="hero-panel">
-		<div class="hero-copy">
-			<p class="eyebrow">ImportPortal</p>
-			<h1>Nightly order import</h1>
-			<p class="hero-summary">Validate @RowCount.ToString("N0") uploaded rows, enrich each one from the customer API, then summarize by region.</p>
-		</div>
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">ImportPortal</p>
+            <h1>Nightly order import</h1>
+            <p class="hero-summary">Validate @RowCount.ToString("N0") uploaded rows, enrich each one from the customer API, then summarize by region.</p>
+        </div>
 
-		<div class="hero-actions">
-			<button class="action" type="button" disabled="@IsBusy" @onclick="RunImportAsync">
-				@if (IsBusy)
-				{
-					<span class="spinner" aria-hidden="true"></span>
-				}
-				@(IsBusy ? "Importing" : "Run import")
-			</button>
+        <div class="hero-actions">
+            <button class="action" type="button" disabled="@IsBusy" @onclick="RunImportAsync">
+                @if (IsBusy)
+                {
+                    <span class="spinner" aria-hidden="true"></span>
+                }
+                @(IsBusy ? "Importing" : "Run import")
+            </button>
 
-			<div class="status-tile">
-				<span class="status-value">@Environment.ProcessorCount</span>
-				<span class="status-label">processors available</span>
-			</div>
-		</div>
-	</header>
+            <div class="status-tile">
+                <span class="status-value">@Environment.ProcessorCount</span>
+                <span class="status-label">processors available</span>
+            </div>
+        </div>
+    </header>
 
-	@if (Report is null && !IsBusy)
-	{
-		<div class="panel">
-			<h2>What to look for</h2>
-			<p class="panel-hint">Run the import and read two things: how long each stage takes, and whether every row was actually validated and enriched. A stage that finishes suspiciously fast may not have done anything.</p>
-		</div>
-	}
+    @if (Report is null && !IsBusy)
+    {
+        <div class="panel">
+            <h2>What to look for</h2>
+            <p class="panel-hint">Run the import and read two things: how long each stage takes, and whether every row was actually validated and enriched. A stage that finishes suspiciously fast may not have done anything.</p>
+        </div>
+    }
 
-	@if (Report is not null)
-	{
-		<div class="panel">
-			<h2>Import stages</h2>
-			<p class="panel-hint">Every row must be validated and enriched. Anything less than @RowCount.ToString("N0") means work was skipped.</p>
+    @if (Report is not null)
+    {
+        <div class="panel">
+            <h2>Import stages</h2>
+            <p class="panel-hint">Every row must be validated and enriched. Anything less than @RowCount.ToString("N0") means work was skipped.</p>
 
-			<div class="result-grid">
-				<div class="result-card @(Report.RowsValidated == RowCount ? "ok" : "bad")">
-					<span class="result-label">Validated</span>
-					<span class="result-value">@Report.RowsValidated.ToString("N0")</span>
-					<span class="result-note">of @RowCount.ToString("N0") in @Report.ValidateElapsed.TotalSeconds.ToString("F2")s</span>
-				</div>
+            <div class="result-grid">
+                <div class="result-card @(Report.RowsValidated == RowCount ? "ok" : "bad")">
+                    <span class="result-label">Validated</span>
+                    <span class="result-value">@Report.RowsValidated.ToString("N0")</span>
+                    <span class="result-note">of @RowCount.ToString("N0") in @Report.ValidateElapsed.TotalSeconds.ToString("F2")s</span>
+                </div>
 
-				<div class="result-card @(Report.RowsEnriched == RowCount ? "ok" : "bad")">
-					<span class="result-label">Enriched</span>
-					<span class="result-value">@Report.RowsEnriched.ToString("N0")</span>
-					<span class="result-note">of @RowCount.ToString("N0") in @Report.EnrichElapsed.TotalSeconds.ToString("F2")s</span>
-				</div>
+                <div class="result-card @(Report.RowsEnriched == RowCount ? "ok" : "bad")">
+                    <span class="result-label">Enriched</span>
+                    <span class="result-value">@Report.RowsEnriched.ToString("N0")</span>
+                    <span class="result-note">of @RowCount.ToString("N0") in @Report.EnrichElapsed.TotalSeconds.ToString("F2")s</span>
+                </div>
 
-				<div class="result-card">
-					<span class="result-label">Report</span>
-					<span class="result-value timing">@Report.ReportElapsed.TotalSeconds.ToString("F2")s</span>
-					<span class="result-note">grouped by region</span>
-				</div>
+                <div class="result-card">
+                    <span class="result-label">Report</span>
+                    <span class="result-value timing">@Report.ReportElapsed.TotalSeconds.ToString("F2")s</span>
+                    <span class="result-note">grouped by region</span>
+                </div>
 
-				<div class="result-card">
-					<span class="result-label">Total</span>
-					<span class="result-value timing">@((Report.ValidateElapsed + Report.EnrichElapsed + Report.ReportElapsed).TotalSeconds.ToString("F2"))s</span>
-					<span class="result-note">end to end</span>
-				</div>
-			</div>
-		</div>
+                <div class="result-card">
+                    <span class="result-label">Total</span>
+                    <span class="result-value timing">@((Report.ValidateElapsed + Report.EnrichElapsed + Report.ReportElapsed).TotalSeconds.ToString("F2"))s</span>
+                    <span class="result-note">end to end</span>
+                </div>
+            </div>
+        </div>
 
-		<div class="panel">
-			<h2>Regional summary</h2>
-			<p class="panel-hint">Average risk is only meaningful once every row has been validated.</p>
+        <div class="panel">
+            <h2>Regional summary</h2>
+            <p class="panel-hint">Average risk is only meaningful once every row has been validated.</p>
 
-			<div class="result-grid">
-				@foreach (var total in Report.RegionTotals)
-				{
-					<div class="result-card" @key="total.Region">
-						<span class="result-label">@total.Region</span>
-						<span class="result-value">@total.Revenue.ToString("C0")</span>
-						<span class="result-note">@total.Orders.ToString("N0") orders, avg risk @total.AverageRisk.ToString("N0")</span>
-					</div>
-				}
-			</div>
-		</div>
-	}
+            <div class="result-grid">
+                @foreach (var total in Report.RegionTotals)
+                {
+                    <div class="result-card" @key="total.Region">
+                        <span class="result-label">@total.Region</span>
+                        <span class="result-value">@total.Revenue.ToString("C0")</span>
+                        <span class="result-note">@total.Orders.ToString("N0") orders, avg risk @total.AverageRisk.ToString("N0")</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
 </section>
