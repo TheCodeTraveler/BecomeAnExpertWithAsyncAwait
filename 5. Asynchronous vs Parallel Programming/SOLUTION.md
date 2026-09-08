@@ -10,7 +10,7 @@ Before changing a line, notice why these bugs exist at all. Four services are re
 
 ```cs
 // Registered as singletons, so one instance is shared by every
-// concurrent request. That is what makes their state a shared resource.
+// concurrent request. That ensures their state is a shared resource.
 builder.Services.AddSingleton<OrderMetrics>();
 builder.Services.AddSingleton<TaxRateProvider>();
 builder.Services.AddSingleton<InventoryLedger>();
@@ -30,8 +30,8 @@ The starter records an order like this:
 // same value before either writes, and one order silently disappears.
 public void RecordOrder(decimal orderTotal)
 {
- _ordersPlaced++;
- _revenue += orderTotal;
+    _ordersPlaced++;
+    _revenue += orderTotal;
 }
 ```
 
@@ -61,39 +61,39 @@ readonly Lock _revenueLock = new();
 Here is the finished `OrderMetrics` in full. Note that the reads are guarded too. `OrdersPlaced` uses `Volatile.Read` so the getter cannot hand back a stale cached value, and `Revenue` reads inside the same lock that writes it, so it can never observe a half written `decimal`. Reads matter as much as writes:
 
 ```cs
- public int OrdersPlaced => Volatile.Read(ref _ordersPlaced);
+    public int OrdersPlaced => Volatile.Read(ref _ordersPlaced);
 
- public decimal Revenue
- {
-  get
-  {
-   lock (_revenueLock)
-   {
-    return _revenue;
-   }
-  }
- }
+    public decimal Revenue
+    {
+        get
+        {
+            lock (_revenueLock)
+            {
+                return _revenue;
+            }
+        }
+    }
 
- public void RecordOrder(decimal orderTotal)
- {
-  // One atomic instruction. Nothing can slip between the read and the write.
-  Interlocked.Increment(ref _ordersPlaced);
+    public void RecordOrder(decimal orderTotal)
+    {
+        // One atomic instruction. Nothing can slip between the read and the write.
+        Interlocked.Increment(ref _ordersPlaced);
 
-  lock (_revenueLock)
-  {
-   _revenue += orderTotal;
-  }
- }
+        lock (_revenueLock)
+        {
+            _revenue += orderTotal;
+        }
+    }
 
- public void Reset()
- {
-  Interlocked.Exchange(ref _ordersPlaced, 0);
+    public void Reset()
+    {
+        Interlocked.Exchange(ref _ordersPlaced, 0);
 
-  lock (_revenueLock)
-  {
-   _revenue = 0;
-  }
- }
+        lock (_revenueLock)
+        {
+            _revenue = 0;
+        }
+    }
 ```
 
 `Reset()` gets the same treatment. It runs at the start of every burst, so it is shared state too.
@@ -103,14 +103,14 @@ Here is the finished `OrderMetrics` in full. Note that the reads are guarded too
 The starter caches the rate table in a nullable field:
 
 ```cs
- // ToDo Refactor: two threads can both find this null and both build the table
- IReadOnlyDictionary<string, decimal>? _rates;
+    // ToDo Refactor: two threads can both find this null and both build the table
+    IReadOnlyDictionary<string, decimal>? _rates;
 ```
 
 ```cs
-  // ToDo Refactor: `??=` is not atomic. Under load this runs BuildRates()
-  // many times, and every caller pays the full build cost.
-  _rates ??= BuildRates();
+        // ToDo Refactor: `??=` is not atomic. Under load this runs BuildRates()
+        // many times, and every caller pays the full build cost.
+        _rates ??= BuildRates();
 ```
 
 `??=` reads as one operation and compiles into two: check whether `_rates` is null, and if it is, assign it. `Parallel.ForEachAsync` runs one checkout per core by default, so on a 16 core machine 16 threads got between the check and the assignment, `BuildRates()` ran 16 times, and each of them paid the full 120 millisecond cost. Your own run shows one build per core, so the number on your screen is your core count.
@@ -118,26 +118,26 @@ The starter caches the rate table in a nullable field:
 `Lazy<T>` exists for exactly this. Its default thread safety mode, `LazyThreadSafetyMode.ExecutionAndPublication`, guarantees the factory runs exactly once and that every caller gets the same instance:
 
 ```cs
- // Lazy<T> guarantees the factory runs exactly once no matter how many threads
- // hit Value at the same time. That is its default thread safety mode,
- // LazyThreadSafetyMode.ExecutionAndPublication.
- Lazy<IReadOnlyDictionary<string, decimal>> _rates;
+    // Lazy<T> guarantees the factory runs exactly once no matter how many threads
+    // hit Value at the same time. That is its default thread safety mode,
+    // LazyThreadSafetyMode.ExecutionAndPublication.
+    Lazy<IReadOnlyDictionary<string, decimal>> _rates;
 
- public TaxRateProvider()
- {
-  _rates = CreateRatesLazy();
- }
+    public TaxRateProvider()
+    {
+        _rates = CreateRatesLazy();
+    }
 ```
 
 `GetRate(string)` then just asks for `Value`. The first caller to reach it runs the factory while the rest wait, and every later call is a plain field read:
 
 ```cs
- public decimal GetRate(string region)
- {
-  Interlocked.Increment(ref _lookups);
+    public decimal GetRate(string region)
+    {
+        Interlocked.Increment(ref _lookups);
 
-  return _rates.Value.TryGetValue(region, out var rate) ? rate : 0m;
- }
+        return _rates.Value.TryGetValue(region, out var rate) ? rate : 0m;
+    }
 ```
 
 The lookup counter gets `Interlocked.Increment` for the same reason the order count did.
@@ -147,15 +147,15 @@ The lookup counter gets `Interlocked.Increment` for the same reason the order co
 `Reset()` cannot set a `Lazy<T>` back to "not created yet", so it hands out a fresh one:
 
 ```cs
- public void Reset()
- {
-  Interlocked.Exchange(ref _lookups, 0);
-  Interlocked.Exchange(ref _builds, 0);
+    public void Reset()
+    {
+        Interlocked.Exchange(ref _lookups, 0);
+        Interlocked.Exchange(ref _builds, 0);
 
-  _rates = CreateRatesLazy();
- }
+        _rates = CreateRatesLazy();
+    }
 
- Lazy<IReadOnlyDictionary<string, decimal>> CreateRatesLazy() => new(BuildRates);
+    Lazy<IReadOnlyDictionary<string, decimal>> CreateRatesLazy() => new(BuildRates);
 ```
 
 That keeps the demo repeatable. Press the button a second time and the table is built exactly once again, not zero times and not once per core.
@@ -165,8 +165,6 @@ That keeps the demo repeatable. Press the button a second time and the table is 
 That "can only" is a guarantee rather than a hope, and it is worth seeing where it comes from. The Run button is disabled while a burst is running, but a disabled button only covers one browser tab, and `CheckoutService` is a singleton that every tab shares. So the burst takes a lock of its own:
 
 ```cs
-// SemaphoreSlim rather than `lock`, because the burst is awaited.
-// The unit of exclusion is the whole run: reset, measure, then read.
 await _burstSemaphore.WaitAsync(token).ConfigureAwait(false);
 ```
 
@@ -177,10 +175,10 @@ This one is not part of your challenge. It is in **1. Start** and **2. Finish** 
 The counters are read through `Volatile.Read`. `RunCheckoutBurstAsync(int, CancellationToken)` awaits the burst to completion before it reads them, and that `await` is already a memory barrier, but these are public getters on a singleton and any thread can call them at any time. Nothing forces the compiler or the CPU to hand a reader the freshest value of a field another thread is writing, and `Volatile.Read` is how you say you want it:
 
 ```cs
- public int Lookups => Volatile.Read(ref _lookups);
+    public int Lookups => Volatile.Read(ref _lookups);
 
- // How many times the expensive table was actually built. Always 1.
- public int Builds => Volatile.Read(ref _builds);
+    // How many times the expensive table was actually built. Always 1.
+    public int Builds => Volatile.Read(ref _builds);
 ```
 
 ## 6. Read the Deadlock Before Fixing It
@@ -188,10 +186,10 @@ The counters are read through `Volatile.Read`. `RunCheckoutBurstAsync(int, Cance
 Nothing about the ledger is careless. It uses `SemaphoreSlim` rather than `lock`, which is right: `lock` cannot be held across an `await`, and this code awaits. The bug is one line:
 
 ```cs
-   // ToDo Refactor: this call also waits on _ledgerSemaphore, which this
-   // method is already holding. SemaphoreSlim is not reentrant, so the
-   // thread waits for a permit it will never release. That is a deadlock.
-   await WriteAuditEntryAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);
+            // ToDo Refactor: this call also waits on _ledgerSemaphore, which this
+            // method is already holding. SemaphoreSlim is not reentrant, so the
+            // thread waits for a permit it will never release. That is a deadlock.
+            await WriteAuditEntryAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);
 ```
 
 `ReserveStockAsync(...)` is holding `_ledgerSemaphore`. `WriteAuditEntryAsync(...)` begins by waiting on `_ledgerSemaphore`. The semaphore has one permit, and the caller that wants it is the caller that already holds it. `SemaphoreSlim` is not reentrant, so it will not notice that this is the same caller. It waits forever.
@@ -203,59 +201,63 @@ In the browser that shows up as the request sitting there until the 5 second tim
 The fix is a pattern worth memorizing: a public method that takes the lock, and a private `...CoreAsync` method that assumes the lock is already held. Every caller that needs the lock takes it exactly once.
 
 ```cs
- public async Task<bool> ReserveStockAsync(string sku, int quantity, CancellationToken token)
- {
-  await _ledgerSemaphore.WaitAsync(token).ConfigureAwait(false);
+    public async Task<bool> ReserveStockAsync(string sku, int quantity, CancellationToken token)
+    {
+        await _ledgerSemaphore.WaitAsync(token).ConfigureAwait(false);
 
-  try
-  {
-   if (!_stockOnHand.TryGetValue(sku, out var onHand) || onHand < quantity)
-   {
-    return false;
-   }
+        try
+        {
+            if (!_stockOnHand.TryGetValue(sku, out var onHand) || onHand < quantity)
+            {
+                return false;
+            }
 
-   _stockOnHand[sku] = onHand - quantity;
+            // Calls the version that does NOT take the semaphore, because this
+            // method is already holding it.
+            await WriteAuditEntryCoreAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);
 
-   // Calls the version that does NOT take the semaphore, because this
-   // method is already holding it.
-   await WriteAuditEntryCoreAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);
+            // The audit write above can be cancelled, so the decrement happens
+            // after it. A cancelled call must not reduce stock with no audit entry.
+            _stockOnHand[sku] = onHand - quantity;
 
-   return true;
-  }
-  finally
-  {
-   _ledgerSemaphore.Release();
-  }
- }
+            return true;
+        }
+        finally
+        {
+            _ledgerSemaphore.Release();
+        }
+    }
 
- public async Task WriteAuditEntryAsync(string entry, CancellationToken token)
- {
-  await _ledgerSemaphore.WaitAsync(token).ConfigureAwait(false);
+    public async Task WriteAuditEntryAsync(string entry, CancellationToken token)
+    {
+        await _ledgerSemaphore.WaitAsync(token).ConfigureAwait(false);
 
-  try
-  {
-   await WriteAuditEntryCoreAsync(entry, token).ConfigureAwait(false);
-  }
-  finally
-  {
-   _ledgerSemaphore.Release();
-  }
- }
+        try
+        {
+            await WriteAuditEntryCoreAsync(entry, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            _ledgerSemaphore.Release();
+        }
+    }
 
- // Must only be called while _ledgerSemaphore is already held
- async Task WriteAuditEntryCoreAsync(string entry, CancellationToken token)
- {
-  // Pretend this writes to an audit table
-  await Task.Delay(TimeSpan.FromMilliseconds(5), token).ConfigureAwait(false);
+    // Must only be called while _ledgerSemaphore is already held
+    async Task WriteAuditEntryCoreAsync(string entry, CancellationToken token)
+    {
+        // Pretend this writes to an audit table
+        await Task.Delay(TimeSpan.FromMilliseconds(5), token).ConfigureAwait(false);
 
-  lock (_auditTrail)
-  {
-   _auditTrail.Add(entry);
-  }
- }
+        lock (_auditTrail)
+        {
+            _auditTrail.Add(entry);
+        }
+    }
 ```
 
 `ReserveStockAsync(...)` takes the permit and calls `WriteAuditEntryCoreAsync(...)`, which never touches the semaphore. `WriteAuditEntryAsync(...)` is still there for callers that do not hold the lock, and it takes the permit itself. The stock update and its audit entry still happen under one lock, so the ledger is still atomic. Nothing waits for itself.
+
+Order matters inside that lock, and it is worth saying why. The audit write is the only step that can be cancelled, because it is the only one that awaits, so it runs first and the decrement follows it. Put the decrement first and a token that trips during that 5 millisecond write leaves stock reduced with no audit entry, which is exactly what the comment at the top of the class promises never happens. Measured over 200 reservations cancelled mid write, the decrement-first ordering left the ledger inconsistent every single time and the audit-first ordering never did. The rule generalises: inside a lock, do the work that can fail before the work you cannot undo.
 
 Notice the naming convention. The `Core` suffix is the signal that says "this method assumes the lock is held". Add the comment above it too. Six months from now, that comment is the only thing standing between someone and a reintroduced deadlock.
 
@@ -264,22 +266,22 @@ Notice the naming convention. The `Core` suffix is the signal that says "this me
 `List<T>` is not thread safe. In the starter, `AuditEntries` returns `Count` with no lock at all, while the audit writer is appending to the same list:
 
 ```cs
- public int AuditEntries => _auditTrail.Count;
+    public int AuditEntries => _auditTrail.Count;
 ```
 
 So take a lock in the getter, and take the same lock in the writer:
 
 ```cs
- public int AuditEntries
- {
-  get
-  {
-   lock (_auditTrail)
-   {
-    return _auditTrail.Count;
-   }
-  }
- }
+    public int AuditEntries
+    {
+        get
+        {
+            lock (_auditTrail)
+            {
+                return _auditTrail.Count;
+            }
+        }
+    }
 ```
 
 `WriteAuditEntryCoreAsync(...)` adds under that same lock, so a read can never land in the middle of an append. It is the same class of bug as the counter: a collection that only ever had one writer now has several.
@@ -287,11 +289,11 @@ So take a lock in the getter, and take the same lock in the writer:
 While you are in the file, update the comment on the semaphore so the next reader knows the rule:
 
 ```cs
- // SemaphoreSlim is the right primitive here: `lock` cannot be held across an await.
- // It is also not reentrant, so no method that holds it may call another method
- // that takes it. The fix is to split each operation into a public method that
- // takes the semaphore and a private method that assumes it is already held.
- readonly SemaphoreSlim _ledgerSemaphore = new(1, 1);
+    // SemaphoreSlim is the right primitive here: `lock` cannot be held across an await.
+    // It is also not reentrant, so no method that holds it may call another method
+    // that takes it. The fix is to split each operation into a public method that
+    // takes the semaphore and a private method that assumes it is already held.
+    readonly SemaphoreSlim _ledgerSemaphore = new(1, 1);
 ```
 
 ## 9. Run It Five Times

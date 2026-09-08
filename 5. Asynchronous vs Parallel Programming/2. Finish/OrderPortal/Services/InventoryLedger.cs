@@ -43,11 +43,13 @@ public sealed class InventoryLedger : IDisposable
 				return false;
 			}
 
-			_stockOnHand[sku] = onHand - quantity;
-
 			// Calls the version that does NOT take the semaphore, because this
 			// method is already holding it.
 			await WriteAuditEntryCoreAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);
+
+			// The audit write above can be cancelled, so the decrement happens
+			// after it. A cancelled call must not reduce stock with no audit entry.
+			_stockOnHand[sku] = onHand - quantity;
 
 			return true;
 		}

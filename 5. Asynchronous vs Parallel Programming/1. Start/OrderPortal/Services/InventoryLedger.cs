@@ -31,12 +31,14 @@ public sealed class InventoryLedger : IDisposable
 				return false;
 			}
 
-			_stockOnHand[sku] = onHand - quantity;
-
 			// ToDo Refactor: this call also waits on _ledgerSemaphore, which this
 			// method is already holding. SemaphoreSlim is not reentrant, so the
 			// thread waits for a permit it will never release. That is a deadlock.
 			await WriteAuditEntryAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);
+
+			// The audit write above can be cancelled, so the decrement happens
+			// after it. A cancelled call must not reduce stock with no audit entry.
+			_stockOnHand[sku] = onHand - quantity;
 
 			return true;
 		}
