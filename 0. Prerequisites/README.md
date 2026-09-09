@@ -14,13 +14,13 @@ dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/Hacker
 
 ## 1. Install or Open an Editor
 
-Use any editor that can open C# files:
+One of these three is required. A plain text editor is not enough: the .NET Internals section on Day 1 is spent setting breakpoints and inspecting threads, and none of that works from `dotnet run`.
 
-* [Visual Studio](https://visualstudio.microsoft.com/downloads/) on Windows
-* [JetBrains Rider](https://www.jetbrains.com/rider/download/) on Windows or macOS
-* [Visual Studio Code](https://code.visualstudio.com/) with the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension
+* [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) (18.0 or later) on Windows. .NET 10 is not offered by Visual Studio 2022, so if that is what you have, use Visual Studio Code or Rider instead.
+* [JetBrains Rider](https://www.jetbrains.com/rider/download/) (2025.3 or later) on Windows or macOS
+* [Visual Studio Code](https://code.visualstudio.com/) with the current [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension. This is the smallest install of the three.
 
-If your work laptop blocks installing IDEs, you can still complete the workshop from a terminal and any editor that is already approved by your organization.
+If your work laptop blocks all three, tell us before the workshop starts rather than on the morning. We can pair you with someone for the debugging exercises.
 
 ## 2. Install .NET 10 SDK
 
@@ -32,11 +32,11 @@ After installing, open a new terminal and verify:
 dotnet --list-sdks
 ```
 
-Confirm that the output includes `10.0.100` or later. If `dotnet` is not found, close and reopen your terminal. If it is still not found, use the no-admin install steps below and run the PATH commands shown there.
+Confirm that the output lists at least one SDK whose version starts with `10.0.`, such as `10.0.100` or `10.0.302`. If `dotnet` is not found, close and reopen your terminal. If it is still not found, use the no-admin install steps below and run the PATH commands shown there.
 
 ## 2a. Windows: Install with Visual Studio Installer
 
-Use this path if you already use Visual Studio or your company manages installs through Visual Studio Installer.
+Use this path if you already use Visual Studio 2026 or your company manages installs through Visual Studio Installer. Visual Studio 2022 cannot install the .NET 10 SDK, so skip to 2b if that is your version.
 
 1. Open **Visual Studio Installer**.
 2. Select **Modify** on your Visual Studio installation.

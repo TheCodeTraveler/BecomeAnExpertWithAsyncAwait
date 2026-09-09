@@ -75,7 +75,7 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | 15 min | Channels lecture |
 | 20 min | Challenge: put a channel behind the TelemetryPipeline webhook |
 | 20 min | Group review and solution walkthrough |
-| 10 min | Final review and Q&A |
+| 10 min | Final review, recap and Q&A |
 
 ## Agenda
 
@@ -89,6 +89,7 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 7. [(Presentation/Code) Data Parallelism](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/7.%20Data%20Parallelism)
 8. [(Presentation/Code) Concurrent Collections](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/8.%20Concurrent%20Collections)
 9. [(Presentation/Code) Channels](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/9.%20Channels)
+10. [(Presentation) Recap, Resources and Thank You](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/blob/main/10.%20Thank%20You/ThankYou.pptx)
 
 ## Additional Resources
 

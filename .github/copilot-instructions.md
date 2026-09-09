@@ -41,7 +41,7 @@ This repository is the attendee-facing material for Brandon Minnick's two-day wo
 ## Markdown conventions
 
 - Numbered lists use incrementing numbers (`1.`, `2.`, `3.`), never repeated `1.` markers.
-- Each challenge states a recommended time and ends by pausing for group review before `SOLUTION.md`. The times are budgeted against the two-day schedule in the root `README.md`, which allots 345 minutes of active material per day plus a 60-minute setup block on Day 1. Coding challenges run 20 to 45 minutes; the .NET Internals investigations run 8 to 12 minutes each. If you change a challenge time, update the schedule table so both still add up.
+- Each challenge states a recommended time and ends by pausing for group review before `SOLUTION.md`. The times are budgeted against the two-day schedule in the root `README.md`. Each day's table totals 345 scheduled minutes, and Day 1's total already includes the 60-minute setup block. The venue schedules its own lunch and snack breaks around these tables, and timings flex to the room. Coding challenges run 20 to 45 minutes; the .NET Internals investigations run 8 to 12 minutes each. If you change a challenge time, update the schedule table so both still add up.
 - Code snippets in `SOLUTION.md` must match the `2. Finish` source exactly.
 - Links into numbered folders need `%20`-encoded spaces. Verify that every changed link resolves.
 
