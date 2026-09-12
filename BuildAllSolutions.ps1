@@ -23,14 +23,26 @@ foreach ($slnxFile in $slnxFiles) {
     }
 
     Write-Host "Building solution: $($slnxFile.FullName)" -ForegroundColor Cyan
-    & dotnet build $slnxFile.FullName -c Release
+    # --no-incremental forces a recompile so analyzer warnings are always reported, even when nothing changed
+    $buildOutput = & dotnet build $slnxFile.FullName -c Release --no-incremental
+    $buildExitCode = $LASTEXITCODE
+    $buildOutput | ForEach-Object { Write-Host $_ }
 
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Build succeeded for: $($slnxFile.FullName)" -ForegroundColor Green
-    }
-    else {
+    # StyleCop element ordering (SA1201, SA1202, SA1204, SA1214, SA1215) is a warning for attendees but a failure here.
+    # See "C# element ordering" in .github/copilot-instructions.md.
+    $orderingWarnings = $buildOutput | Select-String -Pattern 'warning SA1(201|202|204|214|215)' | ForEach-Object { $_.Line.Trim() } | Sort-Object -Unique
+
+    if ($buildExitCode -ne 0) {
         Write-Host "Build failed for: $($slnxFile.FullName)" -ForegroundColor Red
         $hasError = $true
+    }
+    elseif ($orderingWarnings) {
+        Write-Host "Build reported StyleCop element ordering warnings for: $($slnxFile.FullName)" -ForegroundColor Red
+        $orderingWarnings | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+        $hasError = $true
+    }
+    else {
+        Write-Host "Build succeeded for: $($slnxFile.FullName)" -ForegroundColor Green
     }
 }
 

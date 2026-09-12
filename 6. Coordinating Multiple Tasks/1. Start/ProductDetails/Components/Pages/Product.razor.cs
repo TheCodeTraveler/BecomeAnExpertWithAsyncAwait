@@ -105,17 +105,6 @@ public partial class ProductPageBase : ComponentBase
 		}
 	}
 
-	void MarkWaitingPanelsSkipped()
-	{
-		for (var index = 0; index < Panels.Count; index++)
-		{
-			if (Panels[index].Status is "waiting")
-			{
-				Panels[index] = Panels[index] with { Status = "skipped" };
-			}
-		}
-	}
-
 	protected void ResetPanels()
 	{
 		for (var index = 0; index < Panels.Count; index++)
@@ -137,4 +126,15 @@ public partial class ProductPageBase : ComponentBase
 				Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
 			}
 		});
+
+	void MarkWaitingPanelsSkipped()
+	{
+		for (var index = 0; index < Panels.Count; index++)
+		{
+			if (Panels[index].Status is "waiting")
+			{
+				Panels[index] = Panels[index] with { Status = "skipped" };
+			}
+		}
+	}
 }

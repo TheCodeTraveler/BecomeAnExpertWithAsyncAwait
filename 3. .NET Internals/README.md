@@ -22,7 +22,7 @@ Recommended time: 10 minutes.
 
 1. Open **2. Principal/PrincipalExample.slnx**.
 2. Open **PrincipalExample/Program.cs** and **PrincipalExample/Controllers/AccountController.cs**.
-3. Before running, predict each output of `LogAmbientState`
+3. Before running, predict the output of each call to the `LogAmbientState(string)` method
     * Which of the values listed below will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed: 
         * `Thread.CurrentPrincipal`
         * `IHttpContextAccessor.HttpContext`

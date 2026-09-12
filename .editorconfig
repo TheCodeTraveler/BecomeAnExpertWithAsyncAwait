@@ -140,3 +140,23 @@ dotnet_diagnostic.CA1834.severity = error
 
 # IDE0220: Add explicit cast
 dotnet_diagnostic.IDE0220.severity = error
+
+# StyleCop.Analyzers (referenced for every project in Directory.Packages.props).
+# Only the element-ordering rules are enabled. They stay warnings so attendee code still builds.
+# Order of elements in a file: extern alias, usings, namespaces, delegates, enums, interfaces, records, structs, classes.
+# Order of members in a type: fields, constructors, finalizers, delegates, events, enums, interfaces, properties, indexers, methods, records, structs, classes.
+# Within each group: public, internal, protected internal, protected, private protected, private; static before instance; readonly before non-readonly.
+# dotnet format cannot apply StyleCop fixes on the .NET 10 SDK: reorder members by hand and rebuild until no SA warnings remain.
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpecialRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpacingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.ReadabilityRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.OrderingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.NamingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.MaintainabilityRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.LayoutRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
+dotnet_diagnostic.SA1201.severity = warning
+dotnet_diagnostic.SA1202.severity = warning
+dotnet_diagnostic.SA1204.severity = warning
+dotnet_diagnostic.SA1214.severity = warning
+dotnet_diagnostic.SA1215.severity = warning

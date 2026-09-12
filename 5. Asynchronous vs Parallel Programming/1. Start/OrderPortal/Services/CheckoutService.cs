@@ -39,6 +39,14 @@ public sealed class CheckoutService(OrderMetrics metrics, TaxRateProvider taxRat
 		}
 	}
 
+	// Reserving stock is a separate step so the deadlock can be demonstrated on its own
+	public Task<bool> ReserveStockAsync(int orderNumber, CancellationToken token)
+	{
+		var sku = _skus[orderNumber % _skus.Length];
+
+		return ledger.ReserveStockAsync(sku, 1, token);
+	}
+
 	async Task PlaceOrderAsync(int orderNumber, CancellationToken token)
 	{
 		var region = _regions[orderNumber % _regions.Length];
@@ -50,13 +58,5 @@ public sealed class CheckoutService(OrderMetrics metrics, TaxRateProvider taxRat
 		await Task.Delay(TimeSpan.FromMilliseconds(2), token).ConfigureAwait(false);
 
 		metrics.RecordOrder(total);
-	}
-
-	// Reserving stock is a separate step so the deadlock can be demonstrated on its own
-	public Task<bool> ReserveStockAsync(int orderNumber, CancellationToken token)
-	{
-		var sku = _skus[orderNumber % _skus.Length];
-
-		return ledger.ReserveStockAsync(sku, 1, token);
 	}
 }

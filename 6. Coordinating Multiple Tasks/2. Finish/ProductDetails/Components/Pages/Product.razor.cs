@@ -95,26 +95,6 @@ public partial class ProductPageBase : ComponentBase
 		}).ConfigureAwait(false);
 	}
 
-	// Wraps one backend call so a single failing service degrades one panel
-	// instead of taking down the whole page.
-	async Task TrackPanelAsync<T>(string name, Task<T> serviceCall, Func<T, string> describe, Stopwatch stopwatch)
-	{
-		try
-		{
-			var result = await serviceCall.ConfigureAwait(false);
-
-			await SetPanelAsync(name, "ready", describe(result), stopwatch.Elapsed).ConfigureAwait(false);
-		}
-		catch (HttpRequestException e)
-		{
-			// The full exception goes to the log, where it can be acted on. The card
-			// gets a fixed message the page owns, so no exception text reaches the browser.
-			Logger.LogError(e, "The {PanelName} service failed while loading the product page.", name);
-
-			await SetPanelAsync(name, "failed", "The service did not respond. Try again in a moment.", stopwatch.Elapsed).ConfigureAwait(false);
-		}
-	}
-
 	protected void ResetPanels()
 	{
 		for (var index = 0; index < Panels.Count; index++)
@@ -136,4 +116,24 @@ public partial class ProductPageBase : ComponentBase
 				Panels[index] = new PanelState(name, status, detail, elapsed.TotalSeconds);
 			}
 		});
+
+	// Wraps one backend call so a single failing service degrades one panel
+	// instead of taking down the whole page.
+	async Task TrackPanelAsync<T>(string name, Task<T> serviceCall, Func<T, string> describe, Stopwatch stopwatch)
+	{
+		try
+		{
+			var result = await serviceCall.ConfigureAwait(false);
+
+			await SetPanelAsync(name, "ready", describe(result), stopwatch.Elapsed).ConfigureAwait(false);
+		}
+		catch (HttpRequestException e)
+		{
+			// The full exception goes to the log, where it can be acted on. The card
+			// gets a fixed message the page owns, so no exception text reaches the browser.
+			Logger.LogError(e, "The {PanelName} service failed while loading the product page.", name);
+
+			await SetPanelAsync(name, "failed", "The service did not respond. Try again in a moment.", stopwatch.Elapsed).ConfigureAwait(false);
+		}
+	}
 }

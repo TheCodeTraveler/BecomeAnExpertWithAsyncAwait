@@ -15,16 +15,16 @@ This repository is the attendee-facing material for Brandon Minnick's two-day wo
 ## Non-negotiable rules
 
 1. **Code and walkthroughs stay in sync, in both directions.** Any change to sample code must be reflected in that section's `README.md` and `SOLUTION.md` (snippets and prose), and any walkthrough change must be reflected in the code. Check every duplicated copy: Start, Finish, and the SynchronizationContext copy.
-2. **Never "fix" the Start projects.** Code marked `// ToDo Refactor` and the compiler warnings it produces (for example CS4014) *are* the challenge. Do not refactor it, suppress its warnings, or run analyzer-based formatting over it.
+2. **Never "fix" the Start projects.** Code marked `// ToDo Refactor` and the compiler warnings it produces (for example CS4014) *are* the challenge. Do not refactor it, suppress its warnings, or run analyzer-based formatting over it. The only permitted change is the element ordering described under "C# element ordering" below: moving a member, with its `// ToDo Refactor` comment attached, never changes what it does.
 3. **Write for attendees, not the host.** READMEs must flow naturally into the challenge without revealing the answer. Solutions belong only in `SOLUTION.md` and the `2. Finish` folders.
 4. **Discourage AI from solving the challenges.** Every challenge begins with a note whose first sentences are exactly: `> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this.` followed by what AI *may* be used for (understanding the code, clarifying concepts, interpreting errors).
 5. **Keep it simple.** Make the smallest correct change. No null-forgiving operator (`!`), no `#pragma` suppressions, no abstractions for one-off work, and no committed helper tooling or scripts beyond `BuildAllSolutions.ps1`. If a bulk edit is needed, do the edit rather than adding automation to the repo.
-6. **Style rules are warnings, not errors,** and live in `.editorconfig`. Do not add build-blocking style enforcement that would interrupt attendees while they iterate.
+6. **Style rules are warnings, not errors,** and live in `.editorconfig`. That includes the StyleCop element-ordering rules. Do not add build-blocking style enforcement that would interrupt attendees while they iterate; ordering is enforced by `BuildAllSolutions.ps1`, which attendees do not run.
 7. **The Prerequisites README must stay foolproof.** It has to work on Windows and macOS, with or without admin rights, with Visual Studio, Rider, or VS Code, with Git blocked (ZIP download), and behind corporate networks that block Hacker News. Do not remove a path just because it looks redundant.
 
 ## Build and validate
 
-- Full validation, required before finishing any code change: `pwsh ./BuildAllSolutions.ps1`. It runs `dotnet format whitespace` and then `dotnet build -c Release` for every `.slnx`. Keep the script on `dotnet format whitespace`: full `dotnet format` fails on the .NET 10 SDK and analyzer/code-style formatting would erase the intentional Start warnings.
+- Full validation, required before finishing any code change: `pwsh ./BuildAllSolutions.ps1`. It runs `dotnet format whitespace` and then `dotnet build -c Release --no-incremental` for every `.slnx`, and it fails when any build reports a StyleCop element-ordering warning (`SA1201`, `SA1202`, `SA1204`, `SA1214`, `SA1215`). Keep the script on `dotnet format whitespace`: full `dotnet format` fails on the .NET 10 SDK and analyzer/code-style formatting would erase the intentional Start warnings.
 - Single solution: `dotnet build "<section>/<folder>/<Name>.slnx"`.
 - Run a web sample: `dotnet run --project "<path>/<Name>.csproj"`. Ports are fixed and referenced by the READMEs: PrincipalExample `5000`, HackerNews Start `5001` / Finish `5002`, SynchronizationContext HackerNews `5004`, StockWatch Start `5005` / Finish `5006`, OrderPortal Start `5007` / Finish `5008`, ProductDetails Start `5009` / Finish `5010`, ImportPortal Start `5011` / Finish `5012`, TelemetryPipeline Start `5013` / Finish `5014`.
 - `Properties/launchSettings.json` is gitignored, but the HackerNews copies are force-tracked because `ASPNETCORE_ENVIRONMENT=Development` is required for `dotnet run` to serve `_framework/blazor.web.js`. Keep them tracked and keep the environment variable.
@@ -37,6 +37,47 @@ This repository is the attendee-facing material for Brandon Minnick's two-day wo
 - Forward `CancellationToken`s to every cancellable API and catch `OperationCanceledException` only `when (token.IsCancellationRequested)`.
 - `ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`: create the task inside the `using` block and `await` it after the block, never inside it.
 - Finished samples are what attendees compare their work against. They must demonstrate the practice being taught even when a shortcut would compile, and they should build without warnings.
+
+## C# element ordering
+
+Every `.cs` file, including the `1. Start` projects and `*.razor.cs` code-behind files, follows the StyleCop ordering rules [SA1201](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1201.md), [SA1202](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1202.md), [SA1204](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1204.md), [SA1214](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1214.md), and [SA1215](https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1215.md). `StyleCop.Analyzers` is referenced by every project through `Directory.Packages.props`, `.editorconfig` enables only these five rules (as warnings), and `BuildAllSolutions.ps1` fails when any of them fire. A code change is not finished until every build is free of `SA` warnings.
+
+Elements at the file root level or within a namespace are positioned in this order:
+
+1. Extern alias directives
+2. Using directives
+3. Namespaces
+4. Delegates
+5. Enums
+6. Interfaces
+7. Records
+8. Structs
+9. Classes
+
+Within a class, struct, or interface, elements are positioned in this order:
+
+1. Fields
+2. Constructors
+3. Finalizers (destructors)
+4. Delegates
+5. Events
+6. Enums
+7. Interfaces
+8. Properties
+9. Indexers
+10. Methods
+11. Records
+12. Structs
+13. Classes
+
+Within each of those groups:
+
+- Order by access: `public`, `internal`, `protected internal`, `protected`, `private protected`, `private`. A member with no access modifier is `private`; keep that style rather than adding `private` to sort it.
+- `static` members come before instance members of the same access level (SA1204).
+- `const` fields come first, then `readonly` fields, then the rest (SA1214, SA1215).
+- Members that tie on everything above keep their existing relative order.
+
+Move a member as a unit: its attributes, comments, `// ToDo Refactor` markers, and the blank line separating it from its neighbour travel with it, and the member itself is never edited while being moved. `dotnet format analyzers` cannot apply StyleCop fixes on the .NET 10 SDK, so reorder by hand and rebuild until no `SA` warnings remain.
 
 ## Markdown conventions
 

@@ -189,14 +189,6 @@ namespace TelemetryPipeline;
 // to run a channel reader for the lifetime of the application.
 public sealed class TelemetryProcessor(TelemetryIngestService ingest) : BackgroundService
 {
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        // Deliberately not stoppingToken. Cancelling the read loop would abandon
-        // whatever is still queued, and every reading is supposed to reach the store.
-        // StopAsync closes the channel instead, which ends ReadAllAsync once it drains.
-        return ingest.DrainAsync(CancellationToken.None);
-    }
-
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         // Stop accepting new readings first, so the consumers can finish the backlog
@@ -207,12 +199,20 @@ public sealed class TelemetryProcessor(TelemetryIngestService ingest) : Backgrou
         // cannot drain in time still lets the process exit.
         await base.StopAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        // Deliberately not stoppingToken. Cancelling the read loop would abandon
+        // whatever is still queued, and every reading is supposed to reach the store.
+        // StopAsync closes the channel instead, which ends ReadAllAsync once it drains.
+        return ingest.DrainAsync(CancellationToken.None);
+    }
 }
 ```
 
 A `BackgroundService` is the standard place to run a channel reader in ASP.NET Core. The host starts `ExecuteAsync` when the app starts and calls `StopAsync` when it stops.
 
-The obvious version of this method takes the `stoppingToken` and passes it into `DrainAsync`, and it is wrong in a way that is easy to miss. `BackgroundService.StopAsync` cancels that token and then waits for `ExecuteAsync` to return. Cancelling is what tears down the `await foreach`, so every reading still sitting in the channel is thrown away. Measure it and the pipeline writes 0 of 400 on shutdown: the burst is accepted, the device is told everything is fine, and the readings never reach the store.
+The obvious version of `ExecuteAsync` takes the `stoppingToken` and passes it into `DrainAsync`, and it is wrong in a way that is easy to miss. `BackgroundService.StopAsync` cancels that token and then waits for `ExecuteAsync` to return. Cancelling is what tears down the `await foreach`, so every reading still sitting in the channel is thrown away. Measure it and the pipeline writes 0 of 400 on shutdown: the burst is accepted, the device is told everything is fine, and the readings never reach the store.
 
 So the read loop does not take the token at all. Shutdown is signalled by completing the channel instead. `ReadAllAsync` drains what is buffered and then ends on its own, `Task.WhenAll` returns, `ExecuteAsync` returns, and `base.StopAsync` sees the task finish. With completion wired in, the same run writes 400 of 400 and shutdown takes about two seconds instead of being instant.
 

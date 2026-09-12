@@ -6,6 +6,9 @@ public partial class CheckoutPageBase : ComponentBase
 {
 	public const int OrderCount = 2_000;
 
+	// Every order is subtotal * (1 + rate) where subtotal is 20 + (orderNumber % 80)
+	public static decimal ExpectedRevenue { get; } = CalculateExpectedRevenue();
+
 	[Inject]
 	public required CheckoutService CheckoutService { get; init; }
 
@@ -14,9 +17,6 @@ public partial class CheckoutPageBase : ComponentBase
 	public CheckoutResult? Result { get; private set; }
 
 	public string? StockMessage { get; private set; }
-
-	// Every order is subtotal * (1 + rate) where subtotal is 20 + (orderNumber % 80)
-	public static decimal ExpectedRevenue { get; } = CalculateExpectedRevenue();
 
 	protected async Task RunBurstAsync()
 	{

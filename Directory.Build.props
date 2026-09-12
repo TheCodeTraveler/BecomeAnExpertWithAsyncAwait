@@ -2,7 +2,8 @@
 <Project>
   <PropertyGroup>
     <Nullable>enable</Nullable>
-    <NoWarn>NETSDK1023</NoWarn>
+    <!-- SA0001 is StyleCop's non-configurable notice that XML documentation output is off; it cannot be silenced from .editorconfig -->
+    <NoWarn>NETSDK1023;SA0001</NoWarn>
     <NetVersion>net10.0</NetVersion>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>

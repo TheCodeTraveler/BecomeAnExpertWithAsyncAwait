@@ -19,6 +19,35 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	protected bool IsListRefreshing { get; set; }
 	protected string? RefreshErrorMessage { get; set; }
 
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
+	}
+
+	protected static void InsertIntoSortedList<T>(List<T> collection, Comparison<T> comparison, T modelToInsert)
+	{
+		if (collection.Count is 0)
+		{
+			collection.Add(modelToInsert);
+			return;
+		}
+
+		var index = 0;
+		foreach (var model in collection)
+		{
+			if (comparison(model, modelToInsert) >= 0)
+			{
+				collection.Insert(index, modelToInsert);
+				return;
+			}
+
+			index++;
+		}
+
+		collection.Insert(index, modelToInsert);
+	}
+
 	protected override void OnInitialized()
 	{
 		IsListRefreshing = true;
@@ -28,6 +57,17 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	}
 
 	protected Task RefreshAsync() => RefreshAsync(_disposeCancellationTokenSource.Token);
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!disposing)
+		{
+			return;
+		}
+
+		_disposeCancellationTokenSource.Cancel();
+		_disposeCancellationTokenSource.Dispose();
+	}
 
 	async Task RefreshAsync(CancellationToken token)
 	{
@@ -119,46 +159,6 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		}
 	}
 
-	protected static void InsertIntoSortedList<T>(List<T> collection, Comparison<T> comparison, T modelToInsert)
-	{
-		if (collection.Count is 0)
-		{
-			collection.Add(modelToInsert);
-			return;
-		}
-
-		var index = 0;
-		foreach (var model in collection)
-		{
-			if (comparison(model, modelToInsert) >= 0)
-			{
-				collection.Insert(index, modelToInsert);
-				return;
-			}
-
-			index++;
-		}
-
-		collection.Insert(index, modelToInsert);
-	}
-
 	bool IsDataRecent(TimeSpan timeSpan) => TopStoryCollection.Any()
 		&& (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) < timeSpan;
-
-	public void Dispose()
-	{
-		Dispose(true);
-		GC.SuppressFinalize(this);
-	}
-
-	protected virtual void Dispose(bool disposing)
-	{
-		if (!disposing)
-		{
-			return;
-		}
-
-		_disposeCancellationTokenSource.Cancel();
-		_disposeCancellationTokenSource.Dispose();
-	}
 }
