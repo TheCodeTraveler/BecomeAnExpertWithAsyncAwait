@@ -9,17 +9,14 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 1. Using File Explorer on Windows or Finder on macOS, navigate to **BecomeAnExpertWithAsyncAwait/2. Correcting Common Async Await Mistakes/1. Start**.
 2. Open **HackerNews.slnx** in your IDE.
 3. Build the project once so you can see the starting warnings and confirm your environment is ready.
-4. Open **HackerNews/Components/Pages/News.razor.cs**.
 
-```console
-dotnet build HackerNews.slnx
-```
 
 ## 2. Inspect the Starting Code
 
-1. Find each `// ToDo Refactor` comment.
-2. Read `OnInitialized()`, `RefreshAsync(CancellationToken)`, `GetTopStories(...)`, `GetStory(...)`, and `GetTopStoryIDs(...)` before changing anything.
-3. Notice which code runs during Blazor component initialization and which code updates component state.
+1. Open **HackerNews/Components/Pages/News.razor.cs**.
+2. Find each `// ToDo Refactor` comment.
+3. Read `OnInitialized()`, `RefreshAsync(CancellationToken)`, `GetTopStories(...)`, `GetStory(...)`, and `GetTopStoryIDs(...)` before changing anything.
+4. Notice which code runs during Blazor component initialization and which code updates component state.
 
 Pay attention to these clues:
 
