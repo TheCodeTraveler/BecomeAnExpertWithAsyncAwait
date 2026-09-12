@@ -8,10 +8,6 @@ In this section, you will build a minimal custom awaitable named `CustomTask`.
 2. Open **CreatingTaskFromScratch.slnx** in your IDE.
 3. Build the project once so you can confirm the starter compiles.
 
-```console
-dotnet build CreatingTaskFromScratch.slnx
-```
-
 ## 2. Inspect the Starting Code
 
 1. Open **CreatingTaskFromScratch/CustomTask.cs**.
