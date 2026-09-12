@@ -143,24 +143,60 @@ This distinction matters in .NET Framework history, too. Before .NET 4.6, `HttpC
 
 ## 4. SynchronizationContext
 
-Open **4. SynchronizationContext/HackerNews/Components/Pages/News.razor.cs**.
+The previous two samples printed the values that ride on `ExecutionContext`. This sample prints the other piece of ambient state that `await` captures: `SynchronizationContext`. In Blazor Server that is the renderer's synchronization context, and it is exactly what `ConfigureAwait(false)` opts out of.
 
-Set a breakpoint before the first await in `RefreshAsync(CancellationToken token)`:
+Open **4. SynchronizationContext/HackerNews/Components/Pages/News.razor.cs**. `RefreshAsync(CancellationToken token)` logs the current thread and `SynchronizationContext` before its first `ConfigureAwait(false)`:
 
 ```cs
+var thread = Thread.CurrentThread;
 var synchronizationContext = SynchronizationContext.Current;
+Logger.LogInformation("Before ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", thread.ManagedThreadId, synchronizationContext?.GetType().Name ?? "<null>");
 ```
 
-Set another breakpoint after `ConfigureAwait(false)` resumes inside the `await foreach` loop:
+It logs them again each time the `await foreach` loop resumes after `ConfigureAwait(false)`:
 
 ```cs
-var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
+await foreach (var story in GetTopStories(topStoryIds, StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
+{
+    var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
+    var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
+    Logger.LogInformation("After ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", threadAfterConfigureAwaitFalse.ManagedThreadId, synchronizationContextAfterConfigureAwaitFalse?.GetType().Name ?? "<null>");
+
+    await InvokeAsync(() =>
+    {
+        if (!TopStoryCollection.Any(x => x.Title.Equals(story.Title, StringComparison.Ordinal)))
+        {
+            InsertIntoSortedList(TopStoryCollection, (a, b) => b.Score.CompareTo(a.Score), story);
+        }
+
+        StateHasChanged();
+    });
+}
 ```
 
-Debug **HackerNews.csproj** and open [http://localhost:5004](http://localhost:5004).
+Run the project:
 
-At the first breakpoint, inspect the current thread and `synchronizationContext`. In Blazor Server, the synchronization context is a renderer/circuit synchronization context. It is not a native UI thread, and the managed thread ID does not have to be `1`.
+```console
+dotnet run --project "4. SynchronizationContext/HackerNews/HackerNews.csproj"
+```
 
-At the second breakpoint, inspect the continuation thread and `synchronizationContextAfterConfigureAwaitFalse`. It is commonly `null` after an asynchronous continuation, but it may remain non-null if the awaited operation completed synchronously.
+Open [http://localhost:5004](http://localhost:5004) and read the `HackerNews.Components.Pages.NewsPageBase` lines in the console. They are interleaved with ASP.NET Core's request logging, so look for the `NewsPageBase` category. There is one `Before` line per refresh and one `After` line per story, and the output has this shape:
+
+```console
+info: HackerNews.Components.Pages.NewsPageBase[0]
+      Before ConfigureAwait(false) | Thread 3 | SynchronizationContext: RendererSynchronizationContext
+info: HackerNews.Components.Pages.NewsPageBase[0]
+      After ConfigureAwait(false) | Thread 19 | SynchronizationContext: <null>
+info: HackerNews.Components.Pages.NewsPageBase[0]
+      After ConfigureAwait(false) | Thread 24 | SynchronizationContext: <null>
+info: HackerNews.Components.Pages.NewsPageBase[0]
+      After ConfigureAwait(false) | Thread 3 | SynchronizationContext: <null>
+```
+
+Thread IDs will differ. Before the await, `SynchronizationContext.Current` is Blazor's `RendererSynchronizationContext`. It is not a native UI thread, and the managed thread ID does not have to be `1`. Blazor Server has no dedicated UI thread: the renderer's synchronization context runs its work on thread pool threads, one work item at a time, and that context is what serializes access to component state.
+
+After `ConfigureAwait(false)`, each continuation runs on whichever thread pool thread completed the awaited operation, and `SynchronizationContext.Current` is `<null>`. In the run above, thread `3` ran the code before the await and later ran a continuation with no synchronization context at all. The thread is not what changed. `ConfigureAwait(false)` told the awaiter not to capture the context, so nothing restored it when the continuation was scheduled. With fifty continuations you may see the same reuse in your own output.
+
+A non-null `After` line is also possible. If the awaited operation had already completed when the `await` ran, there was no continuation to schedule, so the code kept running on the same thread with the same context. `ConfigureAwait(false)` only affects continuations that are actually scheduled.
 
 The key observation is that `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` avoid capturing the synchronization context when a continuation is scheduled. The sample uses `InvokeAsync(...)` to marshal UI state updates back through Blazor's renderer.

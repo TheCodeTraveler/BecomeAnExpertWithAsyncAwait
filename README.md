@@ -25,7 +25,7 @@ Each hands-on section follows the same rhythm:
 5. We walk through the solution step by step as a group, reiterating the key concepts along the way.
 6. You compare your implementation with the completed sample and ask any remaining questions while the context is fresh.
 
-Coding challenges run 20 to 45 minutes depending on how much code they ask you to write. The shorter investigation challenges in the .NET Internals section focus on debugger observations and discussion rather than large code changes.
+Coding challenges run 20 to 45 minutes depending on how much code they ask you to write. The shorter investigation challenges in the .NET Internals section focus on runtime observations and discussion rather than large code changes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use AI Agents to understand the existing code, clarify concepts, interpret errors, and ask questions that help you decide what to do next. The goal is to practice the reasoning yourself.
 

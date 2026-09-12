@@ -70,6 +70,7 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	{
 		var thread = Thread.CurrentThread;
 		var synchronizationContext = SynchronizationContext.Current;
+		Logger.LogInformation("Before ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", thread.ManagedThreadId, synchronizationContext?.GetType().Name ?? "<null>");
 
 		IsListRefreshing = true;
 		RefreshErrorMessage = null;
@@ -80,14 +81,15 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		try
 		{
 			var topStoryIds = await GetTopStoryIDs(token).ConfigureAwait(false);
+			
+			var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
+			var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
+			Logger.LogInformation("After ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", threadAfterConfigureAwaitFalse.ManagedThreadId, synchronizationContextAfterConfigureAwaitFalse?.GetType().Name ?? "<null>");
 
 			await InvokeAsync(TopStoryCollection.Clear);
 
 			await foreach (var story in GetTopStories(topStoryIds, StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
 			{
-				var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
-				var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
-
 				await InvokeAsync(() =>
 				{
 					if (!TopStoryCollection.Any(x => x.Title.Equals(story.Title, StringComparison.Ordinal)))
@@ -157,5 +159,5 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	}
 
 	bool IsDataRecent(TimeSpan timeSpan) => TopStoryCollection.Any()
-	                                        && (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) < timeSpan;
+											&& (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) < timeSpan;
 }

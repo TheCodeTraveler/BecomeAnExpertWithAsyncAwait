@@ -58,9 +58,9 @@ Recommended time: 10 minutes.
 
 1. Open **4. SynchronizationContext/HackerNews.slnx**.
 2. Open **HackerNews/Components/Pages/News.razor.cs**.
-3. Set breakpoints before and after `ConfigureAwait(false)` in the refresh flow.
-4. Debug the app and open [http://localhost:5004](http://localhost:5004).
-5. Inspect the current thread and `SynchronizationContext` before the await and after the continuation.
+3. Before running, predict the thread ID and `SynchronizationContext` that each `Logger.LogInformation(...)` call in `RefreshAsync(CancellationToken)` will report, both before `ConfigureAwait(false)` and after each continuation.
+4. Run the app and open [http://localhost:5004](http://localhost:5004).
+5. Read the `NewsPageBase` log lines and compare them with your predictions.
 6. Explain why `ConfigureAwait(false)` avoids capturing Blazor's synchronization context when a continuation is scheduled, and why synchronous completion may leave the current context unchanged.
 
 ## 5. Review the Solution
@@ -69,4 +69,4 @@ After you have attempted the investigation challenges, pause here for group revi
 
 We will compare observations, debug through the samples together, and answer questions before opening [SOLUTION.md](SOLUTION.md) together.
 
-The solution walkthrough gives the step-by-step debugger path and the observations you should be able to explain.
+The solution walkthrough gives the step-by-step path through each sample and the observations you should be able to explain.
