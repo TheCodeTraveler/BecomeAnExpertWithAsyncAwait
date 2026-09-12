@@ -12,7 +12,7 @@ In this section, you will build a minimal custom awaitable named `CustomTask`.
 
 1. Open **CreatingTaskFromScratch/CustomTask.cs**.
 2. Open **CreatingTaskFromScratch/Program.cs**.
-3. Notice that `CustomTask` starts empty and `Program.cs` only prints the starting thread ID.
+3. Notice that `CustomTask` starts empty and `Program.cs` has compilation errors due to the missing implementation
 
 You are going to add just enough infrastructure to understand how task-like types work with continuations, blocking waits, timers, `ExecutionContext`, and the `await` keyword. This challenge builds on the .NET Internals section: the `ExecutionContext` flow you observed there is the same context your `CustomTask` must capture and restore when it runs continuations.
 
@@ -28,13 +28,13 @@ Requirements:
 
 1. Track completion state safely across threads.
 2. Store exceptions and rethrow them without losing the original stack trace.
-3. Implement `Run(Action)` using the thread pool.
-4. Implement `ContinueWith(Action)` and complete the returned `CustomTask` when the continuation succeeds or fails.
+3. Implement `public static CustomTask Run(Action action)` using the thread pool.
+4. Implement `public CustomTask ContinueWith(Action action)` and complete the returned `CustomTask` when the continuation succeeds or fails.
 5. Support multiple pending continuations on the same `CustomTask` and run all of them when it completes.
 6. Preserve each caller's `ExecutionContext` when a continuation is registered before the antecedent completes, and never leak the completing thread's context into any continuation.
 7. Queue continuations instead of invoking them inline so a long `ContinueWith` chain cannot overflow the stack.
-8. Implement `Wait()` with a blocking wait primitive.
-9. Implement `Delay(TimeSpan)` using `Timer`, keep the timer alive until it fires, and dispose it from the callback.
+8. Implement `public void Wait()` with a blocking wait primitive.
+9. Implement `public static CustomTask Delay(TimeSpan delay)` using `Timer`, keep the timer alive until it fires, and dispose it from the callback.
 10. Add a `CustomTaskAwaiter` that enables the `await` keyword.
 11. Update `Program.cs` so the final version uses `await` instead of `Wait()`.
 
