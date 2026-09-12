@@ -11,14 +11,6 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 3. Build the project once so you can confirm the starter compiles.
 4. Run the project and open [http://localhost:5013](http://localhost:5013).
 
-```console
-dotnet build TelemetryPipeline.slnx
-```
-
-```console
-dotnet run --project TelemetryPipeline/TelemetryPipeline.csproj
-```
-
 ## 2. Inspect the Starting Code
 
 1. Open **TelemetryPipeline/Services/TelemetryIngestService.cs** and find each `// ToDo Refactor` comment. This is the only file you need to change.
