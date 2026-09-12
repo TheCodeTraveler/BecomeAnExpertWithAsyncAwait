@@ -11,20 +11,12 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 3. Build the project once so you can confirm the starter compiles. It builds clean, with no warnings. Every bug in this section is a runtime bug.
 4. Run the app and open it in your browser.
 
-```console
-dotnet build OrderPortal.slnx
-```
-
-```console
-dotnet run --project "OrderPortal/OrderPortal.csproj"
-```
-
 The app runs at [http://localhost:5007](http://localhost:5007).
 
 ## 2. Inspect the Starting Code
 
 1. Open **OrderPortal/Program.cs** and notice that `OrderMetrics`, `TaxRateProvider`, `InventoryLedger` and `CheckoutService` are registered with `AddSingleton`. One instance of each is shared by every request.
-2. Open **OrderPortal/Services/CheckoutService.cs** and read `RunCheckoutBurstAsync(int, CancellationToken)`. It queues 2,000 checkouts through `Parallel.ForEachAsync`, which runs `Environment.ProcessorCount` of them at a time by default. So roughly one checkout per core is inside those singletons at any instant, and all 2,000 pass through the same three objects over the life of the burst. One writer per core is all it takes to lose orders.
+2. Open **OrderPortal/Services/CheckoutService.cs** and read `RunCheckoutBurstAsync(int, CancellationToken)`. It queues 2,000 checkouts through `Parallel.ForEachAsync`. So roughly one checkout per CPU core is modifying those singletons at any instant, and all 2,000 pass through the same three objects over the lifetime of the burst. One writer per core is all it takes to lose orders.
 3. Open **OrderPortal/Services/OrderMetrics.cs**, **OrderPortal/Services/TaxRateProvider.cs**, and **OrderPortal/Services/InventoryLedger.cs**, and find each `// ToDo Refactor` comment.
 4. Open **OrderPortal/Components/Pages/Checkout.razor.cs** and read `ExpectedRevenue`. Nothing in this app is random. Every graded result card has exactly one correct value.
 
