@@ -11,14 +11,6 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 3. Build the project once so you can confirm your environment is ready. The starter builds with zero warnings. That is part of the lesson.
 4. Run the project and open the app in your browser.
 
-```console
-dotnet build ImportPortal.slnx
-```
-
-```console
-dotnet run --project ImportPortal/ImportPortal.csproj
-```
-
 The starter app runs at [http://localhost:5011](http://localhost:5011). The finished app runs at [http://localhost:5012](http://localhost:5012), so you can run both at the same time and compare them later.
 
 ## 2. Inspect the Starting Code
