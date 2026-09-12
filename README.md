@@ -31,7 +31,9 @@ Coding challenges run 20 to 45 minutes depending on how much code they ask you t
 
 ## Schedule
 
-Day 1 opens with a full hour of setup. Everyone installs the .NET 10 SDK, picks an editor, clones the repo, and builds a sample before we teach anything. Nobody should spend the first coding challenge fighting an install. Work through [0. Prerequisites](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/0.%20Prerequisites#0-install-prerequisites) before you arrive if you can, and we will use the hour to fix whatever did not work.
+Both days run from 09:00 to 17:00. Breakfast is served from 08:00, there is a short break mid-morning and mid-afternoon, and lunch is served at the restaurant on the second floor.
+
+Day 1 opens with nearly an hour of setup. Everyone installs the .NET 10 SDK, picks an editor, clones the repo, and builds a sample before we teach anything. Nobody should spend the first coding challenge fighting an install. Work through [0. Prerequisites](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/0.%20Prerequisites#0-install-prerequisites) before you arrive if you can, and we will use that time to fix whatever did not work. If you want a head start, arrive during breakfast and begin the install then.
 
 Day 1 then covers asynchronous programming: what the compiler does to your async methods, the mistakes everyone makes, the internal machinery that makes it all work, and building a `Task` from scratch.
 
@@ -39,43 +41,51 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 
 ### Day 1: Setup and Asynchronous Programming
 
-| Time | Topic |
-| --- | --- |
-| 60 min | Setup and installation: .NET 10 SDK, editor, clone, first build |
-| 20 min | Thread switching and compiler-generated code lecture |
-| 20 min | Correcting common async/await mistakes lecture |
-| 35 min | Challenge: refactor the HackerNews refresh flow |
-| 10 min | Group review of attendee approaches |
-| 15 min | Step-by-step solution walkthrough |
-| 20 min | .NET Internals lecture |
-| 40 min | Four investigation challenges: `ThreadStatic`, `Principal`, `ExecutionContext`, `SynchronizationContext` |
-| 20 min | Group review and solution walkthrough |
-| 25 min | Custom `Task` implementation lecture |
-| 45 min | Challenge: build an awaitable `CustomTask` |
-| 10 min | Group review of attendee approaches |
-| 25 min | Step-by-step solution walkthrough and Q&A |
+| Time | Length | Topic |
+| --- | --- | --- |
+| 09:00 - 09:55 | 55 min | Setup and installation: .NET 10 SDK, editor, clone, first build |
+| 09:55 - 10:15 | 20 min | Thread switching and compiler-generated code lecture |
+| 10:15 - 10:30 | 15 min | Morning break |
+| 10:30 - 10:55 | 25 min | Correcting common async/await mistakes lecture |
+| 10:55 - 11:30 | 35 min | Challenge: refactor the HackerNews refresh flow |
+| 11:30 - 11:40 | 10 min | Group review of attendee approaches |
+| 11:40 - 12:00 | 20 min | Step-by-step solution walkthrough |
+| 12:00 - 13:00 | 60 min | Lunch, served at the restaurant on the second floor |
+| 13:00 - 13:30 | 30 min | .NET Internals lecture |
+| 13:30 - 14:10 | 40 min | Four investigation challenges: `ThreadStatic`, `Principal`, `ExecutionContext`, `SynchronizationContext` |
+| 14:10 - 14:40 | 30 min | Group review and solution walkthrough |
+| 14:40 - 15:15 | 35 min | Custom `Task` implementation lecture |
+| 15:15 - 15:30 | 15 min | Afternoon break |
+| 15:30 - 16:15 | 45 min | Challenge: build an awaitable `CustomTask` |
+| 16:15 - 16:30 | 15 min | Group review of attendee approaches |
+| 16:30 - 17:00 | 30 min | Step-by-step solution walkthrough and Q&A |
 
 ### Day 2: Parallel Programming
 
-| Time | Topic |
-| --- | --- |
-| 10 min | Day 1 recap and Day 2 orientation |
-| 25 min | Asynchronous vs parallel programming lecture |
-| 25 min | Challenge: fix OrderPortal's races and deadlock |
-| 25 min | Group review and solution walkthrough |
-| 15 min | Coordinating multiple tasks lecture |
-| 20 min | Challenge: fan out the ProductDetails page |
-| 20 min | Group review and solution walkthrough |
-| 20 min | Data parallelism lecture: the `Parallel` class and PLINQ |
-| 25 min | Challenge: speed up the ImportPortal batch job |
-| 25 min | Group review and solution walkthrough |
-| 20 min | Concurrent collections lecture |
-| 25 min | Challenge: make the StockWatch dashboard thread safe |
-| 25 min | Group review and solution walkthrough |
-| 15 min | Channels lecture |
-| 20 min | Challenge: put a channel behind the TelemetryPipeline webhook |
-| 20 min | Group review and solution walkthrough |
-| 10 min | Final review, recap and Q&A |
+| Time | Length | Topic |
+| --- | --- | --- |
+| 09:00 - 09:15 | 15 min | Day 1 recap and Day 2 orientation |
+| 09:15 - 09:40 | 25 min | Asynchronous vs parallel programming lecture |
+| 09:40 - 10:05 | 25 min | Challenge: fix OrderPortal's races and deadlock |
+| 10:05 - 10:15 | 10 min | Group review of attendee approaches |
+| 10:15 - 10:30 | 15 min | Morning break |
+| 10:30 - 10:50 | 20 min | Step-by-step solution walkthrough |
+| 10:50 - 11:15 | 25 min | Coordinating multiple tasks lecture |
+| 11:15 - 11:35 | 20 min | Challenge: fan out the ProductDetails page |
+| 11:35 - 12:00 | 25 min | Group review and solution walkthrough |
+| 12:00 - 13:00 | 60 min | Lunch, served at the restaurant on the second floor |
+| 13:00 - 13:20 | 20 min | Data parallelism lecture: the `Parallel` class and PLINQ |
+| 13:20 - 13:45 | 25 min | Challenge: speed up the ImportPortal batch job |
+| 13:45 - 14:10 | 25 min | Group review and solution walkthrough |
+| 14:10 - 14:30 | 20 min | Concurrent collections lecture |
+| 14:30 - 14:55 | 25 min | Challenge: make the StockWatch dashboard thread safe |
+| 14:55 - 15:15 | 20 min | Group review and solution walkthrough |
+| 15:15 - 15:30 | 15 min | Afternoon break |
+| 15:30 - 15:40 | 10 min | Workshop evaluation |
+| 15:40 - 15:55 | 15 min | Channels lecture |
+| 15:55 - 16:15 | 20 min | Challenge: put a channel behind the TelemetryPipeline webhook |
+| 16:15 - 16:40 | 25 min | Group review and solution walkthrough |
+| 16:40 - 17:00 | 20 min | Final review, recap and Q&A |
 
 ## Agenda
 
