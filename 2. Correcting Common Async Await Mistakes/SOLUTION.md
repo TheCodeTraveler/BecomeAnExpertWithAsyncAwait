@@ -61,16 +61,19 @@ await InvokeAsync(TopStoryCollection.Clear);
 Do not use `.Wait()` or `.Result` inside async code. Await the task instead:
 
 ```cs
-try
-{
-    await minimumRefreshTimeTask.ConfigureAwait(false);
-}
-catch (OperationCanceledException) when (token.IsCancellationRequested)
-{
-}
+await minimumRefreshTimeTask.ConfigureAwait(ConfigureAwaitOptions.None | ConfigureAwaitOptions.SuppressThrowing);
 ```
 
 Blocking waits can cause thread starvation, deadlocks, and poor responsiveness.
+
+`ConfigureAwaitOptions` is the .NET 8 overload of `ConfigureAwait` for when you need more than a context decision:
+
+- `ConfigureAwaitOptions.None` is the equivalent of `ConfigureAwait(false)`: the continuation does not capture the current context.
+- `ConfigureAwaitOptions.SuppressThrowing` completes the `await` without throwing when the task is canceled or faulted, and marks the exception as observed.
+
+The delay is canceled when the component is disposed, so `SuppressThrowing` replaces a `try`/`catch (OperationCanceledException)` around the `await` whose only job was to swallow that cancellation. `Task.Delay` can only complete successfully or canceled, so nothing else is hidden.
+
+`SuppressThrowing` is only supported on the non-generic `Task`. Using it on a `Task<TResult>` throws `ArgumentOutOfRangeException`, because there would be no result to return.
 
 ## 5. Stream Stories
 
