@@ -12,14 +12,6 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 4. Run the project and open the dashboard in your browser.
 5. Watch it for a minute, and reload it a few times, before you change anything.
 
-```console
-dotnet build StockWatch.slnx
-```
-
-```console
-dotnet run --project StockWatch/StockWatch.csproj
-```
-
 The dashboard is at [http://localhost:5005](http://localhost:5005).
 
 > **Note:** This app has a race condition, not a guaranteed crash. Some runs look perfect. Reload the page several times before you decide the bug is not there. The page is also blank for a moment on every load while the Blazor circuit connects, which is normal. If the page goes blank and then stops updating entirely, check the `dotnet run` terminal: the parallel loop threw, and this project has no on-page error banner to tell you.
