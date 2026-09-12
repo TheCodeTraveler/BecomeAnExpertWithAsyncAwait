@@ -12,14 +12,6 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 4. Build the project once so you can confirm your environment is ready.
 5. Run the project and leave it running while you read the code.
 
-```console
-dotnet build ProductDetails.slnx
-```
-
-```console
-dotnet run --project ProductDetails/ProductDetails.csproj
-```
-
 The app runs at [http://localhost:5009](http://localhost:5009).
 
 ## 2. Inspect the Starting Code

@@ -85,7 +85,7 @@ public partial class ProductPageBase : ComponentBase
 			// The continuation is off Blazor's renderer, so these writes go back through it
 			await InvokeAsync(() =>
 			{
-				PageError = "A backend service did not respond. Every panel below it was never requested.";
+				PageError = "A backend service did not respond. Certain panel updates have been skipped.";
 
 				// Anything still waiting when the load stopped will never arrive
 				MarkWaitingPanelsSkipped();
