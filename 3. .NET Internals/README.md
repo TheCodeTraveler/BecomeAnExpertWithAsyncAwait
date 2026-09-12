@@ -28,9 +28,10 @@ Recommended time: 10 minutes.
         * `IHttpContextAccessor.HttpContext`
         * The controller's `HttpContext` property
         * `principal`.
-4. Debug the app and navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
-5. Read the three `AccountController` log lines and compare them with your predictions.
-6. Explain which values are carried by `ExecutionContext` and which are simply object references that were never on a thread in the first place.
+4. Launch the app using the Debugger
+5. In a browser, navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
+6. Read the three `AccountController` log lines and compare them with your predictions.
+7. Explain which values are carried by `ExecutionContext` and which are simply object references that were never on a thread in the first place.
 
 ## 3. ExecutionContext Challenge
 
