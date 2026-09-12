@@ -54,11 +54,11 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | 13:00 - 13:30 | 30 min | .NET Internals lecture |
 | 13:30 - 14:10 | 40 min | Four investigation challenges: `ThreadStatic`, `ExecutionContext`, `Principal`, `SynchronizationContext` |
 | 14:10 - 14:40 | 30 min | Group review and solution walkthrough |
-| 14:40 - 15:15 | 35 min | Custom `Task` implementation lecture |
+| 14:40 - 15:15 | 35 min | Challenge: build an awaitable `CustomTask` |
 | 15:15 - 15:30 | 15 min | Afternoon break |
-| 15:30 - 16:15 | 45 min | Challenge: build an awaitable `CustomTask` |
-| 16:15 - 16:30 | 15 min | Group review of attendee approaches |
-| 16:30 - 17:00 | 30 min | Step-by-step solution walkthrough and Q&A |
+| 15:30 - 15:45 | 15 min | (Continued) Challenge: build an awaitable `CustomTask` |
+| 15:45 - 16:15 | 30 min | Group review of attendee approaches |
+| 16:15 - 17:00 | 45 min | Step-by-step solution walkthrough and Q&A |
 
 ### Day 2: Parallel Programming
 
