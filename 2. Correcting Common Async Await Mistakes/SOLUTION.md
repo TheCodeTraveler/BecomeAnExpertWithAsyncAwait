@@ -104,8 +104,10 @@ async Task RefreshAsync(CancellationToken token)
             });
         }
     }
-    catch (OperationCanceledException) when (token.IsCancellationRequested)
+    catch (OperationCanceledException e) when (token.IsCancellationRequested)
     {
+        Logger.LogError(e, "Refresh timed out.");
+        await InvokeAsync(() => RefreshErrorMessage = "Unable to refresh top stories. Check your connection and try again.");
     }
     catch (Exception e)
     {
@@ -114,22 +116,15 @@ async Task RefreshAsync(CancellationToken token)
     }
     finally
     {
-        try
-        {
-            await minimumRefreshTimeTask.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-        }
+        await minimumRefreshTimeTask.ConfigureAwait(ConfigureAwaitOptions.None | ConfigureAwaitOptions.SuppressThrowing);
 
-        if (!token.IsCancellationRequested)
+        await InvokeAsync(() =>
         {
-            await InvokeAsync(() =>
-            {
-                IsListRefreshing = false;
+            IsListRefreshing = false;
+
+            if (!token.IsCancellationRequested)
                 StateHasChanged();
-            });
-        }
+        });
     }
 }
 ```
@@ -142,12 +137,10 @@ async IAsyncEnumerable<StoryModel> GetTopStories(IReadOnlyList<long> topStoryIds
     ArgumentOutOfRangeException.ThrowIfNegativeOrZero(storyCount);
 
     var storyIds = topStoryIds.Take(storyCount).ToList();
-    var getTopStoryTaskList = storyIds.Select(id => GetStory(id, token)).ToList();
+    var getTopStoryTaskList = storyIds.Select(id => GetStory(id, token)).ToAsyncEnumerable();
 
-    foreach (var topStoryTask in getTopStoryTaskList)
+    await foreach (var topStoryTask in getTopStoryTaskList.WithCancellation(token).ConfigureAwait(false))
     {
-        token.ThrowIfCancellationRequested();
-
         yield return await topStoryTask.ConfigureAwait(false);
     }
 }
