@@ -52,7 +52,7 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | 11:40 - 12:00 | 20 min | Step-by-step solution walkthrough |
 | 12:00 - 13:00 | 60 min | Lunch, served at the restaurant on the second floor |
 | 13:00 - 13:30 | 30 min | .NET Internals lecture |
-| 13:30 - 14:10 | 40 min | Four investigation challenges: `ThreadStatic`, `Principal`, `ExecutionContext`, `SynchronizationContext` |
+| 13:30 - 14:10 | 40 min | Four investigation challenges: `ThreadStatic`, `ExecutionContext`, `Principal`, `SynchronizationContext` |
 | 14:10 - 14:40 | 30 min | Group review and solution walkthrough |
 | 14:40 - 15:15 | 35 min | Custom `Task` implementation lecture |
 | 15:15 - 15:30 | 15 min | Afternoon break |

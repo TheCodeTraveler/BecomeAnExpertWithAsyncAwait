@@ -14,16 +14,33 @@ Recommended time: 8 minutes.
 4. Build and run the project.
 5. Write down why the main thread keeps its value and why each background thread has its own value.
 
-## 2. Principal Challenge
+## 2. ExecutionContext Challenge
 
-Recommended time: 10 minutes.
+Recommended time: 12 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
-1. Open **2. Principal/PrincipalExample.slnx**.
+1. Open **2. ExecutionContext/ExecutionContextExample.slnx**.
+2. Open **ExecutionContextExample/Program.cs**.
+3. Before running the app, predict the culture, principal, and `AsyncLocal` value at each `PrintThreadValues()` call.
+4. Debug the project and step through each call.
+5. Explain what changes when `ExecutionContext.Run(...)` is used.
+6. Explain what changes when `Task.Run(...)` flows `ExecutionContext` automatically.
+7. Explain why the task created inside `using (ExecutionContext.SuppressFlow())` sees default values.
+8. Explain why the task is awaited only after leaving the `using` block.
+
+## 3. Principal Challenge
+
+Recommended time: 10 minutes.
+
+The previous challenge showed `ExecutionContext` flowing through a console app. This challenge shows the same mechanism inside an ASP.NET Core request, where the ambient values are the signed-in user and the current `HttpContext`.
+
+> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
+
+1. Open **3. Principal/PrincipalExample.slnx**.
 2. Open **PrincipalExample/Program.cs** and **PrincipalExample/Controllers/AccountController.cs**.
 3. Before running, predict the output of each call to the `LogAmbientState(string)` method
-    * Which of the values listed below will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed: 
+    * Which of the values listed below will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed:
         * `Thread.CurrentPrincipal`
         * `IHttpContextAccessor.HttpContext`
         * The controller's `HttpContext` property
@@ -32,21 +49,6 @@ Recommended time: 10 minutes.
 5. In a browser, navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
 6. Read the three `AccountController` log lines and compare them with your predictions.
 7. Explain which values are carried by `ExecutionContext` and which are simply object references that were never on a thread in the first place.
-
-## 3. ExecutionContext Challenge
-
-Recommended time: 12 minutes.
-
-> **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
-
-1. Open **3. ExecutionContext/ExecutionContextExample.slnx**.
-2. Open **ExecutionContextExample/Program.cs**.
-3. Before running the app, predict the culture, principal, and `AsyncLocal` value at each `PrintThreadValues()` call.
-4. Debug the project and step through each call.
-5. Explain what changes when `ExecutionContext.Run(...)` is used.
-6. Explain what changes when `Task.Run(...)` flows `ExecutionContext` automatically.
-7. Explain why the task created inside `using (ExecutionContext.SuppressFlow())` sees default values.
-8. Explain why the task is awaited only after leaving the `using` block.
 
 ## 4. SynchronizationContext Challenge
 
