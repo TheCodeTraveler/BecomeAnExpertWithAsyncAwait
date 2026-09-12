@@ -22,7 +22,12 @@ Recommended time: 10 minutes.
 
 1. Open **2. Principal/PrincipalExample.slnx**.
 2. Open **PrincipalExample/Program.cs** and **PrincipalExample/Controllers/AccountController.cs**.
-3. Before running, predict which of these will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed: `Thread.CurrentPrincipal`, `IHttpContextAccessor.HttpContext`, the controller's `HttpContext` property, and the `principal` local variable.
+3. Before running, predict each output of `LogAmbientState`
+    * Which of the values listed below will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed: 
+        * `Thread.CurrentPrincipal`
+        * `IHttpContextAccessor.HttpContext`
+        * The controller's `HttpContext` property
+        * `principal`.
 4. Debug the app and navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
 5. Read the three `AccountController` log lines and compare them with your predictions.
 6. Explain which values are carried by `ExecutionContext` and which are simply object references that were never on a thread in the first place.
