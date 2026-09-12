@@ -99,8 +99,10 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 				});
 			}
 		}
-		catch (OperationCanceledException) when (token.IsCancellationRequested)
+		catch (OperationCanceledException e) when (token.IsCancellationRequested)
 		{
+			Logger.LogError(e, "Refresh timed out.");
+			await InvokeAsync(() => RefreshErrorMessage = "Unable to refresh top stories. Check your connection and try again.");
 		}
 		catch (Exception e)
 		{
@@ -109,22 +111,13 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		}
 		finally
 		{
-			try
+			await minimumRefreshTimeTask.ConfigureAwait(ConfigureAwaitOptions.None | ConfigureAwaitOptions.SuppressThrowing);
+			await InvokeAsync(() =>
 			{
-				await minimumRefreshTimeTask.ConfigureAwait(false);
-			}
-			catch (OperationCanceledException) when (token.IsCancellationRequested)
-			{
-			}
-
-			if (!token.IsCancellationRequested)
-			{
-				await InvokeAsync(() =>
-				{
-					IsListRefreshing = false;
+				IsListRefreshing = false;
+				if (!token.IsCancellationRequested)
 					StateHasChanged();
-				});
-			}
+			});
 		}
 	}
 
@@ -164,5 +157,5 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	}
 
 	bool IsDataRecent(TimeSpan timeSpan) => TopStoryCollection.Any()
-		&& (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) < timeSpan;
+	                                        && (DateTimeOffset.UtcNow - TopStoryCollection.Max(x => x.CreatedAt)) < timeSpan;
 }
