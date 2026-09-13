@@ -43,7 +43,7 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 
 | Time | Length | Topic |
 | --- | --- | --- |
-| 09:00 - 09:55 | 55 min | Setup and installation: .NET 10 SDK, editor, clone, first build |
+| 09:00 - 09:55 | 55 min | Setup and installation: .NET 10 SDK, IDE, Clone Repo |
 | 09:55 - 10:15 | 20 min | 1. Thread Switching and Compiler-Generated Code (Lecture) |
 | 10:15 - 10:30 | 15 min | Morning break |
 | 10:30 - 10:55 | 25 min | 2. Correcting Common Async/Await Mistakes (Lecture) |
@@ -98,7 +98,6 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 7. [(Presentation/Code) Data Parallelism](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/7.%20Data%20Parallelism)
 8. [(Presentation/Code) Concurrent Collections](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/8.%20Concurrent%20Collections)
 9. [(Presentation/Code) Channels](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/tree/main/9.%20Channels)
-10. [(Presentation) Recap, Resources and Thank You](https://github.com/TheCodeTraveler/BecomeAnExpertWithAsyncAwait/blob/main/10.%20Thank%20You/ThankYou.pptx)
 
 ## Additional Resources
 
