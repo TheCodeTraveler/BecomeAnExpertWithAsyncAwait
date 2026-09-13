@@ -51,7 +51,7 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | 11:30 - 12:00 | 30 min | 2. Correcting Common Async/Await Mistakes (Group Review) |
 | 12:00 - 13:00 | 60 min | Lunch |
 | 13:00 - 13:30 | 30 min | 3. .NET Internals (Lecture) |
-| 13:30 - 13:50 | 20 min | 3. .NET Internals (Coding Challenge) |
+| 13:30 - 13:50 | 20 min | 3. .NET Internals (Coding "Challenge") |
 | 13:50 - 14:10 | 20 min | 3. .NET Internals (Group Review) |
 | 14:10 - 14:30 | 20 min | 4. Creating A Custom `Task` (Lecture) |
 | 14:30 - 15:15 | 45 min | 4. Creating a Custom `Task` (Coding Challenge) |

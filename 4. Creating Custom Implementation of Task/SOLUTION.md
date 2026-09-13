@@ -121,9 +121,7 @@ void CompleteTask(Exception? exception)
     lock (_lock)
     {
         if (_completed)
-        {
             throw new InvalidOperationException($"{nameof(CustomTask)} already completed. Cannot complete an already completed {nameof(CustomTask)}");
-        }
 
         _completed = true;
         _exception = exception;
@@ -132,8 +130,8 @@ void CompleteTask(Exception? exception)
         _continuations.Clear();
     }
 
-    // Always queue (never inline) so long ContinueWith chains cannot recurse through CompleteTask.
-    // Unsafe* skips capturing this thread's context; the registrar's context is restored inside the work item.
+    // Always queue (never inline) to avoid long ContinueWith chains recursively executing through CompleteTask.
+    // UnsafeQueueUserWorkItem skips capturing this thread's context; the registrar's context is restored inside the work item.
     foreach (var pending in continuationsToRun)
     {
         ThreadPool.UnsafeQueueUserWorkItem(static state =>
@@ -214,13 +212,13 @@ public static CustomTask Delay(TimeSpan delay)
 
 ## 7. Enable Await
 
-`await` works when the awaited type exposes the awaiter pattern:
+`await` works when the awaited type exposes the awaiter pattern: a `GetAwaiter()` method that returns a type with `IsCompleted`, `OnCompleted(Action)` and `GetResult()`. The starter project already contains the awaiter, so the only missing piece is the method that returns it:
 
 ```cs
 public CustomTaskAwaiter GetAwaiter() => new(this);
 ```
 
-The awaiter delegates completion and continuation behavior back to `CustomTask`:
+The provided `CustomTaskAwaiter` owns no state of its own. Every member delegates completion and continuation behavior back to `CustomTask`, which is why the starter's compiler errors pointed at `IsCompleted`, `ContinueWith(...)` and `Wait()`:
 
 ```cs
 using System.Runtime.CompilerServices;
@@ -245,6 +243,8 @@ readonly struct CustomTaskAwaiter : INotifyCompletion
     public void GetResult() => _task.Wait();
 }
 ```
+
+`Program.cs` needs no changes either. Its top-level `await` statements compile as soon as `GetAwaiter()` exists, because the compiler generates the same `IsCompleted`, `OnCompleted(...)` and `GetResult()` calls for `CustomTask` that it generates for `Task`.
 
 ## 8. Compare Against Finish
 
