@@ -44,48 +44,47 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | Time | Length | Topic |
 | --- | --- | --- |
 | 09:00 - 09:55 | 55 min | Setup and installation: .NET 10 SDK, editor, clone, first build |
-| 09:55 - 10:15 | 20 min | Thread switching and compiler-generated code lecture |
+| 09:55 - 10:15 | 20 min | 1. Thread Switching and Compiler-Generated Code (Lecture) |
 | 10:15 - 10:30 | 15 min | Morning break |
-| 10:30 - 10:55 | 25 min | Correcting common async/await mistakes lecture |
-| 10:55 - 11:30 | 35 min | Challenge: refactor the HackerNews refresh flow |
-| 11:30 - 11:40 | 10 min | Group review of attendee approaches |
-| 11:40 - 12:00 | 20 min | Step-by-step solution walkthrough |
-| 12:00 - 13:00 | 60 min | Lunch, served at the restaurant on the second floor |
-| 13:00 - 13:30 | 30 min | .NET Internals lecture |
-| 13:30 - 14:10 | 40 min | Four investigation challenges: `ThreadStatic`, `ExecutionContext`, `Principal`, `SynchronizationContext` |
-| 14:10 - 14:40 | 30 min | Group review and solution walkthrough |
-| 14:40 - 15:15 | 35 min | Challenge: build an awaitable `CustomTask` |
+| 10:30 - 10:55 | 25 min | 2. Correcting Common Async/Await Mistakes (Lecture) |
+| 10:55 - 11:30 | 35 min | 2. Correcting Common Async/Await Mistakes (Coding Challenge) |
+| 11:30 - 12:00 | 30 min | 2. Correcting Common Async/Await Mistakes (Group Review) |
+| 12:00 - 13:00 | 60 min | Lunch |
+| 13:00 - 13:30 | 30 min | 3. .NET Internals (Lecture) |
+| 13:30 - 13:50 | 20 min | 3. .NET Internals (Coding Challenge) |
+| 13:50 - 14:10 | 20 min | 3. .NET Internals (Group Review) |
+| 14:10 - 14:30 | 20 min | 4. Creating A Custom `Task` (Lecture) |
+| 14:30 - 15:15 | 45 min | 4. Creating a Custom `Task` (Coding Challenge) |
 | 15:15 - 15:30 | 15 min | Afternoon break |
-| 15:30 - 15:45 | 15 min | (Continued) Challenge: build an awaitable `CustomTask` |
-| 15:45 - 16:15 | 30 min | Group review of attendee approaches |
-| 16:15 - 17:00 | 45 min | Step-by-step solution walkthrough and Q&A |
+| 15:30 - 16:00 | 15 min | 4. Creating a Custom `Task` (Challenge, continued) |
+| 16:00 - 17:00 | 25 min | 4. Creating a Custom `Task` (Group Review) |
 
 ### Day 2: Parallel Programming
 
 | Time | Length | Topic |
 | --- | --- | --- |
-| 09:00 - 09:15 | 15 min | Day 1 recap and Day 2 orientation |
-| 09:15 - 09:40 | 25 min | Asynchronous vs parallel programming lecture |
-| 09:40 - 10:05 | 25 min | Challenge: fix OrderPortal's races and deadlock |
-| 10:05 - 10:15 | 10 min | Group review of attendee approaches |
+| 09:00 - 09:15 | 15 min | Day 1 Recap |
+| 09:15 - 09:40 | 25 min | 5. Asynchronous vs Parallel Programming (Lecture) |
+| 09:40 - 10:05 | 25 min | 5. Asynchronous vs Parallel Programming (Coding Challenge) |
+| 10:05 - 10:15 | 10 min | 5. Asynchronous vs Parallel Programming (Group Review) |
 | 10:15 - 10:30 | 15 min | Morning break |
-| 10:30 - 10:50 | 20 min | Step-by-step solution walkthrough |
-| 10:50 - 11:15 | 25 min | Coordinating multiple tasks lecture |
-| 11:15 - 11:35 | 20 min | Challenge: fan out the ProductDetails page |
-| 11:35 - 12:00 | 25 min | Group review and solution walkthrough |
-| 12:00 - 13:00 | 60 min | Lunch, served at the restaurant on the second floor |
-| 13:00 - 13:20 | 20 min | Data parallelism lecture: the `Parallel` class and PLINQ |
-| 13:20 - 13:45 | 25 min | Challenge: speed up the ImportPortal batch job |
-| 13:45 - 14:10 | 25 min | Group review and solution walkthrough |
-| 14:10 - 14:30 | 20 min | Concurrent collections lecture |
-| 14:30 - 14:55 | 25 min | Challenge: make the StockWatch dashboard thread safe |
-| 14:55 - 15:15 | 20 min | Group review and solution walkthrough |
+| 10:30 - 10:50 | 20 min | 5. Asynchronous vs Parallel Programming (Group Review, continued) |
+| 10:50 - 11:15 | 25 min | 6. Coordinating Multiple Tasks (Lecture) |
+| 11:15 - 11:35 | 20 min | 6. Coordinating Multiple Tasks (Coding Challenge) |
+| 11:35 - 12:00 | 25 min | 6. Coordinating Multiple Tasks (Group Review) |
+| 12:00 - 13:00 | 60 min | Lunch |
+| 13:00 - 13:20 | 20 min | 7. Data Parallelism (Lecture) |
+| 13:20 - 13:45 | 25 min | 7. Data Parallelism (Coding Challenge) |
+| 13:45 - 14:10 | 25 min | 7. Data Parallelism (Group Review) |
+| 14:10 - 14:30 | 20 min | 8. Concurrent Collections (Lecture) |
+| 14:30 - 14:55 | 25 min | 8. Concurrent Collections (Coding Challenge) |
+| 14:55 - 15:15 | 20 min | 8. Concurrent Collections (Group Review) |
 | 15:15 - 15:30 | 15 min | Afternoon break |
-| 15:30 - 15:40 | 10 min | Workshop evaluation |
-| 15:40 - 15:55 | 15 min | Channels lecture |
-| 15:55 - 16:15 | 20 min | Challenge: put a channel behind the TelemetryPipeline webhook |
-| 16:15 - 16:40 | 25 min | Group review and solution walkthrough |
-| 16:40 - 17:00 | 20 min | Final review, recap and Q&A |
+| 15:30 - 15:45 | 15 min | 9. Channels (Lecture) |
+| 15:45 - 16:05 | 20 min | 9. Channels (Coding Challenge) |
+| 16:05 - 16:25 | 25 min | 9. Channels (Group Review) |
+| 16:25 - 16:45 | 20 min | Final Review, Recap and Q&A |
+| 16:45 - 17:00 | 10 min | Workshop evaluation |
 
 ## Agenda
 
