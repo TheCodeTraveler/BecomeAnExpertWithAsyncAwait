@@ -2,7 +2,7 @@
 
 Use this during the guided walkthrough after the challenge and group review in [README.md](README.md).
 
-The completed project is **2. Finish/CreatingTaskFromScratch**. Compare your implementation with the finished sample as we rebuild the solution step by step.
+The completed project is **2. Finish/CreatingTaskFromScratch**. Compare your implementation with the finished sample as we rebuild the solution step by step, replacing each `NotImplementedException` stub from the starter's `CustomTask.cs` along the way.
 
 ## 1. Track Completion State
 
@@ -212,13 +212,13 @@ public static CustomTask Delay(TimeSpan delay)
 
 ## 7. Enable Await
 
-`await` works when the awaited type exposes the awaiter pattern: a `GetAwaiter()` method that returns a type with `IsCompleted`, `OnCompleted(Action)` and `GetResult()`. The starter project already contains the awaiter, so the only missing piece is the method that returns it:
+`await` works when the awaited type exposes the awaiter pattern: a `GetAwaiter()` method that returns a type with `IsCompleted`, `OnCompleted(Action)` and `GetResult()`. The starter project already contains the awaiter, so the only missing piece is replacing the `GetAwaiter()` stub with a method that returns it:
 
 ```cs
 public CustomTaskAwaiter GetAwaiter() => new(this);
 ```
 
-The provided `CustomTaskAwaiter` owns no state of its own. Every member delegates completion and continuation behavior back to `CustomTask`, which is why the starter's compiler errors pointed at `IsCompleted`, `ContinueWith(...)` and `Wait()`:
+The provided `CustomTaskAwaiter` owns no state of its own. Every member delegates completion and continuation behavior back to `CustomTask`, which is why the starter's `CustomTask.cs` had to declare `IsCompleted`, `ContinueWith(...)` and `Wait()` for `CustomTaskAwaiter.cs` to compile:
 
 ```cs
 using System.Runtime.CompilerServices;
@@ -244,7 +244,7 @@ readonly struct CustomTaskAwaiter : INotifyCompletion
 }
 ```
 
-`Program.cs` needs no changes either. Its top-level `await` statements compile as soon as `GetAwaiter()` exists, because the compiler generates the same `IsCompleted`, `OnCompleted(...)` and `GetResult()` calls for `CustomTask` that it generates for `Task`.
+`Program.cs` needs no changes either. It calls every public member of `CustomTask`, so it compiled against the starter's stubs from the beginning, and now every member it calls does real work. Its top-level `await` statements work because the compiler generates the same `IsCompleted`, `OnCompleted(...)` and `GetResult()` calls for `CustomTask` that it generates for `Task`.
 
 ## 8. Compare Against Finish
 
@@ -256,4 +256,10 @@ Compare your implementation with the completed files:
 
 [2. Finish/CreatingTaskFromScratch/Program.cs](2.%20Finish/CreatingTaskFromScratch/Program.cs)
 
-Run the completed program and confirm it prints the starting thread ID followed by three `CustomTask` thread IDs.
+Run the completed program and confirm it prints all five steps. The thread IDs will differ on your machine, but the pattern should match:
+
+1. In Step 1, the `Run()` action prints a thread pool thread ID, and `Wait()` returns on the main thread.
+2. In Step 2, `IsCompleted` is `False` right after `Delay()` returns, and the two chained continuations print in order.
+3. In Step 3, awaiting `Delay()` resumes on a thread pool thread, and awaiting the already completed `runTask` keeps the same thread ID before and after the `await`.
+4. In Step 4, the `await` resumes only after the continuation calls `SetResult()`.
+5. In Step 5, `await` and `Wait()` both rethrow the stored exception, and the stack trace from `Wait()` starts at the lambda in `Program.cs` that threw it, not at `CustomTask.Wait()`.
