@@ -46,9 +46,9 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | 09:00 - 09:30 | 30 min | Setup and installation: .NET 10 SDK, IDE, Clone Repo |
 | 09:30 - 10:15 | 45 min | 1. Thread Switching and Compiler-Generated Code (Lecture) |
 | 10:15 - 10:30 | 15 min | Morning break |
-| 10:30 - 10:55 | 25 min | 2. Correcting Common Async/Await Mistakes (Lecture) |
-| 10:55 - 11:30 | 35 min | 2. Correcting Common Async/Await Mistakes (Coding Challenge) |
-| 11:30 - 12:00 | 30 min | 2. Correcting Common Async/Await Mistakes (Group Review) |
+| 10:30 - 11:05 | 35 min | 2. Correcting Common Async/Await Mistakes (Lecture) |
+| 11:05 - 11:40 | 35 min | 2. Correcting Common Async/Await Mistakes (Coding Challenge) |
+| 11:40 - 12:00 | 20 min | 2. Correcting Common Async/Await Mistakes (Group Review) |
 | 12:00 - 13:00 | 60 min | Lunch |
 | 13:00 - 13:30 | 30 min | 3. .NET Internals (Lecture) |
 | 13:30 - 13:50 | 20 min | 3. .NET Internals (Coding "Challenge") |
