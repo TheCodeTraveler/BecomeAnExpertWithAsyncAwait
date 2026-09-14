@@ -256,7 +256,7 @@ Compare your implementation with the completed files:
 
 [2. Finish/CreatingTaskFromScratch/Program.cs](2.%20Finish/CreatingTaskFromScratch/Program.cs)
 
-Run the completed program and confirm it prints all five steps. The thread IDs will differ on your machine, but the pattern should match:
+Run the completed program and confirm it prints all five steps, and that every line matches its `Expected:` result. The thread IDs will differ on your machine, but the pattern should match:
 
 1. In Step 1, the `Run()` action prints a thread pool thread ID, and `Wait()` returns on the main thread.
 2. In Step 2, `IsCompleted` is `False` right after `Delay()` returns, and the two chained continuations print in order.

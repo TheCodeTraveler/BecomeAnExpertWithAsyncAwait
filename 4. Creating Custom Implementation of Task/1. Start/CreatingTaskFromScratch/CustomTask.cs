@@ -33,8 +33,8 @@ sealed class CustomTask
 		throw new NotImplementedException("CustomTask.ContinueWith() is not implemented yet. Hint: return a new CustomTask that completes when the action finishes or throws. If this CustomTask has already completed, queue the action to the thread pool now. Otherwise store the action, along with the caller's ExecutionContext, so SetResult() or SetException() can run it later. One CustomTask can have many continuations.");
 	}
 
-	public CustomTaskAwaiter GetAwaiter() 
-	{ 
+	public CustomTaskAwaiter GetAwaiter()
+	{
 		throw new NotImplementedException("CustomTask.GetAwaiter() is not implemented yet. Hint: return a CustomTaskAwaiter for this CustomTask. CustomTaskAwaiter.cs is already complete, so read it to see what it needs.");
 	}
 
@@ -43,7 +43,7 @@ sealed class CustomTask
 		throw new NotImplementedException("CustomTask.SetResult() is not implemented yet. Hint: mark this CustomTask as completed, then queue every continuation stored by ContinueWith() to the thread pool, running each one inside the ExecutionContext captured when it was stored. A CustomTask completes exactly once, so completing it a second time should throw an InvalidOperationException.");
 	}
 
-	public void SetException(Exception exception) 
+	public void SetException(Exception exception)
 	{
 		throw new NotImplementedException("CustomTask.SetException() is not implemented yet. Hint: store the exception so Wait() and await can rethrow it, then complete this CustomTask the same way SetResult() does. SetResult() and SetException() can share one private completion method.");
 	}

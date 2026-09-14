@@ -17,7 +17,7 @@ In this section, you will build a minimal custom awaitable named `CustomTask`.
 
 `CustomTaskAwaiter` is provided so you can concentrate on `CustomTask` itself. Read it before you start: its three members tell you which `CustomTask` members the `await` keyword depends on, and `CustomTask` still needs a `GetAwaiter()` method that returns it.
 
-`Program.cs` is the finished program, and it is your guide. It calls every public member of `CustomTask` in five numbered steps, and its comments explain what each member should do and what its output should show.
+`Program.cs` is the finished program, and it is your guide. It calls every public member of `CustomTask` in five numbered steps. Its comments explain what each member should do, and every line it prints ends with the `Expected:` result, so you can check your work as you go.
 
 You are going to add just enough infrastructure to understand how task-like types work with continuations, blocking waits, timers, `ExecutionContext`, and the `await` keyword. This challenge builds on the .NET Internals section: the `ExecutionContext` flow you observed there is the same context your `CustomTask` must capture and restore when it runs continuations.
 
@@ -48,7 +48,7 @@ Requirements:
 Acceptance checks:
 
 1. **CreatingTaskFromScratch.slnx** builds.
-2. The program runs all five steps in `Program.cs`, and the output of each step matches what its comments describe.
+2. The program runs all five steps in `Program.cs`, and every line of output matches its `Expected:` result.
 3. The continuation runs after the first task completes.
 4. Chaining `ContinueWith(...)` on the task returned by `ContinueWith(...)` does not wait forever.
 5. Two callers waiting on the same incomplete `CustomTask` both resume when it completes.
