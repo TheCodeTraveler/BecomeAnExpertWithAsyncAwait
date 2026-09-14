@@ -1,0 +1,15 @@
+@inherits StepNavBase
+
+<nav class="step-nav" aria-label="Workshop steps">
+    <NavLink class="step-nav-link" href="" Match="NavLinkMatch.All">
+        <span class="step-nav-title">Home</span>
+    </NavLink>
+
+    @foreach (var step in Verifier.Steps)
+    {
+        <NavLink class="step-nav-link" href="@($"steps/{step.Number}")" @key="step.Number">
+            <span class="step-nav-title">Step @step.Number · @step.Scenario</span>
+            <StepBadge Status="Verifier.GetState(step.Number).Status" IsUnlocked="Verifier.IsUnlocked(step.Number)" />
+        </NavLink>
+    }
+</nav>

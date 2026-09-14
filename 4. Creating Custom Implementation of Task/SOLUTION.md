@@ -2,7 +2,7 @@
 
 Use this during the guided walkthrough after the challenge and group review in [README.md](README.md).
 
-The completed project is **2. Finish/CreatingTaskFromScratch**. Compare your implementation with the finished sample as we rebuild the solution step by step, replacing each `NotImplementedException` stub from the starter's `CustomTask.cs` along the way.
+The completed app is **2. Finish/CoffeeShop**. Compare your implementation with the finished sample as we rebuild the solution step by step, replacing each `NotImplementedException` stub from the starter's `CustomTask.cs` along the way.
 
 ## 1. Track Completion State
 
@@ -223,7 +223,7 @@ The provided `CustomTaskAwaiter` owns no state of its own. Every member delegate
 ```cs
 using System.Runtime.CompilerServices;
 
-namespace CreatingTaskFromScratch;
+namespace CoffeeShop;
 
 readonly struct CustomTaskAwaiter : INotifyCompletion
 {
@@ -244,22 +244,25 @@ readonly struct CustomTaskAwaiter : INotifyCompletion
 }
 ```
 
-`Program.cs` needs no changes either. It calls every public member of `CustomTask`, so it compiled against the starter's stubs from the beginning, and now every member it calls does real work. Its top-level `await` statements work because the compiler generates the same `IsCompleted`, `OnCompleted(...)` and `GetResult()` calls for `CustomTask` that it generates for `Task`.
+The coffee shop code in **Steps** needs no changes either. It compiled against the starter's stubs from the beginning, and now every member it calls does real work. Its `await` statements work because the compiler generates the same `IsCompleted`, `OnCompleted(...)` and `GetResult()` calls for `CustomTask` that it generates for `Task`.
+
+There is one difference from `Task` that matters in a Blazor app. `CustomTask` never captures `SynchronizationContext`: `OnCompleted(...)` registers the continuation with `ContinueWith(...)`, and the continuation runs on a thread pool thread. After awaiting a `CustomTask`, a component is off Blazor's renderer, exactly as it is after `ConfigureAwait(false)`, so any component state change must go through `InvokeAsync(...)`. Step 3 checks this.
 
 ## 8. Compare Against Finish
 
 Compare your implementation with the completed files:
 
-[2. Finish/CreatingTaskFromScratch/CustomTask.cs](2.%20Finish/CreatingTaskFromScratch/CustomTask.cs)
+[2. Finish/CoffeeShop/CustomTask.cs](2.%20Finish/CoffeeShop/CustomTask.cs)
 
-[2. Finish/CreatingTaskFromScratch/CustomTaskAwaiter.cs](2.%20Finish/CreatingTaskFromScratch/CustomTaskAwaiter.cs)
+[2. Finish/CoffeeShop/CustomTaskAwaiter.cs](2.%20Finish/CoffeeShop/CustomTaskAwaiter.cs)
 
-[2. Finish/CreatingTaskFromScratch/Program.cs](2.%20Finish/CreatingTaskFromScratch/Program.cs)
+[2. Finish/CoffeeShop/Steps](2.%20Finish/CoffeeShop/Steps)
 
-Run the completed program and confirm it prints all five steps, and that every line matches its `Expected:` result. The thread IDs will differ on your machine, but the pattern should match:
+Run the completed app at [http://localhost:5016](http://localhost:5016). Steps 1 to 5 pass as soon as it starts, and Step 6 passes when you run it from its page. Thread IDs will differ on your machine, but every expected result should match:
 
-1. In Step 1, the `Run()` action prints a thread pool thread ID, and `Wait()` returns on the main thread.
-2. In Step 2, `IsCompleted` is `False` right after `Delay()` returns, and the two chained continuations print in order.
-3. In Step 3, awaiting `Delay()` resumes on a thread pool thread, and awaiting the already completed `runTask` keeps the same thread ID before and after the `await`.
-4. In Step 4, the `await` resumes only after the continuation calls `SetResult()`.
-5. In Step 5, `await` and `Wait()` both rethrow the stored exception, and the stack trace from `Wait()` starts at the lambda in `Program.cs` that threw it, not at `CustomTask.Wait()`.
+1. Step 1, print the receipt: `Run()` returns before the receipt is rendered, the render runs on a thread pool thread, and `Wait()` returns on the thread that called it with `IsCompleted` now `True`.
+2. Step 2, brew a pour-over: `IsCompleted` is `False` right after `Delay()`, the first continuation runs after the delay, and the second continuation runs only after the first one completes.
+3. Step 3, prepare a mobile order: the `async` method returns to its caller at its first `await`, resumes on a thread pool thread after the delay without the `SynchronizationContext` it started on, and awaiting an already completed `CustomTask` keeps running on the same thread.
+4. Step 4, wrap the espresso machine's events: `IsCompleted` stays `False` while the shot brews, the `await` resumes only after `ShotPulled`, and completing the same `CustomTask` twice throws `InvalidOperationException`.
+5. Step 5, handle a jammed machine and an empty grinder: `await` rethrows the machine's exception, and `Wait()` rethrows the grinder's exception with a stack trace that still starts where it was thrown, not in `CustomTask.Wait()`.
+6. Step 6, rush hour: two customers waiting on the same order both resume, a 10,000-link `ContinueWith` chain completes without a stack overflow, and each continuation sees the `ExecutionContext` of the code that registered it, never the context of the thread that completed the `CustomTask`.
