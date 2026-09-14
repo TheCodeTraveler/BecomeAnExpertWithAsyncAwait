@@ -81,7 +81,7 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		try
 		{
 			var topStoryIds = await GetTopStoryIDs(token).ConfigureAwait(false);
-			
+
 			var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
 			var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
 			Logger.LogInformation("After ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", threadAfterConfigureAwaitFalse.ManagedThreadId, synchronizationContextAfterConfigureAwaitFalse?.GetType().Name ?? "<null>");

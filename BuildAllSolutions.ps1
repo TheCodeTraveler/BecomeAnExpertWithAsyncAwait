@@ -24,11 +24,12 @@ foreach ($slnxFile in $slnxFiles) {
 
     Write-Host "Building solution: $($slnxFile.FullName)" -ForegroundColor Cyan
     # --no-incremental forces a recompile so analyzer warnings are always reported, even when nothing changed
+    # -c Release is required: Directory.Build.props hides the StyleCop element-ordering warnings in every other configuration
     $buildOutput = & dotnet build $slnxFile.FullName -c Release --no-incremental
     $buildExitCode = $LASTEXITCODE
     $buildOutput | ForEach-Object { Write-Host $_ }
 
-    # StyleCop element ordering (SA1201, SA1202, SA1204, SA1214, SA1215) is a warning for attendees but a failure here.
+    # StyleCop element ordering (SA1201, SA1202, SA1204, SA1214, SA1215) is hidden from attendees building in Debug but a failure here.
     # See "C# element ordering" in .github/copilot-instructions.md.
     $orderingWarnings = $buildOutput | Select-String -Pattern 'warning SA1(201|202|204|214|215)' | ForEach-Object { $_.Line.Trim() } | Sort-Object -Unique
 

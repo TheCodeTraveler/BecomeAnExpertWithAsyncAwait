@@ -67,4 +67,9 @@
       IL3050,IL3051,IL3052,IL3053,IL3054,IL3055,IL3056
     </WarningsAsErrors>
   </PropertyGroup>
+  <!-- StyleCop element ordering (SA1201, SA1202, SA1204, SA1214, SA1215) is only reported in Release builds (BuildAllSolutions.ps1 and CI), so attendees working in Debug never see it.
+       Keep this after the NoWarn above, and compare against Release: Configuration is still empty here when no configuration is passed. -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
+    <NoWarn>$(NoWarn);SA1201;SA1202;SA1204;SA1214;SA1215</NoWarn>
+  </PropertyGroup>
 </Project>
