@@ -8,8 +8,8 @@ Console.WriteLine();
 // Step 1: CustomTask.Run(), Wait() and IsCompleted
 Console.WriteLine("Step 1: CustomTask.Run(), Wait() and IsCompleted");
 
-// Run() queues the action to the thread pool and returns immediately, so the action runs on a thread pool thread, not the main thread.
-CustomTask runTask = CustomTask.Run(() => Console.WriteLine($"   The Run() action is running on a thread pool thread. Thread Id: {Environment.CurrentManagedThreadId}"));
+// Run() queues the action to the thread pool and returns the Task immediately, so the action runs on a thread pool thread, not the main thread.
+var runTask = CustomTask.Run(() => Console.WriteLine($"   The Run() action is running on a thread pool thread. Thread Id: {Environment.CurrentManagedThreadId}"));
 
 // Wait() blocks the calling thread until the CustomTask completes, so the next line cannot run before the action has finished.
 runTask.Wait();
@@ -22,12 +22,12 @@ Console.WriteLine();
 Console.WriteLine("Step 2: CustomTask.Delay() and ContinueWith()");
 
 // Delay() starts a timer and returns immediately. No thread is blocked while the time passes, so IsCompleted is still false.
-CustomTask delayTask = CustomTask.Delay(TimeSpan.FromSeconds(1));
+var delayTask = CustomTask.Delay(TimeSpan.FromSeconds(1));
 Console.WriteLine($"   Delay() returned before the delay finished. IsCompleted: {delayTask.IsCompleted}");
 
 // ContinueWith() stores an action to run after delayTask completes, and returns a new CustomTask that completes when that action finishes.
 // Calling ContinueWith() on the returned CustomTask builds a chain: each link runs only after the link before it has completed.
-CustomTask continuationChain = delayTask
+var continuationChain = delayTask
 	.ContinueWith(() => Console.WriteLine($"   First continuation: runs after the delay completes. Thread Id: {Environment.CurrentManagedThreadId}"))
 	.ContinueWith(() => Console.WriteLine($"   Second continuation: runs after the first continuation completes. Thread Id: {Environment.CurrentManagedThreadId}"));
 
@@ -49,7 +49,7 @@ Console.WriteLine($"   Resumed on a thread pool thread after the delay. Thread I
 
 // runTask completed in Step 1, so the awaiter's IsCompleted returns true.
 // The compiler skips OnCompleted(), calls GetResult() right away, and the code after the await keeps running on the same thread.
-int threadIdBeforeAwait = Environment.CurrentManagedThreadId;
+var threadIdBeforeAwait = Environment.CurrentManagedThreadId;
 await runTask;
 Console.WriteLine($"   Awaiting an already completed CustomTask does not switch threads. Thread Id before await: {threadIdBeforeAwait}, after await: {Environment.CurrentManagedThreadId}");
 Console.WriteLine();
@@ -59,10 +59,10 @@ Console.WriteLine("Step 4: SetResult()");
 
 // A CustomTask does not have to run an action. You can create one and complete it yourself when something else finishes,
 // which is what TaskCompletionSource does for Task.
-CustomTask manuallyCompletedTask = new();
+var manuallyCompletedTask = new CustomTask();
 Console.WriteLine($"   Created a CustomTask that has no action to run. IsCompleted: {manuallyCompletedTask.IsCompleted}");
 
-CustomTask setResultTask = CustomTask.Delay(TimeSpan.FromSeconds(1)).ContinueWith(() =>
+var setResultTask = CustomTask.Delay(TimeSpan.FromSeconds(1)).ContinueWith(() =>
 {
 	Console.WriteLine($"   The delay completed, so the continuation is calling SetResult(). Thread Id: {Environment.CurrentManagedThreadId}");
 	manuallyCompletedTask.SetResult();
