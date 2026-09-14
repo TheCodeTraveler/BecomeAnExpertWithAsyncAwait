@@ -1,0 +1,222 @@
+@page "/steps/{Number:int}"
+@inherits StepPageBase
+
+<PageTitle>@(Step is null ? "Step not found" : $"Step {Step.Number} · CoffeeShop")</PageTitle>
+
+<section class="page">
+    @if (Step is null)
+    {
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">CoffeeShop</p>
+                <h1>Step not found</h1>
+                <p class="hero-summary">There is no Step @Number. <a href="">Go back to every step</a>.</p>
+            </div>
+        </header>
+    }
+    else
+    {
+        var state = State;
+        var run = RunOnThisPage;
+        var report = run?.Report ?? state.Report;
+
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Step @Step.Number</p>
+                <h1>@Step.Scenario</h1>
+                <p class="hero-summary"><code>@Step.Title</code></p>
+            </div>
+
+            <div class="hero-actions">
+                @if (run is not null)
+                {
+                    <button class="action action-secondary" type="button" @onclick="StopRun">Stop</button>
+                }
+
+                <button class="action" type="button" disabled="@(Verifier.IsBusy || IsRunning || !IsUnlocked)" @onclick="RunStepAsync">
+                    @if (IsRunning)
+                    {
+                        <span class="spinner" aria-hidden="true"></span>
+                    }
+                    @(IsRunning ? "Running" : "Run step")
+                </button>
+
+                <StepBadge Status="state.Status" IsUnlocked="IsUnlocked" />
+            </div>
+        </header>
+
+        <div class="layout">
+            <StepNav Verifier="Verifier" />
+
+            <div class="content">
+                @if (!IsUnlocked)
+                {
+                    <div class="banner banner-locked">Finish <a href="@($"steps/{Step.Number - 1}")">Step @(Step.Number - 1)</a> first.</div>
+                }
+                else if (Verifier.IsCheckingAllSteps && run is null)
+                {
+                    <div class="banner banner-running" aria-live="polite">Checking your CustomTask…</div>
+                }
+
+                @if (ErrorMessage is not null)
+                {
+                    <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+                }
+
+                @if (!IsRunning && state.CompletedAt is { } lastRunAt)
+                {
+                    @switch (state.Status)
+                    {
+                        case StepStatus.Passed:
+                            <div class="banner banner-passed banner-fresh" role="status" @key="lastRunAt">
+                                @if (NextStep is null)
+                                {
+                                    <span>Step @Step.Number passed. Every station works.</span>
+                                }
+                                else
+                                {
+                                    <span>Step @Step.Number passed. <a href="@($"steps/{NextStep.Number}")">Continue to Step @NextStep.Number</a>.</span>
+                                }
+                                <span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
+                            break;
+                        case StepStatus.NotImplemented:
+                            <div class="banner banner-missing banner-fresh" role="alert" @key="lastRunAt"><span><code>@state.MissingMember</code> still throws NotImplementedException. Open CustomTask.cs and read its hint (it is also in the terminal).</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                        case StepStatus.TimedOut:
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
+                                @if (state.WasWaitingForBarista)
+                                {
+                                    <span>Step @Step.Number did not finish in time because nobody pressed the espresso machine's button. Run it again, or leave Automatic barista on.</span>
+                                }
+                                else
+                                {
+                                    <span>Step @Step.Number did not finish within @StepVerifier.AutomaticTimeout.TotalSeconds seconds. @Step.TimeoutHint</span>
+                                }
+                                <span class="banner-note">The timed-out run may still be blocking a thread. Restart the app after fixing CustomTask.cs. Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
+                            break;
+                        case StepStatus.Failed:
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Some expected results did not match.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                        case StepStatus.Crashed:
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Step @Step.Number threw an unexpected @state.ExceptionType. The terminal running the app has the details.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                        case StepStatus.Stopped:
+                            <div class="banner banner-locked banner-fresh" role="status" @key="lastRunAt"><span>Step @Step.Number was stopped before it finished.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                    }
+                }
+
+                <div class="panel">
+                    <h2>The story</h2>
+                    <p>@Step.Story</p>
+                    <dl class="facts">
+                        <dt>Real .NET equivalent</dt>
+                        <dd><code>@Step.TaskEquivalent</code></dd>
+                        <dt>Code</dt>
+                        <dd><code>@Step.SourceFile</code>. Its comments explain what each expected result checks, and why.</dd>
+                    </dl>
+                    @if (!Step.VerifyOnStartup)
+                    {
+                        <p class="panel-hint">This step is not checked on startup. If the app exits while it runs, the terminal shows why: usually continuations running inline until the stack overflows.</p>
+                    }
+                </div>
+
+                @if (Step.BaristaAction is not BaristaAction.None)
+                {
+                    <div class="panel machine-panel">
+                        <h2>Espresso machine</h2>
+                        <label class="toggle">
+                            <input type="checkbox" @bind="IsBaristaAutomatic" disabled="@(run is not null)" />
+                            Automatic barista
+                        </label>
+                        <p class="panel-hint">Turn the automatic barista off to press the machine's button yourself, and watch IsCompleted stay False until you do.</p>
+
+                        @if (run is not null && !run.IsBaristaAutomatic && run.EspressoMachine.IsBrewing)
+                        {
+                            <div class="machine-brewing">
+                                <span>Brewing: @run.EspressoMachine.CurrentDrink</span>
+                                @if (Step.BaristaAction is BaristaAction.JamMachine)
+                                {
+                                    <button class="action action-danger" type="button" @onclick="() => PressBaristaButtonAsync(BaristaAction.JamMachine)">Machine jammed</button>
+                                }
+                                else
+                                {
+                                    <button class="action" type="button" @onclick="() => PressBaristaButtonAsync(BaristaAction.FinishShot)">Shot is ready</button>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (report is not null)
+                {
+                    var checks = report.Checks;
+                    var entries = report.Entries;
+
+                    <div class="panel">
+                        <h2>Expected results</h2>
+                        @if (checks.Count is 0)
+                        {
+                            <p class="panel-hint">No expected results have been checked yet.</p>
+                        }
+                        else
+                        {
+                            <div class="table-scroll">
+                                <table class="checklist">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col"><span class="visually-hidden">Result</span></th>
+                                            <th scope="col">Expected result</th>
+                                            <th scope="col">Expected</th>
+                                            <th scope="col">Actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var check in checks)
+                                        {
+                                            <tr class="@(check.Passed ? "check-passed" : "check-failed")">
+                                                <td>@(check.Passed ? "✅" : "❌")</td>
+                                                <td>@check.Description</td>
+                                                <td>@check.Expected</td>
+                                                <td>@check.Actual</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="panel">
+                        <h2>Log</h2>
+                        <div class="table-scroll">
+                            <table class="log">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">ms</th>
+                                        <th scope="col">Thread</th>
+                                        <th scope="col">Pool thread</th>
+                                        <th scope="col">Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var entry in entries)
+                                    {
+                                        <tr>
+                                            <td>@entry.Elapsed.TotalMilliseconds.ToString("0")</td>
+                                            <td>@entry.ThreadId</td>
+                                            <td>@(entry.IsThreadPoolThread ? "yes" : "no")</td>
+                                            <td>@entry.Message</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</section>

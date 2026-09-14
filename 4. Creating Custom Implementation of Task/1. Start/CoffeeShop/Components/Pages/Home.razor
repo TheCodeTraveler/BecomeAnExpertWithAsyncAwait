@@ -1,0 +1,127 @@
+@page "/"
+@inherits HomePageBase
+
+<PageTitle>CoffeeShop</PageTitle>
+
+<section class="page">
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">Creating a custom implementation of Task</p>
+            <h1>CoffeeShop</h1>
+            <p class="hero-summary">Our point-of-sale app runs on CustomTask, a home-grown Task. Finish CustomTask.cs so every station works.</p>
+        </div>
+
+        <div class="hero-actions">
+            <button class="action" type="button" disabled="@(Verifier.IsBusy || IsCheckingSteps)" @onclick="CheckAllStepsAsync">
+                @if (IsCheckingSteps)
+                {
+                    <span class="spinner" aria-hidden="true"></span>
+                }
+                @(IsCheckingSteps ? "Checking Steps 1-5" : "Run Steps 1-5")
+            </button>
+
+            <div class="status-tile">
+                <span class="status-value">@PassedStepCount of @Verifier.Steps.Count</span>
+                <span class="status-label">stations work</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <StepNav Verifier="Verifier" />
+
+        <div class="content">
+            @if (IsCheckingSteps)
+            {
+                <div class="banner banner-running" aria-live="polite">
+                    <span><span class="spinner" aria-hidden="true"></span> Checking your CustomTask against Steps 1-5…</span>
+                </div>
+            }
+            else
+            {
+                var lastCheckedStep = LastCheckedStep;
+                var lastState = Verifier.GetState(lastCheckedStep.Number);
+                var stepLink = $"steps/{lastCheckedStep.Number}";
+
+                @if (lastState.CompletedAt is { } checkedAt && lastState.Status is not StepStatus.NotRun)
+                {
+                    @if (StoppedAtStep is null)
+                    {
+                        <div class="banner banner-passed banner-fresh" role="status" @key="checkedAt">
+                            <span>Steps 1-5 passed. Step 6 only runs manually: open <a href="steps/6">Step 6</a> and click Run step.</span>
+                            <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @switch (lastState.Status)
+                        {
+                            case StepStatus.NotImplemented:
+                                <div class="banner banner-missing banner-fresh" role="alert" @key="checkedAt">
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: <code>@lastState.MissingMember</code> still throws NotImplementedException. Open CustomTask.cs and read its hint (it is also in the terminal).</span>
+                                    <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                                </div>
+                                break;
+                            case StepStatus.Failed:
+                                <div class="banner banner-failed banner-fresh" role="alert" @key="checkedAt">
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: some expected results did not match. Open the step to compare them.</span>
+                                    <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                                </div>
+                                break;
+                            case StepStatus.TimedOut:
+                                <div class="banner banner-failed banner-fresh" role="alert" @key="checkedAt">
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: it did not finish within @StepVerifier.AutomaticTimeout.TotalSeconds seconds. @lastCheckedStep.TimeoutHint</span>
+                                    <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                                </div>
+                                break;
+                            case StepStatus.Crashed:
+                                <div class="banner banner-failed banner-fresh" role="alert" @key="checkedAt">
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: it threw an unexpected @lastState.ExceptionType. The terminal running the app has the details.</span>
+                                    <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                                </div>
+                                break;
+                            default:
+                                <div class="banner banner-locked banner-fresh" role="status" @key="checkedAt">
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a> before it finished.</span>
+                                    <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                                </div>
+                                break;
+                        }
+                    }
+                }
+            }
+
+            @if (ErrorMessage is not null)
+            {
+                <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+            }
+
+            <div class="panel">
+                <h2>How it works</h2>
+                <ol class="how-it-works">
+                    <li>Implement <code>CustomTask.cs</code>. Every step below is a real coffee shop feature built on it, and the code for each one is in the <code>Steps</code> folder.</li>
+                    <li>Every time the app starts, it checks your CustomTask against Steps 1 to 5 automatically. Step 6 runs only from its own page.</li>
+                    <li>A step unlocks when the step before it passes. Open a step to read its story, run it again, and compare every expected result with what actually happened.</li>
+                    <li>Stop and run the app again after each change to <code>CustomTask.cs</code>. If your IDE applied the change with Hot Reload, click Run Steps 1-5 instead. Results from before your change are not trusted.</li>
+                    <li>If the app exits, or the browser shows that it is reconnecting, a CustomTask member threw on a thread pool thread. The terminal running the app shows which one. Fix it and run the app again.</li>
+                </ol>
+            </div>
+
+            <div class="step-grid">
+                @foreach (var step in Verifier.Steps)
+                {
+                    <a class="step-card" href="@($"steps/{step.Number}")" @key="step.Number">
+                        <span class="step-card-number">Step @step.Number</span>
+                        <span class="step-card-scenario">@step.Scenario</span>
+                        <code class="step-card-title">@step.Title</code>
+                        @if (!step.VerifyOnStartup)
+                        {
+                            <span class="step-card-note">This step only runs manually. Click into it, then click Run step.</span>
+                        }
+                        <StepBadge Status="Verifier.GetState(step.Number).Status" IsUnlocked="Verifier.IsUnlocked(step.Number)" />
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</section>
