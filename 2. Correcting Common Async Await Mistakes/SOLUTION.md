@@ -18,9 +18,9 @@ protected override void OnInitialized()
 }
 ```
 
-An `async void` helper can appear to solve the compiler warning, but it creates a different problem: callers cannot await it, exceptions cannot be observed through a returned `Task`, and Blazor cannot track the asynchronous lifecycle work.
+Using `async void` can appear to solve the compiler warning, but it creates a different problem: callers cannot await it, exceptions cannot be observed through a returned `Task`, and Blazor cannot track the asynchronous lifecycle work. Another option, when async/await is not available in synchronous code paths, an extension method like [`.SafeFireAndForget()`](https://www.nuget.org/packages/AsyncAwaitBestPractices/) can also be used.
 
-Use the asynchronous Blazor lifecycle method instead:
+However, since the Blazor offers an asynchronous version of `OnInitializedAsync()`, let's use that:
 
 ```cs
 protected override async Task OnInitializedAsync()
