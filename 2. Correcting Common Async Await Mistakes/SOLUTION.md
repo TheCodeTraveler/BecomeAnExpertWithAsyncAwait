@@ -30,7 +30,7 @@ protected override async Task OnInitializedAsync()
 }
 ```
 
-Safe fire-and-forget still has a place when an API truly cannot return `Task`, but Blazor lifecycle methods already have `Task`-returning alternatives.
+[Safe fire-and-forget](https://www.nuget.org/packages/AsyncAwaitBestPractices/) still has a place when an API truly cannot return `Task`, but Blazor lifecycle methods already have `Task`-returning alternatives.
 
 ## 2. Forward Cancellation Tokens
 
