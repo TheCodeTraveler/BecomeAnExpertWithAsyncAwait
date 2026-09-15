@@ -50,7 +50,7 @@ public sealed class ImportService(OrderFileService orderFile, CustomerApiService
 
 		reportStopwatch.Stop();
 
-		await Task.CompletedTask.ConfigureAwait(false);
+		await Task.Yield();
 
 		return new ImportReport(
 			orders.Count(static order => order.RiskScore > 0),
