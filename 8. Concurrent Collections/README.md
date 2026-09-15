@@ -14,7 +14,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5005](http://localhost:5005). The finished app runs at [http://localhost:5006](http://localhost:5006), so you can run both at the same time and compare them later.
 
-The app opens on the **Dashboard**, with the **workshop guide** docked beside it. Every step in the guide is one bug in the dashboard's code-behind, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the app's log output (your IDE's Run or Debug output window, or the terminal if you started the app with `dotnet run`) shows the same result, with a hint.
+The app opens on the **Dashboard**, with the **workshop guide** docked beside it. Every step in the guide is one bug in the dashboard's code-behind, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1. Open that step to see every result that did not match, with a hint for each one.
 
 > **Note:** This app has a race condition, not a guaranteed crash. Some runs look perfect. Reload the page several times before you decide the bug is not there. The page is also blank for a moment on every load while the Blazor circuit connects, which is normal. If a **Feed fault** panel replaces the dashboard, read the exception it shows: a collection that many threads touched at once threw while the dashboard loaded or rendered. Reload the browser tab to bring the dashboard back.
 
@@ -52,7 +52,7 @@ The app walks you through the challenge one step at a time:
 
 1. Step 1 shows every card, Step 2 keeps every quote and keeps the newest, Step 3 counts every quote, and Step 4 guards the refresh timer.
 2. A step unlocks only after the step before it passes. Select a step in the guide to read the story behind the bug, how to see it on the Dashboard, which lines to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step renders a fresh dashboard, drives your code from many threads at once, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is written to the app's log output (your IDE's Run or Debug output window, or the terminal if you started the app with `dotnet run`).
+3. Each step renders a fresh dashboard, drives your code from many threads at once, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint right under it.
 4. Every time the app starts, it checks your code against every step, so the guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** at the top of the guide instead.
 

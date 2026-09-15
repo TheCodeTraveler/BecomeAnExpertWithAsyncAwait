@@ -99,7 +99,7 @@ using (ExecutionContext.SuppressFlow())
 await suppressedExecutionContextTask;
 ```
 
-`ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. Create the task while flow is suppressed, leave the `using` block so flow is restored on the current thread, and only then await the task.
+A `using (ExecutionContext.SuppressFlow())` block has to end on the thread that started it. Create the task while flow is suppressed, let the `using` block end so flow is restored on the current thread, and only then await the task.
 
 One run produced these results:
 

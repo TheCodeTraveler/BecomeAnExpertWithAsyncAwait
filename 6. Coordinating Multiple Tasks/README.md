@@ -14,7 +14,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5009](http://localhost:5009). The finished app runs at [http://localhost:5010](http://localhost:5010), so you can run both at the same time and compare them later.
 
-The app opens on the **Product page**, with the workshop guide docked beside it. Every step in the guide is one thing wrong with how the product page waits for its backend services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the app's log output (your IDE's Run or Debug output window, or the terminal) shows the same result, with a hint.
+The app opens on the **Product page**, with the workshop guide docked beside it. Every step in the guide is one thing wrong with how the product page waits for its backend services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1. Open that step to see every result that did not match, with a hint for each one.
 
 ## 2. Inspect the Starting Code
 
@@ -48,7 +48,7 @@ The app walks you through the challenge one step at a time:
 
 1. The steps, in order, are **Start every call before awaiting any of them**, **Let one failing service break only its own card**, and **Paint each card as its service answers**.
 2. A step unlocks only after the step before it passes. Each step's tab in the guide tells the story behind the bug, how to see it on the Product page, which file to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step renders your product page the way a browser tab does and shows a checklist of every expected result next to what actually happened: how long the page took, what every card says, and every time the page repainted. Every result that does not match comes with a hint, and the same hint is written to the app's log output.
+3. Each step renders your product page the way a browser tab does and shows a checklist of every expected result next to what actually happened: how long the page took, what every card says, and every time the page repainted. Every result that does not match comes with a hint right under it.
 4. Every time the app starts, it checks your code against every step, so the workshop guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** in the workshop guide instead.
 

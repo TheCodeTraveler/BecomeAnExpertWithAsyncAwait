@@ -13,7 +13,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5001](http://localhost:5001). The finished app runs at [http://localhost:5002](http://localhost:5002), so you can run both at the same time and compare them later.
 
-The app opens on the **Top stories** page, with the **workshop guide** docked beside it. Every step in the guide is one async/await mistake in the Top stories page, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and your IDE's Run or Debug output window (or the terminal, if you started the app with `dotnet run`) shows the same result, with a hint.
+The app opens on the **Top stories** page, with the **workshop guide** docked beside it. Every step in the guide is one async/await mistake in the Top stories page, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1. Open that step to see every result that did not match, with a hint for each one.
 
 The steps render your News page against an in-memory Hacker News, so they work offline and on networks that block Hacker News. The **Top stories** page itself still loads the real Hacker News API.
 
@@ -42,7 +42,7 @@ The app walks you through the challenge one step at a time:
 
 1. Step 1 loads the stories as part of initialization, Step 2 keeps Blazor's renderer free, Step 3 stops refresh work when the page goes away, Step 4 streams stories as they arrive, and Step 5 skips the state machines you don't need.
 2. A step unlocks only after the step before it passes. Select a step in the guide to read the story behind the mistake, how to see it on the Top stories page, which file to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step renders your real News page in memory against an in-memory Hacker News whose delays the step controls, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is printed in the app's log output (your IDE's Run or Debug output window, or the terminal, if you started the app with `dotnet run`).
+3. Each step renders your real News page in memory against an in-memory Hacker News whose delays the step controls, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint right under it.
 4. Every time the app starts, it checks your code against every step, so the guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** at the top of the guide instead.
 

@@ -13,7 +13,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5011](http://localhost:5011). The finished app runs at [http://localhost:5012](http://localhost:5012), so you can run both at the same time and compare them later.
 
-The app opens on the **Import page**, with the workshop guide docked beside it. Every step in the guide is one stage of the nightly import, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and Step 1 shows a hint for every result that does not match.
+The app opens on the **Import page**, with the workshop guide docked beside it. Every step in the guide is one stage of the nightly import, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1. Open that step to see every result that did not match, with a hint for each one.
 
 ## 2. Inspect the Starting Code
 

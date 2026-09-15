@@ -129,7 +129,7 @@ public sealed class Step2ExecutionContext : WorkshopStep
 		}
 		catch (InvalidOperationException e)
 		{
-			// Expected: the Step 2 page shows this exception, because seeing it is the point of Try it. The terminal logs it too.
+			// Expected: the Step 2 page shows this exception, because seeing it is the point of Try it. The app's log output has it too.
 			logger.LogInformation(e, "Try it: awaiting inside using (ExecutionContext.SuppressFlow()) threw, as expected");
 			exceptionType = e.GetType().Name;
 			exception = SourceCode.WithRelativePaths(e.ToString());
