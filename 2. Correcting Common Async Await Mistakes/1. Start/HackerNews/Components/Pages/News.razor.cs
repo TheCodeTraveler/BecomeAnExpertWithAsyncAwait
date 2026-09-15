@@ -52,7 +52,8 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 	{
 		IsListRefreshing = true;
 
-		//ToDo Refactor
+		// ToDo Refactor (Step 1): this starts the refresh and forgets it. OnInitialized() returns straight away,
+		// so Blazor treats the page as initialized while the stories are still loading, and nothing observes the task.
 		RefreshAsync(_disposeCancellationTokenSource.Token);
 	}
 
@@ -74,12 +75,15 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		IsListRefreshing = true;
 		RefreshErrorMessage = null;
 
-		// ToDo Refactor
+		// ToDo Refactor (Step 3): this method receives a CancellationToken, and this delay never hears about it.
+		// When the page goes away, the refresh keeps running until the 2 seconds are up.
 		var minimumRefreshTimeTask = Task.Delay(TimeSpan.FromSeconds(2));
 
 		try
 		{
-			// ToDo Refactor
+			// ToDo Refactor (Step 2): this await captures Blazor's context, so everything after it, including the
+			// finally block, runs on the renderer.
+			// ToDo Refactor (Step 4): it also hands back nothing until every story has arrived.
 			var topStoriesList = await GetTopStories(token, StoriesConstants.NumberOfStories);
 
 			await InvokeAsync(() =>
@@ -102,7 +106,8 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		}
 		finally
 		{
-			// ToDo Refactor
+			// ToDo Refactor (Step 2): Wait() blocks the thread that runs it. Here that is Blazor's renderer for this
+			// browser tab, and nothing else can run on it until the 2 second delay ends.
 			minimumRefreshTimeTask.Wait();
 
 			await InvokeAsync(() =>
@@ -113,7 +118,7 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		}
 	}
 
-	// ToDo Refactor
+	// ToDo Refactor (Step 4): the page sees none of these stories until the last one has arrived and the list is sorted
 	async Task<IReadOnlyList<StoryModel>> GetTopStories(CancellationToken token, int storyCount = int.MaxValue)
 	{
 		List<StoryModel> topStoryList = [];
@@ -134,13 +139,14 @@ public partial class NewsPageBase : ComponentBase, IDisposable
 		return topStoryList.OrderByDescending(x => x.Score).ToList();
 	}
 
-	//ToDo Refactor
+	// ToDo Refactor (Step 5): an async state machine whose only job is to await one task and return its result
 	async Task<StoryModel> GetStory(long storyId, CancellationToken token)
 	{
 		return await HackerNewsApiService.GetStory(storyId, token);
 	}
 
-	//ToDo Refactor
+	// ToDo Refactor (Step 5): when the stories on the page are recent, this completes without awaiting anything,
+	// yet every call still allocates a Task to hand back the result
 	async Task<IReadOnlyList<long>> GetTopStoryIDs(CancellationToken token)
 	{
 		if (IsDataRecent(TimeSpan.FromHours(1)))

@@ -1,0 +1,321 @@
+@inherits WorkshopGuideBase
+
+<aside class="guide @(IsCollapsed ? "collapsed" : null)" aria-label="Workshop guide">
+    @if (IsCollapsed)
+    {
+        <button class="guide-toggle" type="button" aria-expanded="false" title="Show the workshop guide" @onclick="ToggleCollapsed">
+            <span aria-hidden="true">«</span>
+            <span class="guide-rail-label">Workshop guide</span>
+        </button>
+
+        <ol class="guide-rail">
+            @foreach (var listedStep in Verifier.Steps)
+            {
+                <li @key="listedStep.Number">
+                    <button class="guide-rail-step" type="button" title="@($"Step {listedStep.Number} · {listedStep.Scenario}")" @onclick="() => SelectTab(listedStep.Number)">
+                        <span class="guide-rail-number">@listedStep.Number</span>
+                        <StepBadge Status="Verifier.GetState(listedStep.Number).Status" IsUnlocked="Verifier.IsUnlocked(listedStep.Number)" IsCompact="true" />
+                    </button>
+                </li>
+            }
+        </ol>
+    }
+    else
+    {
+        <header class="guide-header">
+            <div>
+                <p class="guide-eyebrow">Workshop guide</p>
+                <h2 class="guide-title">Code review</h2>
+                <p class="guide-subtitle">Pull request #214, Top stories page. Five review comments block the merge.</p>
+            </div>
+
+            <button class="guide-toggle" type="button" aria-expanded="true" title="Hide the workshop guide" @onclick="ToggleCollapsed">
+                <span aria-hidden="true">»</span>
+                <span class="visually-hidden">Hide the workshop guide</span>
+            </button>
+        </header>
+
+        <div class="guide-progress">
+            <div class="progress-meter" aria-hidden="true">
+                @foreach (var listedStep in Verifier.Steps)
+                {
+                    <span class="progress-segment @(Verifier.GetState(listedStep.Number).Status is StepStatus.Passed ? "done" : null)" @key="listedStep.Number"></span>
+                }
+            </div>
+
+            <div class="guide-progress-row">
+                <p class="guide-progress-count"><strong>@PassedStepCount of @Verifier.Steps.Count</strong> steps pass</p>
+
+                <button class="action small" type="button" disabled="@(Verifier.IsBusy || IsCheckingSteps)" @onclick="CheckAllStepsAsync">
+                    @if (IsCheckingSteps)
+                    {
+                        <span class="spinner" aria-hidden="true"></span>
+                    }
+                    @(IsCheckingSteps ? "Checking every step" : "Run every step")
+                </button>
+            </div>
+        </div>
+
+        <nav class="guide-tabs" aria-label="Workshop steps">
+            <button class="guide-tab @(SelectedTab is ChallengeTab ? "selected" : null)" type="button" aria-current="@(SelectedTab is ChallengeTab ? "true" : null)" @onclick="() => SelectTab(ChallengeTab)">
+                <span class="guide-tab-number" aria-hidden="true">★</span>
+                <span class="guide-tab-title">Your challenge</span>
+            </button>
+
+            @foreach (var listedStep in Verifier.Steps)
+            {
+                <button class="guide-tab @(SelectedTab == listedStep.Number ? "selected" : null)" type="button" aria-current="@(SelectedTab == listedStep.Number ? "true" : null)" @key="listedStep.Number" @onclick="() => SelectTab(listedStep.Number)">
+                    <span class="guide-tab-number">@listedStep.Number</span>
+                    <span class="guide-tab-title">@listedStep.Scenario</span>
+                    <StepBadge Status="Verifier.GetState(listedStep.Number).Status" IsUnlocked="Verifier.IsUnlocked(listedStep.Number)" />
+                </button>
+            }
+        </nav>
+
+        <div class="guide-body">
+            @if (ErrorMessage is not null)
+            {
+                <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+            }
+
+            @if (SelectedStep is not { } step)
+            {
+                @if (IsCheckingSteps)
+                {
+                    <div class="banner banner-running" aria-live="polite">
+                        <span><span class="spinner" aria-hidden="true"></span> Checking your News page against every step…</span>
+                    </div>
+                }
+                else
+                {
+                    var lastCheckedStep = LastCheckedStep;
+                    var lastState = Verifier.GetState(lastCheckedStep.Number);
+
+                    @if (lastState.CompletedAt is { } checkedAt && lastState.Status is not StepStatus.NotRun)
+                    {
+                        @if (StoppedAtStep is null)
+                        {
+                            <div class="banner banner-passed banner-fresh" role="status" @key="checkedAt">
+                                <span>Every step passed. Press Refresh on Top stories and watch the stories stream in, then pause here for the group review.</span>
+                                <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="banner @(lastState.Status is StepStatus.Stopped ? "banner-locked" : "banner-failed") banner-fresh" role="alert" @key="checkedAt">
+                                <span>
+                                    Stopped at Step @lastCheckedStep.Number:
+                                    @(lastState.Status switch
+                                    {
+                                        StepStatus.Failed => "some expected results did not match.",
+                                        StepStatus.TimedOut => $"it did not finish within {StepVerifier.Timeout.TotalSeconds} seconds. {lastCheckedStep.TimeoutHint}",
+                                        StepStatus.Crashed => $"it threw an unexpected {lastState.ExceptionType}. The terminal running the app has the details.",
+                                        _ => "it was stopped before it finished.",
+                                    })
+                                </span>
+                                <button class="link-button" type="button" @onclick="() => SelectTab(lastCheckedStep.Number)">Open Step @lastCheckedStep.Number to see what to change →</button>
+                                <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
+                            </div>
+                        }
+                    }
+                }
+
+                <section class="guide-section">
+                    <h3>Your challenge</h3>
+                    <p>Fix <code>Components/Pages/News.razor.cs</code> so the Top stories page follows the async await and Blazor practices covered in this workshop. Leave <code>News.razor</code>, the <code>Services</code> folder, and <code>Program.cs</code> alone. The page's markup and the Hacker News client are not the problem.</p>
+                    <p>Everything you need is in this section's toolbox: <code>OnInitializedAsync()</code>, <code>await</code>, <code>CancellationToken</code>, <code>ConfigureAwait(false)</code> and <code>ConfigureAwaitOptions</code>, <code>InvokeAsync(...)</code>, <code>IAsyncEnumerable&lt;T&gt;</code> with <code>[EnumeratorCancellation]</code>, and <code>ValueTask&lt;T&gt;</code>. <code>SafeFireAndForget()</code> from AsyncAwaitBestPractices is referenced too, for the rare caller that truly cannot return a <code>Task</code>.</p>
+                    <p>Recommended time: 35 minutes. Work through the steps in order. When every step passes, pause for the group review.</p>
+                    <p class="ai-note"><strong>Please avoid letting AI Agents solve the challenges for you. You're smart. You got this.</strong> Use them to understand the existing code, clarify async await concepts, and interpret errors.</p>
+                </section>
+
+                <section class="guide-section">
+                    <h3>How this guide works</h3>
+                    <ol class="how-it-works">
+                        <li>Every step is one async await mistake in the Top stories page. Each step renders your real News page in memory, the way Blazor renders it for a browser tab, against an in-memory Hacker News whose delays the step controls, so the checks run offline and give the same answer on every laptop. The code for each check is in the <code>Steps</code> folder.</li>
+                        <li>Every time the app starts, it checks your News page against every step. A step unlocks when the step before it passes.</li>
+                        <li>Open a step to read its story, see what to change and where, run it again, and compare every expected result with what actually happened. Every result that does not match comes with a hint, and every step has clues if you get stuck.</li>
+                        <li>Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click Run every step instead. Results from before your change are not trusted.</li>
+                        <li>The Top stories page beside this guide is the app itself, and it still loads the real Hacker News. Use it to watch the same mistakes happen.</li>
+                    </ol>
+                </section>
+            }
+            else
+            {
+                var state = Verifier.GetState(step.Number);
+                var run = SelectedRun;
+                var report = run?.Report ?? state.Report;
+                var isUnlocked = Verifier.IsUnlocked(step.Number);
+                var nextStep = Verifier.FindStep(step.Number + 1);
+
+                <header class="step-header">
+                    <div>
+                        <p class="step-eyebrow">Step @step.Number</p>
+                        <h3 class="step-title">@step.Scenario</h3>
+                        <code class="step-members">@step.Title</code>
+                    </div>
+
+                    <div class="step-actions">
+                        <StepBadge Status="state.Status" IsUnlocked="isUnlocked" />
+
+                        <div class="step-buttons">
+                            @if (run is not null)
+                            {
+                                <button class="action small secondary" type="button" @onclick="StopRun">Stop</button>
+                            }
+
+                            <button class="action small" type="button" disabled="@(Verifier.IsBusy || IsSelectedStepRunning || !isUnlocked)" @onclick="RunSelectedStepAsync">
+                                @if (IsSelectedStepRunning)
+                                {
+                                    <span class="spinner" aria-hidden="true"></span>
+                                }
+                                @(IsSelectedStepRunning ? "Running" : "Run step")
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                @if (!isUnlocked)
+                {
+                    <div class="banner banner-locked"><span>Finish <button class="link-button" type="button" @onclick="() => SelectTab(step.Number - 1)">Step @(step.Number - 1)</button> first.</span></div>
+                }
+                else if (Verifier.IsCheckingAllSteps && run is null)
+                {
+                    <div class="banner banner-running" aria-live="polite"><span><span class="spinner" aria-hidden="true"></span> Checking your News page…</span></div>
+                }
+
+                @if (!IsSelectedStepRunning && state.CompletedAt is { } lastRunAt)
+                {
+                    @switch (state.Status)
+                    {
+                        case StepStatus.Passed:
+                            <div class="banner banner-passed banner-fresh" role="status" @key="lastRunAt">
+                                @if (nextStep is null)
+                                {
+                                    <span>Step @step.Number passed, and so does every step before it. The Top stories page is ready to ship. Pause here for the group review.</span>
+                                }
+                                else
+                                {
+                                    <span>Step @step.Number passed.</span>
+                                    <button class="link-button" type="button" @onclick="() => SelectTab(nextStep.Number)">Continue to Step @nextStep.Number →</button>
+                                }
+                                <span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
+                            break;
+                        case StepStatus.TimedOut:
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
+                                <span>Step @step.Number did not finish within @StepVerifier.Timeout.TotalSeconds seconds. @step.TimeoutHint</span>
+                                <span class="banner-note">If you paused at a breakpoint, just run the step again. Otherwise the timed-out run may still be blocking a thread, so restart the app after fixing the code. Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
+                            break;
+                        case StepStatus.Failed:
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Some expected results did not match. Read the hint under each one.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                        case StepStatus.Crashed:
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Step @step.Number threw an unexpected @state.ExceptionType. The terminal running the app has the details.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                        case StepStatus.Stopped:
+                            <div class="banner banner-locked banner-fresh" role="status" @key="lastRunAt"><span>Step @step.Number was stopped before it finished.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            break;
+                    }
+                }
+
+                <section class="guide-section">
+                    <h4>The story</h4>
+                    <p>@step.Story</p>
+                    <p class="see-it"><strong>See it in the app.</strong> @step.SeeItInTheApp</p>
+                </section>
+
+                <section class="guide-section">
+                    <h4>Your task</h4>
+                    <dl class="facts">
+                        <dt>Where to look</dt>
+                        <dd><code>@step.FileToChange</code>, at every <code>// ToDo Refactor (Step @step.Number)</code> comment</dd>
+                        <dt>Checks</dt>
+                        <dd><code>@step.SourceFile</code>. Its comments explain what each expected result checks, and why.</dd>
+                    </dl>
+                    <ol class="task-list">
+                        @foreach (var task in step.Tasks)
+                        {
+                            <li>@task</li>
+                        }
+                    </ol>
+                    <p class="guide-note">Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click Run step instead.</p>
+                    <details class="clues">
+                        <summary>Stuck? Show clues</summary>
+                        <ul>
+                            @foreach (var clue in step.Clues)
+                            {
+                                <li>@clue</li>
+                            }
+                        </ul>
+                    </details>
+                </section>
+
+                @if (report is not null)
+                {
+                    var checks = report.Checks;
+                    var entries = report.Entries;
+
+                    <section class="guide-section">
+                        <h4>Expected results</h4>
+                        @if (checks.Count is 0)
+                        {
+                            <p class="guide-note">No expected results have been checked yet.</p>
+                        }
+                        else
+                        {
+                            <ol class="check-list">
+                                @foreach (var check in checks)
+                                {
+                                    <li class="check @(check.Passed ? "check-passed" : "check-failed")">
+                                        <span class="check-icon" aria-hidden="true">@(check.Passed ? "✅" : "❌")</span>
+                                        <div class="check-body">
+                                            <p class="check-description"><span class="visually-hidden">@(check.Passed ? "Passed: " : "Did not match: ")</span>@check.Description</p>
+                                            <dl class="check-values">
+                                                <dt>Expected</dt>
+                                                <dd>@check.Expected</dd>
+                                                <dt>Actual</dt>
+                                                <dd>@check.Actual</dd>
+                                            </dl>
+                                            @if (!check.Passed)
+                                            {
+                                                <p class="check-hint"><span aria-hidden="true">💡</span><span class="visually-hidden">Hint: </span> @check.Hint</p>
+                                            }
+                                        </div>
+                                    </li>
+                                }
+                            </ol>
+                        }
+                    </section>
+
+                    <details class="guide-section guide-log">
+                        <summary>Log <span class="guide-log-count">@entries.Count entries</span></summary>
+                        <div class="table-scroll">
+                            <table class="step-log">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">ms</th>
+                                        <th scope="col">Thread</th>
+                                        <th scope="col">Pool</th>
+                                        <th scope="col">Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var entry in entries)
+                                    {
+                                        <tr>
+                                            <td>@entry.Elapsed.TotalMilliseconds.ToString("0")</td>
+                                            <td>@entry.ThreadId</td>
+                                            <td>@(entry.IsThreadPoolThread ? "yes" : "no")</td>
+                                            <td>@entry.Message</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                }
+            }
+        </div>
+    }
+</aside>

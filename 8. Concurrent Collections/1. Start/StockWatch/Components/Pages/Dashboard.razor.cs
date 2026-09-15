@@ -4,7 +4,7 @@ namespace StockWatch.Components.Pages;
 
 public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 {
-	// ToDo Refactor: Dictionary is not thread safe. Every symbol is fetched in
+	// ToDo Refactor (Step 2): Dictionary is not thread safe. Every symbol is fetched in
 	// parallel, so more than one write to this can be in flight at once.
 	readonly Dictionary<string, StockQuoteModel> _latestQuotes = [];
 
@@ -16,10 +16,14 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 	[Inject]
 	public required MarketDataService MarketDataService { get; init; }
 
+	// ToDo Refactor (Step 3): Blazor's renderer reads this on a different thread than the
+	// one that last wrote _refreshCount, and a plain read can hand it a stale value.
 	public int RefreshCount => _refreshCount;
 
 	public IReadOnlyList<StockSymbolModel> Symbols => GetSymbols();
 
+	// ToDo Refactor (Step 4): this stops the timer while StartRefreshTimer() may still be
+	// running. Anything you add to guard the timer has to be cleaned up here too.
 	public async ValueTask DisposeAsync()
 	{
 		await _disposeCancellationTokenSource.CancelAsync().ConfigureAwait(false);
@@ -38,7 +42,7 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 		await StartRefreshTimer().ConfigureAwait(false);
 	}
 
-	// ToDo Refactor: two callers can both read _refreshTimer as null and both
+	// ToDo Refactor (Step 4): two callers can both read _refreshTimer as null and both
 	// create a timer. Nothing guards this field.
 	async ValueTask StartRefreshTimer()
 	{
@@ -55,6 +59,8 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 		_refreshTimer.Change(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
 	}
 
+	// ToDo Refactor (Step 4): this reads and writes _refreshTimer too, and nothing stops it
+	// running at the same time as StartRefreshTimer(), which also calls it.
 	async ValueTask StopRefreshTimer()
 	{
 		if (_refreshTimer is not null)
@@ -77,7 +83,7 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 				{
 					var quote = await MarketDataService.GetStockQuote(symbol, cancellationToken).ConfigureAwait(false);
 
-					// ToDo Refactor: this is a read, then a write, on a collection
+					// ToDo Refactor (Step 2): this is a read, then a write, on a collection
 					// that many threads are touching. It can corrupt the Dictionary
 					// or throw, and one update can overwrite a newer one.
 					if (!_latestQuotes.TryAdd(symbol, quote))
@@ -85,7 +91,7 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 						_latestQuotes[symbol] = quote;
 					}
 
-					// ToDo Refactor: `++` is a read, an add, and a write. Increments get lost.
+					// ToDo Refactor (Step 3): `++` is a read, an add, and a write. Increments get lost.
 					_refreshCount++;
 				}).ConfigureAwait(false);
 
@@ -100,7 +106,7 @@ public partial class DashboardPageBase : ComponentBase, IAsyncDisposable
 
 	IReadOnlyList<StockSymbolModel> GetSymbols()
 	{
-		// ToDo Refactor: List is not thread safe, and Parallel.ForEach can call
+		// ToDo Refactor (Step 1): List is not thread safe, and Parallel.ForEach can call
 		// Add from more than one worker at once. Items go missing or this throws.
 		List<StockSymbolModel> symbols = [];
 

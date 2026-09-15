@@ -10,7 +10,7 @@ public sealed class Step1PrintReceipt : WorkshopStep
 
 	public override string Story => "The receipt printer's SDK calls the till synchronously and needs the finished receipt before its callback returns. "
 		+ "Rendering the receipt is CPU-bound, so the till starts it on the thread pool with CustomTask.Run(), opens the cash drawer while it renders, then blocks with Wait() only because the callback must return synchronously. "
-		+ "Calling Run() and then Wait() with nothing in between would only waste a thread, the same mistake as Task.Run(...).Wait() in Section 2. "
+		+ "Calling Run() and then Wait() with nothing in between would only waste a thread, the same blocking wait you removed from the Top stories page in Correcting Common Async Await Mistakes. "
 		+ "Run() completes its CustomTask with SetResult() or SetException(), so implement those two first.";
 
 	public override string TaskEquivalent => "Task.Run(), Task.Wait() and Task.IsCompleted";

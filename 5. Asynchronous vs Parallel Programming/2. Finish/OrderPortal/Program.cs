@@ -12,11 +12,16 @@ public static class Program
 			.AddInteractiveServerComponents();
 
 		// Registered as singletons, so one instance is shared by every
-		// concurrent request. That ensures their state is a shared resource.
+		// concurrent request. That is what makes their state a shared resource.
 		builder.Services.AddSingleton<OrderMetrics>();
 		builder.Services.AddSingleton<TaxRateProvider>();
 		builder.Services.AddSingleton<InventoryLedger>();
 		builder.Services.AddSingleton<CheckoutService>();
+
+		// Workshop plumbing: one StepVerifier holds every step's result. It is also a hosted service,
+		// so it checks your services against every step each time the app starts.
+		builder.Services.AddSingleton<StepVerifier>();
+		builder.Services.AddHostedService(static serviceProvider => serviceProvider.GetRequiredService<StepVerifier>());
 
 		var app = builder.Build();
 

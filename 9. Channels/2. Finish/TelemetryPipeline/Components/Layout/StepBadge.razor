@@ -1,0 +1,10 @@
+@inherits StepBadgeBase
+
+@if (IsCompact)
+{
+    <span class="badge badge-compact @CssClass" title="@Label"><span aria-hidden="true">@Icon</span><span class="visually-hidden">@Label</span></span>
+}
+else
+{
+    <span class="badge @CssClass">@Icon @Label</span>
+}

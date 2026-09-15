@@ -2,35 +2,53 @@
 
 Use this during the guided walkthrough after the investigation challenges and group review in [README.md](README.md).
 
-## 1. ThreadStatic
+All four experiments live in one app, **InternalsLab**. There is no Start or Finish folder, because nothing is broken: every section below walks through one step's experiment, the results it produces, and the observations behind that step's explain questions.
 
-Open **1. Thread Static/ThreadStaticExample/Program.cs** and inspect the `[ThreadStatic]` field:
+Run the app:
+
+```console
+dotnet run --project "3. .NET Internals/InternalsLab/InternalsLab.csproj"
+```
+
+Open [http://localhost:5003](http://localhost:5003). Your thread IDs, random values, and name will differ from the runs shown below. The predictions each step grades never do.
+
+## 1. ThreadStatic (Step 1)
+
+Open **InternalsLab/Experiments/ThreadStaticExperiment.cs** and inspect the `[ThreadStatic]` field:
 
 ```cs
 [ThreadStatic]
 static int _threadSpecificValue;
 ```
 
-Run the project:
+The Step 1 page runs `RunAsync()` on a new dedicated thread that plays the part of a console app's main thread. The main thread assigns `100`, starts two background threads that each record the field before and after assigning a random value, waits for both with `Join()`, and then awaits `Task.Yield()`:
 
-```console
-dotnet run --project "1. Thread Static/ThreadStaticExample/ThreadStaticExample.csproj"
+```cs
+await Task.Yield();
+
+// Step 1: checkpoint 7. Whichever thread pool thread runs the continuation
+log.Record(7, _threadSpecificValue);
 ```
 
-Expected output shape:
+One run produced these results:
 
-```console
-Main thread - threadSpecificValue: 100
-Thread 4 _threadSpecificValue: 51
-Thread 5 _threadSpecificValue: 72
-Main thread after threads finished - threadSpecificValue: 100
-```
+| Checkpoint | Thread | Pool thread | `_threadSpecificValue` |
+| --- | --- | --- | --- |
+| 1. Main thread, after assigning 100 | 23 | no | 100 |
+| 2. Background thread 1, before assigning | 24 | no | 0 |
+| 3. Background thread 1, after assigning its random value | 24 | no | 7 |
+| 4. Background thread 2, before assigning | 25 | no | 0 |
+| 5. Background thread 2, after assigning its random value | 25 | no | 93 |
+| 6. Main thread, after both threads finish | 23 | no | 100 |
+| 7. After await Task.Yield() | 9 | yes | 0 |
 
 The exact background thread IDs and random values will differ. The important observation is that each thread has its own value, and the main thread keeps `100` after the background threads complete.
 
-## 2. ExecutionContext
+Checkpoints 2 and 4 show that nothing copies the main thread's value into a new thread: each thread's copy starts at `0`, the default for `int`. Checkpoint 7 is the reason async code cannot use `[ThreadStatic]` for ambient data. `Task.Yield()` always schedules a continuation, the dedicated thread has no `SynchronizationContext`, so the continuation ran on a thread pool thread, and that thread has its own copy of the field. The value stayed behind with the thread. The next step shows the storage .NET uses instead.
 
-Open **2. ExecutionContext/ExecutionContextExample/Program.cs**.
+## 2. ExecutionContext (Step 2)
+
+Open **InternalsLab/Experiments/ExecutionContextExperiment.cs**.
 
 The main thread sets values controlled by `ExecutionContext`:
 
@@ -44,11 +62,13 @@ When the sample captures the main thread context and runs it on a background thr
 
 ```cs
 var mainThreadExecutionContext = ExecutionContext.Capture() ?? throw new InvalidOperationException("ExecutionContext only null when suppressed");
+```
 
+```cs
 ExecutionContext.Run(mainThreadExecutionContext, _ =>
 {
-    Console.WriteLine("Same Background Thread, but using MainThread's ExecutionContext");
-    PrintThreadValues();
+    // Step 2: checkpoint 3. The same background thread, but running with the main thread's ExecutionContext
+    RecordThreadValues(3);
 }, null);
 ```
 
@@ -57,8 +77,8 @@ When `Task.Run(...)` is awaited normally, `ExecutionContext` flows automatically
 ```cs
 await Task.Run(() =>
 {
-    Console.WriteLine("Print Values from Task.Run()");
-    PrintThreadValues();
+    // Step 2: checkpoint 5. Inside Task.Run()
+    RecordThreadValues(5);
 });
 ```
 
@@ -70,49 +90,102 @@ using (ExecutionContext.SuppressFlow())
 {
     suppressedExecutionContextTask = Task.Run(() =>
     {
-        Console.WriteLine("Print Values from Task.Run() With Execution Context Suppressed");
-        PrintThreadValues();
+        // Step 2: checkpoint 6. Inside Task.Run() started while ExecutionContext flow is suppressed
+        RecordThreadValues(6);
     });
 }
 
+// Step 2: the task is created inside the using block, but awaited only after the block ends
 await suppressedExecutionContextTask;
 ```
 
 `ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. Create the task while flow is suppressed, leave the `using` block so flow is restored on the current thread, and only then await the task.
 
-Expected suppressed-flow output shape:
+One run produced these results:
 
-```console
-Print Values from Task.Run() With Execution Context Suppressed
-Thread ID: 7
-Culture: <machine-default culture> (eg "English (United States)")
-Principal:
-AsyncLocalData:
+| Checkpoint | Thread | Culture | Principal | AsyncLocal |
+| --- | --- | --- | --- | --- |
+| 1. Main thread, after assigning its values | 21 | es-ES | ClaimsPrincipal | Initial Value |
+| 2. Background thread, after assigning its own values | 22 | en-GB | CustomPrincipal | AsyncLocalData in Thread |
+| 3. Same background thread, inside ExecutionContext.Run(mainThreadExecutionContext, ...) | 22 | es-ES | ClaimsPrincipal | Initial Value |
+| 4. Main thread, after the background thread finishes | 21 | es-ES | ClaimsPrincipal | Initial Value |
+| 5. Inside Task.Run(...) | 9 | es-ES | ClaimsPrincipal | Initial Value |
+| 6. Inside Task.Run(...) started while ExecutionContext flow is suppressed | 7 | en-US | null | null |
+
+The exact thread IDs may differ. At checkpoint 6, the important observation is that the culture returns to the machine default (`en-US` on this machine), `Principal` is empty, and `AsyncLocalData` is empty.
+
+Checkpoint 3 runs on the same thread as checkpoint 2, yet sees the main thread's values: `ExecutionContext.Run(...)` applies the captured context only for the duration of the callback. Checkpoint 4 shows that the background thread's assignments changed its own `ExecutionContext`, never the main thread's. Checkpoints 5 and 6 both run on thread pool threads, and the thread is not what decides the result: `Task.Run(...)` captures `ExecutionContext` when the task is created, and inside `SuppressFlow()` there is nothing to capture.
+
+The app starts the experiment with the same pattern, which is how the values the experiment assigns never leak into the Blazor circuit, and the circuit's values never leak into the experiment. From **InternalsLab/Steps/WorkshopStep.cs**:
+
+```cs
+Task experimentTask;
+using (ExecutionContext.SuppressFlow())
+{
+    experimentTask = Task.Factory.StartNew(experiment, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
+}
+
+await experimentTask.WaitAsync(Timeout, token).ConfigureAwait(false);
 ```
 
-The exact thread ID may differ. The important observation is that the culture returns to the machine default, `Principal` is empty, and `AsyncLocalData` is empty.
+### Try it: await inside the using block
 
-## 3. Principal
+The **Try it** button on the Step 2 page runs `AwaitInsideSuppressFlowAsync()`, the version that awaits inside the block:
 
-The previous sample showed `ExecutionContext` flowing through a console app. This sample moves the same mechanism into an ASP.NET Core request. The goal is to separate two things that are easy to confuse: values that flow across an `await` because they ride on `ExecutionContext`, and values that are available after an `await` simply because they are object references the code already holds.
+```cs
+public async Task AwaitInsideSuppressFlowAsync()
+{
+    using (ExecutionContext.SuppressFlow())
+    {
+        // Step 2: the thread that starts the using block
+        RecordThreadValues(1);
 
-Open **3. Principal/PrincipalExample/Controllers/HomeController.cs**. `RunExperiment()` holds the signed-in user in a local variable, then records four checkpoints:
+        await Task.Run(() => RecordThreadValues(2));
+
+        // Step 2: the thread that runs the continuation, which is also the thread that ends the using block
+        RecordThreadValues(3);
+    }
+}
+```
+
+The `await` lets the method return while flow is still suppressed on the thread that entered the block. The rest of the method, including the end of the `using` block, runs later as a continuation on a thread pool thread where flow is not suppressed, so disposing the `AsyncFlowControl` throws. The page shows the exception type and the two thread IDs, and the terminal running the app logs the full exception:
+
+```console
+System.InvalidOperationException: AsyncFlowControl object must be used on the thread where it was created.
+   at System.Threading.AsyncFlowControl.Undo()
+```
+
+In the rare run where the task has already finished when the `await` looks at it, there is no continuation to schedule, the block ends on the thread that started it, and nothing throws. That does not make the code correct. It makes the bug intermittent.
+
+## 3. Principal (Step 3)
+
+The previous sample showed `ExecutionContext` flowing through a console-style program. This sample moves the same mechanism into an ASP.NET Core request. The goal is to separate two things that are easy to confuse: values that flow across an `await` because they ride on `ExecutionContext`, and values that are available after an `await` simply because they are object references the code already holds.
+
+Open **InternalsLab/Controllers/PrincipalController.cs**. `RunExperiment()` holds the signed-in user in a local variable, then records four checkpoints:
 
 ```cs
 var checkpoints = new List<Checkpoint>();
+
+// Step 3: an ordinary local variable that holds the signed-in user
 var signedInUser = HttpContext.User;
 
+// Step 3: checkpoint 1. Nothing in this action has awaited yet
 checkpoints.Add(Observe("1. Start of the action"));
 
+// Try it: delete this line, apply the change with Hot Reload, and click Run it again. Which cells change at checkpoints 2 and 3?
 Thread.CurrentPrincipal = signedInUser;
 
 // Yields the current thread: the rest of this method runs later as a continuation on the thread pool
+// Try it: replace this line with await Task.Delay(1).ConfigureAwait(false) and apply it with Hot Reload. Does httpContextAccessor still find the HttpContext at checkpoint 2?
 await Task.Yield();
 
+// Step 3: checkpoint 2. The continuation, usually on a different thread
 checkpoints.Add(Observe("2. After await Task.Yield()"));
 
+// Step 3: checkpoint 3. A thread pool thread running the Task.Run(...) lambda
 checkpoints.Add(await Task.Run(() => Observe("3. Inside Task.Run(...)")));
 
+// Step 3: checkpoint 4. The task is created while ExecutionContext flow is suppressed, and awaited only after the using block ends
 Task<Checkpoint> suppressedFlowTask;
 using (ExecutionContext.SuppressFlow())
 {
@@ -136,34 +209,37 @@ Checkpoint Observe(string checkpoint) => new Checkpoint(
 
 `await Task.Yield()` never completes synchronously. ASP.NET Core has no `SynchronizationContext`, so the rest of the method is queued to the thread pool as a real continuation, and it usually resumes on a different thread.
 
-Run the project:
+The controller is an ordinary MVC action inside the same app, because the experiment has to observe a real request. **Run the experiment** on the Step 3 page leaves the Blazor circuit with a full page load, and the action saves its checkpoints in the lab notebook and redirects back:
 
-```console
-dotnet run --project "3. Principal/PrincipalExample/PrincipalExample.csproj"
+```cs
+// Workshop plumbing: saves the checkpoints in the lab notebook, then goes back to the Step 3 page to compare them with your predictions
+notebook.RecordPrincipalRun(checkpoints);
+
+return Redirect("/steps/3");
 ```
 
-Open [http://localhost:5000](http://localhost:5000), sign in, and select **Run the experiment**. Signed in as `Ada`, one run produced this **Results** table:
+Open [http://localhost:5003/steps/3](http://localhost:5003/steps/3), sign in, and select **Run the experiment**. Signed in as `Ada`, one run produced this **Results** table:
 
 | Checkpoint | Thread | `Thread.CurrentPrincipal` | `httpContextAccessor.HttpContext?.User` | `HttpContext.User` | `signedInUser` |
 | --- | --- | --- | --- | --- | --- |
-| 1. Start of the action | 15 | null | Ada | Ada | Ada |
-| 2. After await Task.Yield() | 12 | Ada | Ada | Ada | Ada |
-| 3. Inside Task.Run(...) | 7 | Ada | Ada | Ada | Ada |
-| 4. Inside Task.Run(...) started while ExecutionContext flow is suppressed | 7 | null | null | Ada | Ada |
+| 1. Start of the action | 13 | null | Ada | Ada | Ada |
+| 2. After await Task.Yield() | 7 | Ada | Ada | Ada | Ada |
+| 3. Inside Task.Run(...) | 15 | Ada | Ada | Ada | Ada |
+| 4. Inside Task.Run(...) started while ExecutionContext flow is suppressed | 15 | null | null | Ada | Ada |
 
-Your name and the thread IDs will differ, and a checkpoint may reuse a thread from an earlier row. Select **Run it again** a few times: the thread IDs move around, but the names and `null`s never change. Read the columns, not the rows.
+Your name and the thread IDs will differ, and a checkpoint may reuse a thread from an earlier row. Select **Run it again** a few times: the thread IDs move around, and the page shows the previous run's thread ID under each one, but the names and `null`s never change. Read the columns, not the rows.
 
 ### Where the signed-in user comes from
 
-Open **3. Principal/PrincipalExample/Program.cs**. The app uses cookie authentication:
+Open **InternalsLab/Program.cs**. The app uses cookie authentication:
 
 ```cs
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(static options => options.LoginPath = "/");
+    .AddCookie(static options => options.LoginPath = "/Account/SignIn");
+```
 
-var app = builder.Build();
-
-// Reads the sign-in cookie on every request and assigns the signed-in user to HttpContext.User
+```cs
+// Step 3: reads the sign-in cookie on every request and assigns the signed-in user to HttpContext.User
 app.UseAuthentication();
 app.UseAuthorization();
 ```
@@ -181,11 +257,11 @@ Checkpoint 1 stays `null` on every run, even when the request lands on a thread 
 
 ### What `ExecutionContext` carries
 
-`Thread.CurrentPrincipal` and `IHttpContextAccessor.HttpContext` are both implemented with `AsyncLocal<T>`. At checkpoint 2 the thread changed from 15 to 12, yet both columns still show `Ada`: `await` captured `ExecutionContext` and restored it on the continuation thread. `Task.Run(...)` does the same capture and restore at checkpoint 3, on the thread pool thread that runs the lambda.
+`Thread.CurrentPrincipal` and `IHttpContextAccessor.HttpContext` are both implemented with `AsyncLocal<T>`. At checkpoint 2 the thread changed from 13 to 7, yet both columns still show `Ada`: `await` captured `ExecutionContext` and restored it on the continuation thread. `Task.Run(...)` does the same capture and restore at checkpoint 3, on the thread pool thread that runs the lambda.
 
-At checkpoint 4 both columns are `null`. The task was created while flow was suppressed, so no `ExecutionContext` was captured for it, and its lambda ran with the default, empty context. The thread does not decide the result: in the run above, checkpoint 4 ran on thread 7, the same thread as checkpoint 3, and still saw `null`, because `ExecutionContext` belongs to the work item, not to the thread. The `httpContextAccessor` object itself was still reachable at checkpoint 4; only the `AsyncLocal<T>` lookup behind its `HttpContext` property came back empty.
+At checkpoint 4 both columns are `null`. The task was created while flow was suppressed, so no `ExecutionContext` was captured for it, and its lambda ran with the default, empty context. The thread does not decide the result: in the run above, checkpoint 4 ran on thread 15, the same thread as checkpoint 3, and still saw `null`, because `ExecutionContext` belongs to the work item, not to the thread. The `httpContextAccessor` object itself was still reachable at checkpoint 4; only the `AsyncLocal<T>` lookup behind its `HttpContext` property came back empty.
 
-As in the previous sample, `ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. Create the task inside the `using` block, leave the block so flow is restored on the same thread, and only then await the task. Awaiting inside the block would let the method return before the block ends. The continuation runs with flow no longer suppressed, often on a different thread, so disposing the `AsyncFlowControl` at the end of the block throws `InvalidOperationException` even when the thread happens to be the same.
+As in the previous sample, `ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. Create the task inside the `using` block, leave the block so flow is restored on the same thread, and only then await the task. Awaiting inside the block would let the method return before the block ends. The continuation runs with flow no longer suppressed, often on a different thread, so disposing the `AsyncFlowControl` at the end of the block throws `InvalidOperationException` even when the thread happens to be the same. Step 2's **Try it** button shows exactly that.
 
 ### What only looks like it flowed
 
@@ -205,64 +281,94 @@ The `httpContextAccessor.HttpContext?.User` and `HttpContext.User` columns reach
 | `HttpContext.User` | your name | your name | your name | Object reference on the controller instance |
 | `signedInUser` | your name | your name | your name | Local variable captured in a compiler-generated closure |
 
-A bit of history: in classic ASP.NET (System.Web), `HttpContext.Current` relied on ASP.NET's `SynchronizationContext` to be re-attached on the continuation thread, so it was commonly `null` after `ConfigureAwait(false)`. ASP.NET Core's `IHttpContextAccessor` is AsyncLocal-backed instead, so it flows the same way `Thread.CurrentPrincipal` does.
+A bit of history: in classic ASP.NET (System.Web), `HttpContext.Current` relied on ASP.NET's `SynchronizationContext` to be re-attached on the continuation thread, so it was commonly `null` after `ConfigureAwait(false)`. ASP.NET Core's `IHttpContextAccessor` is AsyncLocal-backed instead, so it flows the same way `Thread.CurrentPrincipal` does. The second `// Try it:` comment in `RunExperiment()` proves it: replace `await Task.Yield()` with `await Task.Delay(1).ConfigureAwait(false)`, and checkpoint 2 still shows your name in the `httpContextAccessor.HttpContext?.User` column.
 
-## 4. SynchronizationContext
+## 4. SynchronizationContext (Step 4)
 
-The previous two samples showed the values that ride on `ExecutionContext`. This sample prints the other piece of ambient state that `await` captures: `SynchronizationContext`. In Blazor Server that is the renderer's synchronization context, and it is exactly what `ConfigureAwait(false)` opts out of.
+The previous two samples showed the values that ride on `ExecutionContext`. This sample shows the other piece of ambient state that `await` captures: `SynchronizationContext`. In Blazor Server that is the renderer's synchronization context, and it is exactly what `ConfigureAwait(false)` opts out of.
 
-Open **4. SynchronizationContext/HackerNews/Components/Pages/News.razor.cs**. `RefreshAsync(CancellationToken token)` logs the current thread and `SynchronizationContext` before its first `ConfigureAwait(false)`:
-
-```cs
-var thread = Thread.CurrentThread;
-var synchronizationContext = SynchronizationContext.Current;
-Logger.LogInformation("Before ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", thread.ManagedThreadId, synchronizationContext?.GetType().Name ?? "<null>");
-```
-
-It logs them again each time the `await foreach` loop resumes after `ConfigureAwait(false)`:
+Open **InternalsLab/Experiments/SynchronizationContextExperiment.cs**. `RefreshAsync(Func<Action, Task>, CancellationToken)` is shaped like `RefreshAsync` from Correcting Common Async Await Mistakes, with a simulated story feed in place of Hacker News so the app runs offline. It records `SynchronizationContext.Current` and the thread at six checkpoints:
 
 ```cs
-await foreach (var story in GetTopStories(topStoryIds, StoriesConstants.NumberOfStories, token).ConfigureAwait(false))
+public async Task RefreshAsync(Func<Action, Task> invokeAsync, CancellationToken token)
 {
-    var threadAfterConfigureAwaitFalse = Thread.CurrentThread;
-    var synchronizationContextAfterConfigureAwaitFalse = SynchronizationContext.Current;
-    Logger.LogInformation("After ConfigureAwait(false) | Thread {ThreadId} | SynchronizationContext: {SynchronizationContext}", threadAfterConfigureAwaitFalse.ManagedThreadId, synchronizationContextAfterConfigureAwaitFalse?.GetType().Name ?? "<null>");
+    // Step 4: checkpoint 1. Before the first await, still inside the click handler
+    RecordSynchronizationContext(1);
 
-    await InvokeAsync(() =>
+    // Step 4: a plain await. GetTopStoryIDs() has to wait for the simulated network.
+    var topStoryIds = await _storyFeed.GetTopStoryIDs(token);
+
+    // Step 4: checkpoint 2. After a plain await
+    RecordSynchronizationContext(2);
+
+    // Step 4: the top story is already in the feed's cache, so the ValueTask has completed before the await looks at it
+    var topStory = await _storyFeed.GetStory(topStoryIds[0], token).ConfigureAwait(false);
+
+    // Step 4: checkpoint 3. After ConfigureAwait(false) on a story that was already cached
+    RecordSynchronizationContext(3);
+
+    // Step 4: this story is not cached, so the await has to wait for the simulated network
+    // Try it: remove ConfigureAwait(false) from this await and apply the change with Hot Reload. Which checkpoints change?
+    var secondStory = await _storyFeed.GetStory(topStoryIds[1], token).ConfigureAwait(false);
+
+    // Step 4: checkpoint 4. After ConfigureAwait(false) on a story that had to download
+    RecordSynchronizationContext(4);
+
+    // Step 4: a plain await again, but it runs after checkpoint 4
+    var thirdStory = await _storyFeed.GetStory(topStoryIds[2], token);
+
+    // Step 4: checkpoint 5. After a plain await that started where checkpoint 4 left off
+    RecordSynchronizationContext(5);
+
+    // Step 4: InvokeAsync() runs the lambda through Blazor's renderer, which is how RefreshAsync() safely changes component state
+    await invokeAsync(() =>
     {
-        if (!TopStoryCollection.Any(x => x.Title.Equals(story.Title, StringComparison.Ordinal)))
-        {
-            InsertIntoSortedList(TopStoryCollection, (a, b) => b.Score.CompareTo(a.Score), story);
-        }
+        TopStories.AddRange([topStory, secondStory, thirdStory]);
 
-        StateHasChanged();
+        // Step 4: checkpoint 6. Inside InvokeAsync()
+        RecordSynchronizationContext(6);
     });
 }
 ```
 
-Run the project:
+**Run the experiment** calls it straight from the Step 4 page's click handler, passing the page's `InvokeAsync`, with nothing awaited first. From **InternalsLab/Steps/Step4SynchronizationContext.cs**:
 
-```console
-dotnet run --project "4. SynchronizationContext/HackerNews/HackerNews.csproj"
+```cs
+// No Task.Run and no ConfigureAwait(false) before this call: RefreshAsync() starts synchronously,
+// on Blazor's renderer, exactly like the click handler that called this method
+var refreshTask = experiment.RefreshAsync(invokeAsync, token);
 ```
 
-Open [http://localhost:5004](http://localhost:5004) and read the `HackerNews.Components.Pages.NewsPageBase` lines in the console. They are interleaved with ASP.NET Core's request logging, so look for the `NewsPageBase` category. There is one `Before` line per refresh and one `After` line per story, and the output has this shape:
+The top story is served from the feed's cache. Open **InternalsLab/Experiments/SimulatedStoryFeed.cs**:
 
-```console
-info: HackerNews.Components.Pages.NewsPageBase[0]
-      Before ConfigureAwait(false) | Thread 3 | SynchronizationContext: RendererSynchronizationContext
-info: HackerNews.Components.Pages.NewsPageBase[0]
-      After ConfigureAwait(false) | Thread 19 | SynchronizationContext: <null>
-info: HackerNews.Components.Pages.NewsPageBase[0]
-      After ConfigureAwait(false) | Thread 24 | SynchronizationContext: <null>
-info: HackerNews.Components.Pages.NewsPageBase[0]
-      After ConfigureAwait(false) | Thread 3 | SynchronizationContext: <null>
+```cs
+// A cached story comes back in a ValueTask that has already completed, so awaiting it never has to wait
+public ValueTask<Story> GetStory(long storyId, CancellationToken token)
+{
+    if (_cache.TryGetValue(storyId, out var cachedStory))
+        return ValueTask.FromResult(cachedStory);
+
+    return new ValueTask<Story>(DownloadStory(storyId, token));
+}
 ```
 
-Thread IDs will differ. Before the await, `SynchronizationContext.Current` is Blazor's `RendererSynchronizationContext`. It is not a native UI thread, and the managed thread ID does not have to be `1`. Blazor Server has no dedicated UI thread: the renderer's synchronization context runs its work on thread pool threads, one work item at a time, and that context is what serializes access to component state.
+One run produced these results:
 
-After `ConfigureAwait(false)`, each continuation runs on whichever thread pool thread completed the awaited operation, and `SynchronizationContext.Current` is `<null>`. In the run above, thread `3` ran the code before the await and later ran a continuation with no synchronization context at all. The thread is not what changed. `ConfigureAwait(false)` told the awaiter not to capture the context, so nothing restored it when the continuation was scheduled. With fifty continuations you may see the same reuse in your own output.
+| Checkpoint | Thread | Pool thread | `SynchronizationContext.Current` |
+| --- | --- | --- | --- |
+| 1. Before the first await, in the click handler | 19 | yes | RendererSynchronizationContext |
+| 2. After a plain await on GetTopStoryIDs() | 18 | yes | RendererSynchronizationContext |
+| 3. After ConfigureAwait(false) on a story that was already cached | 18 | yes | RendererSynchronizationContext |
+| 4. After ConfigureAwait(false) on a story that had to download | 18 | yes | null |
+| 5. After a plain await that started where checkpoint 4 left off | 18 | yes | null |
+| 6. Inside InvokeAsync(...) | 18 | yes | RendererSynchronizationContext |
 
-A non-null `After` line is also possible. If the awaited operation had already completed when the `await` ran, there was no continuation to schedule, so the code kept running on the same thread with the same context. `ConfigureAwait(false)` only affects continuations that are actually scheduled.
+Thread IDs will differ. Before the first await, `SynchronizationContext.Current` is Blazor's `RendererSynchronizationContext`. It is not a native UI thread, and the managed thread ID does not have to be `1`: the Pool thread column says `yes` for every checkpoint. Blazor Server has no dedicated UI thread: the renderer's synchronization context runs its work on thread pool threads, one work item at a time, and that context is what serializes access to component state. Checkpoint 2 shows it: the plain `await` posted its continuation back to the renderer's context, which ran it on a different thread from checkpoint 1.
 
-The key observation is that `ConfigureAwait(false)` and `ConfigureAwaitOptions.None` avoid capturing the synchronization context when a continuation is scheduled. The sample uses `InvokeAsync(...)` to marshal UI state updates back through Blazor's renderer.
+After `ConfigureAwait(false)` on an operation that has to wait, the continuation runs on whichever thread pool thread completed the awaited operation, and `SynchronizationContext.Current` is `null`. In the run above, thread `18` ran checkpoints 2 and 3 on the renderer's context and then ran checkpoint 4 with no synchronization context at all. The thread is not what changed. `ConfigureAwait(false)` told the awaiter not to capture the context, so nothing restored it when the continuation was scheduled.
+
+Checkpoint 3 is the non-null result after `ConfigureAwait(false)`. The cached story's `ValueTask` had already completed when the `await` ran, so there was no continuation to schedule, and the code kept running on the same thread with the same context. `ConfigureAwait(false)` only affects continuations that are actually scheduled.
+
+Checkpoint 5 is the one that surprises people. It is a plain `await`, but it does not bring you back to the renderer, because an `await` captures whatever `SynchronizationContext` is current when that `await` runs. After checkpoint 4 there was none. The only way back is to ask for it: checkpoint 6 runs inside `InvokeAsync(...)`, which runs the lambda through Blazor's renderer, and reports `RendererSynchronizationContext`, even though it ran on the same thread as checkpoint 5.
+
+The key observation is that `ConfigureAwait(false)` avoids capturing the synchronization context when a continuation is scheduled. After that, every change to component state goes back through `InvokeAsync(...)`, just as Correcting Common Async Await Mistakes does.

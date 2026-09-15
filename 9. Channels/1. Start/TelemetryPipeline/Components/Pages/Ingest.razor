@@ -1,17 +1,35 @@
 @page "/"
 @inherits IngestPageBase
 
-<PageTitle>TelemetryPipeline</PageTitle>
+<PageTitle>TelemetryPipeline · Ingest</PageTitle>
 
-<section class="page">
-    <header class="hero-panel">
-        <div class="hero-copy">
-            <p class="eyebrow">TelemetryPipeline</p>
-            <h1>Device telemetry ingest</h1>
-            <p class="hero-summary">@EventCount.ToString("N0") devices post readings in a burst. Each reading has to reach the database, and each device gives up if the endpoint is slow.</p>
-        </div>
+<div class="control-room">
+    <header class="ops-bar">
+        <span class="ops-logo"><span class="ops-logo-mark" aria-hidden="true">◈</span> TelemetryPipeline</span>
+        <span class="ops-status"><span class="ops-status-light" aria-hidden="true"></span> Fleet control room · Ingest endpoint</span>
+    </header>
 
-        <div class="hero-actions">
+    <section class="ops-hero">
+        <p class="ops-eyebrow">Device fleet · live ingest</p>
+        <h1>Device telemetry ingest</h1>
+        <p class="ops-summary">@EventCount.ToString("N0") devices post readings in a burst. Each reading has to reach the database, and each device gives up if the endpoint is slow.</p>
+
+        <dl class="ops-limits">
+            <div>
+                <dt>Device timeout</dt>
+                <dd>20ms</dd>
+            </div>
+            <div>
+                <dt>Database write</dt>
+                <dd>40ms</dd>
+            </div>
+            <div>
+                <dt>Burst</dt>
+                <dd>@EventCount.ToString("N0") readings</dd>
+            </div>
+        </dl>
+
+        <div class="ops-actions">
             <button class="action" type="button" disabled="@IsBusy" @onclick="RunBurstAsync">
                 @if (IsBusy)
                 {
@@ -24,47 +42,104 @@
                 Refresh counters
             </button>
         </div>
-    </header>
+    </section>
 
     @if (Stats is null && !IsBusy)
     {
-        <div class="panel">
+        <section class="ops-panel">
             <h2>What to look for</h2>
-            <p class="panel-hint">Receive the burst and watch the average accept time. A device gives up after 20ms, so anything slower than that is a dropped reading in production.</p>
-        </div>
+            <p class="ops-hint">Receive the burst and watch the average accept time. A device gives up after 20ms, so anything slower than that is a dropped reading in production.</p>
+        </section>
     }
 
     @if (Stats is not null)
     {
-        <div class="panel">
+        // Each gauge is full at its limit: the whole burst, the 20ms a device waits, and 40ms per reading, the burst duration when every write happens inline
+        var acceptedGauge = Math.Min(100, Stats.Accepted * 100 / EventCount);
+        var acceptGauge = Math.Min(100, Stats.AverageAcceptMilliseconds * 100 / 20).ToString("F0");
+        var durationGauge = Math.Min(100, Stats.TotalSeconds * 100 / (EventCount * 0.04)).ToString("F0");
+        var writtenGauge = Math.Min(100, LiveProcessed * 100 / EventCount);
+
+        <section class="ops-panel">
             <h2>Ingest results</h2>
-            <p class="panel-hint">Accepting an event should be fast. Processing it can take as long as it needs, as long as nothing is lost.</p>
+            <p class="ops-hint">Accepting an event should be fast. Processing it can take as long as it needs, as long as nothing is lost.</p>
 
             <div class="result-grid">
-                <div class="result-card @(Stats.Accepted == EventCount ? "ok" : "bad")">
+                <div class="result-card @(Stats.Accepted == EventCount ? "ok" : "bad")" style="--gauge: @acceptedGauge">
+                    <span class="gauge" aria-hidden="true"></span>
                     <span class="result-label">Accepted</span>
                     <span class="result-value">@Stats.Accepted.ToString("N0")</span>
                     <span class="result-note">of @EventCount.ToString("N0")</span>
                 </div>
 
-                <div class="result-card @(Stats.AverageAcceptMilliseconds < 5 ? "ok" : "bad")">
+                <div class="result-card @(Stats.AverageAcceptMilliseconds < 5 ? "ok" : "bad")" style="--gauge: @acceptGauge">
+                    <span class="gauge" aria-hidden="true"></span>
                     <span class="result-label">Average accept</span>
-                    <span class="result-value timing">@Stats.AverageAcceptMilliseconds.ToString("F1")ms</span>
+                    <span class="result-value">@Stats.AverageAcceptMilliseconds.ToString("F1")ms</span>
                     <span class="result-note">slowest @Stats.SlowestAcceptMilliseconds.ToString("F0")ms, devices retry past 20ms</span>
                 </div>
 
-                <div class="result-card">
+                <div class="result-card" style="--gauge: @durationGauge">
+                    <span class="gauge" aria-hidden="true"></span>
                     <span class="result-label">Burst duration</span>
-                    <span class="result-value timing">@Stats.TotalSeconds.ToString("F2")s</span>
+                    <span class="result-value">@Stats.TotalSeconds.ToString("F2")s</span>
                     <span class="result-note">to accept every event</span>
                 </div>
 
-                <div class="result-card @(LiveProcessed == EventCount ? "ok" : "pending")">
+                <div class="result-card @(LiveProcessed == EventCount ? "ok" : "pending")" style="--gauge: @writtenGauge">
+                    <span class="gauge" aria-hidden="true"></span>
                     <span class="result-label">Written to store</span>
                     <span class="result-value">@LiveProcessed.ToString("N0")</span>
                     <span class="result-note">@LiveQueueDepth waiting in the queue</span>
                 </div>
             </div>
-        </div>
+        </section>
     }
-</section>
+
+    <section class="ops-panel">
+        <h2>Pipeline</h2>
+        <p class="ops-hint">Live counters from the ingest service, as of the last time the page refreshed.</p>
+
+        <div class="pipeline">
+            <div class="pipeline-node">
+                <span class="node-glyph" aria-hidden="true">◉</span>
+                <span class="node-name">Devices</span>
+                <span class="node-value">@EventCount.ToString("N0")</span>
+                <span class="node-caption">readings per burst</span>
+            </div>
+
+            <div class="pipeline-link @(IsBusy ? "flowing" : null)" style="--fill: @(Math.Min(100, (Stats?.Accepted ?? 0) * 100 / EventCount))%" aria-hidden="true">
+                <span class="link-track"></span>
+            </div>
+
+            <div class="pipeline-node @(LiveQueueDepth > 0 ? "busy" : null)">
+                <span class="node-glyph" aria-hidden="true">☰</span>
+                <span class="node-name">Queue</span>
+                <span class="node-value">@LiveQueueDepth.ToString("N0")</span>
+                <span class="node-caption">waiting</span>
+            </div>
+
+            <div class="pipeline-link @(LiveQueueDepth > 0 ? "flowing" : null)" style="--fill: @(LiveQueueDepth > 0 ? 100 : 0)%" aria-hidden="true">
+                <span class="link-track"></span>
+            </div>
+
+            <div class="pipeline-node @(LiveQueueDepth > 0 ? "busy" : null)">
+                <span class="node-glyph" aria-hidden="true">⚙</span>
+                <span class="node-name">Consumers</span>
+                <span class="node-value">@(LiveQueueDepth > 0 ? "Draining" : "Idle")</span>
+                <span class="node-caption">background service</span>
+            </div>
+
+            <div class="pipeline-link" style="--fill: @(Math.Min(100, LiveProcessed * 100 / EventCount))%" aria-hidden="true">
+                <span class="link-track"></span>
+            </div>
+
+            <div class="pipeline-node @(LiveProcessed >= EventCount ? "done" : null)">
+                <span class="node-glyph" aria-hidden="true">▤</span>
+                <span class="node-name">Store</span>
+                <span class="node-value">@LiveProcessed.ToString("N0")</span>
+                <span class="node-caption">written</span>
+            </div>
+        </div>
+    </section>
+</div>

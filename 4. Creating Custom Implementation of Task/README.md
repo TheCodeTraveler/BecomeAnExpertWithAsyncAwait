@@ -27,7 +27,7 @@ The starter builds, but every `CustomTask` member is still a stub that throws a 
 
 The app enforces the order of the steps:
 
-1. Step 1 is `CustomTask.Run()`, `Wait()` and `IsCompleted`. Step 2 is `CustomTask.Delay()` and `ContinueWith()`. Step 3 is `await`, which uses `GetAwaiter()`. Step 4 is `SetResult()`. Step 5 is `SetException()`. Step 6, rush hour, covers many waiters, long `ContinueWith` chains and `ExecutionContext`.
+1. Each step names the members its feature exercises, and a step can also need members from later steps. Step 1 is `CustomTask.Run()`, `Wait()` and `IsCompleted`, and it also needs `SetResult()`, `SetException()` and `ContinueWith()`. Step 2 is `CustomTask.Delay()` and `ContinueWith()`. Step 3 is `await`, which uses `GetAwaiter()`. Step 4 is `SetResult()`. Step 5 is `SetException()`. Step 6, rush hour, covers many waiters, long `ContinueWith` chains and `ExecutionContext`.
 2. A step unlocks only after the step before it passes. Each step page tells the story behind the feature, names the real .NET API it mirrors, and shows a live log plus a checklist of every expected result next to what actually happened.
 3. Every time the app starts, it checks your `CustomTask` against Steps 1 to 5 automatically, so the Home page always reflects the code you have now. Step 6 runs only when you click **Run step** on its page, because an implementation that runs continuations inline overflows the stack there, and a stack overflow ends the whole process.
 4. Stop and run the app again after each change to **CustomTask.cs**. If your IDE applied the change with Hot Reload, click **Run Steps 1-5** on the Home page instead.

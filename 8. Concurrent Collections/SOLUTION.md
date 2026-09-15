@@ -2,23 +2,58 @@
 
 Use this during the guided walkthrough after the challenge and group review in [README.md](README.md).
 
-The completed project is **2. Finish/StockWatch**. Compare your decisions with the finished Blazor sample as we rebuild the solution step by step.
+The completed project is **2. Finish/StockWatch**. Compare your decisions with the finished Blazor sample as we rebuild the solution step by step. Each section below names the workshop step it makes pass, so you can follow along in the workshop guide.
+
+**1. Start** and **2. Finish** share the same workshop plumbing: the `Steps` and `Verification` folders, the layout with its workshop guide, and the Dashboard page's markup. The only differences are **Components/Pages/Dashboard.razor.cs** and the port in `Properties/launchSettings.json`.
 
 Every change lives in one file: **Components/Pages/Dashboard.razor.cs**. Nothing in `MarketDataService`, the models, or the markup needs to move.
 
-## 1. Replace the Dictionary
+## 1. Collect Results in a ConcurrentBag (Step 1)
 
-`Dictionary<TKey, TValue>` is fast because it assumes it will never be written by two threads at once. `Parallel.ForEachAsync(...)` refreshes all 60 symbols concurrently, so more than one writer can be in flight at once. A concurrent resize can lose entries, corrupt a bucket chain, or throw.
-
-`ConcurrentDictionary<TKey, TValue>` is the replacement. Reads are lock-free, and writes take a lock from a small striped lock array, one lock per processor by default and capped at 1024, rather than one lock over the whole collection, so threads writing different keys usually do not wait on each other.
-
-Add the namespace:
+Every change in this walkthrough uses the concurrent collections namespace, so add it first:
 
 ```cs
 using System.Collections.Concurrent;
 ```
 
-Then change the field:
+`GetSymbols()` runs `Parallel.ForEach(...)` and adds one item per symbol. `List<T>.Add` writes into an internal array and sometimes grows it, so parallel calls silently lose items, leave a null in the backing array for `OrderBy` to trip over, or throw. This is the failure the dashboard shows most often: a card is simply not there.
+
+Step 1 reads `Symbols` 200 times in a row, the way 200 renders would. The starter returns all 60 cards on well under 200 of those reads, some reads come back with far fewer, and a handful throw the same `NullReferenceException` that puts a Feed fault panel in place of the dashboard in the browser.
+
+`ConcurrentBag<T>` is built for this shape of work. It is unordered, it allows duplicates, and it gives each producing thread its own local storage so adds rarely contend at all.
+
+```cs
+    IReadOnlyList<StockSymbolModel> GetSymbols()
+    {
+        // ConcurrentBag collects results from parallel workers without a lock
+        ConcurrentBag<StockSymbolModel> symbols = [];
+
+        Parallel.ForEach(MarketDataService.Symbols, symbol =>
+        {
+            _latestQuotes.TryGetValue(symbol, out var quote);
+
+            symbols.Add(new StockSymbolModel(symbol, MarketDataService.GetCompanyName(symbol), quote));
+        });
+
+        return [.. symbols.OrderBy(static symbol => symbol.Symbol)];
+    }
+```
+
+Unordered is fine here because the last line sorts the results anyway. If you needed indexing or `List<T>` semantics, a bag would be the wrong answer.
+
+`List<T>` has no drop-in concurrent replacement. Pick by how you read the data back: keyed lookup is `ConcurrentDictionary<TKey, TValue>`, first in first out is `ConcurrentQueue<T>`, last in first out is `ConcurrentStack<T>`, and "just collect it and sort later" is `ConcurrentBag<T>`.
+
+One honest footnote, because someone always asks. `Symbols` is evaluated on Blazor's renderer on every render, and `Parallel.ForEach(...)` is a blocking call that holds that thread until the last partition finishes. Sixty dictionary lookups do not need sixty-way parallelism, and the partitioning costs more than the work. In real code this method would be a plain LINQ projection over `MarketDataService.Symbols`, with no concurrent collection needed at all, because a body that shares nothing cannot race. The parallel loop is here because it is the clearest place to watch `ConcurrentBag<T>` do its job.
+
+## 2. Replace the Dictionary (Step 2)
+
+`Dictionary<TKey, TValue>` is fast because it assumes it will never be written by two threads at once. `Parallel.ForEachAsync(...)` refreshes all 60 symbols concurrently, so more than one writer can be in flight at once. A concurrent resize can lose entries, corrupt a bucket chain, or throw.
+
+`ConcurrentDictionary<TKey, TValue>` is the replacement. Reads are lock-free, and writes take a lock from a small striped lock array, one lock per processor by default and capped at 1024, rather than one lock over the whole collection, so threads writing different keys usually do not wait on each other.
+
+A lost insert is rare enough that one refresh often comes out right, so Step 2 does not rely on catching one. It checks the type of `_latestQuotes` directly, and the guide shows the type you chose.
+
+Change the field:
 
 ```cs
     // ConcurrentDictionary is safe for many writers at once. AddOrUpdate replaces
@@ -27,7 +62,7 @@ Then change the field:
     readonly ConcurrentDictionary<string, StockQuoteModel> _latestQuotes = new();
 ```
 
-## 2. Make Each Update a Single Call
+## 3. Make Each Update a Single Call (Steps 2 and 3)
 
 The starter code calls `TryAdd(...)`, and when that returns `false` it assigns through the indexer. Those are two operations. Between them another thread can write a newer quote that your indexer assignment then overwrites. Swapping in a concurrent dictionary alone does not fix this, because each call being thread safe does not make the pair of them atomic.
 
@@ -79,7 +114,11 @@ Contrast that with the line directly beneath it in the sample. `Interlocked.Incr
 
 The timestamp comparison matters for a second reason. When one 2 second tick runs long, two refreshes overlap, and without the comparison a slow thread carrying an older quote could overwrite a newer one that already landed.
 
-## 3. Read the Counter Safely
+That is the case Step 2 builds on purpose. It stores a quote timestamped an hour from now for one symbol and a quote from an hour ago for another, runs a refresh, and checks that the newer quote survived and the older one was replaced. Swapping in `ConcurrentDictionary<TKey, TValue>` while keeping `TryAdd(...)` and the indexer passes the type check and fails this one, which is where this section started: every call being thread safe does not make the pair of them atomic.
+
+Step 3 covers the counter. It runs 32 refreshes at the same time and checks that the count grew by exactly 60 each, but a lost increment is timing dependent, so a single run can come out right by luck. It also reads the compiled code of `RefreshQuotes()`, including the lambda and its async state machine, and checks that it calls `Interlocked.Increment(...)`.
+
+## 4. Read the Counter Safely (Step 3)
 
 `Interlocked.Increment(...)` makes the writes atomic and publishes them. What it does not do is stop the JIT from hoisting a plain `_refreshCount` read into a register and never looking at the field again.
 
@@ -89,38 +128,13 @@ The timestamp comparison matters for a second reason. When one 2 second tick run
 
 `Volatile.Read(...)` forces a real acquire-ordered read of the field. In this component the `InvokeAsync(StateHasChanged)` hand-off already orders the render behind the writes, so this is defense in depth, but it costs nothing, and it tells the next person reading this property that the field is shared.
 
-## 4. Collect Results in a ConcurrentBag
+No test can reliably catch a read the JIT served from a register, so Step 3 checks the compiled getter for `Volatile.Read(...)`, the same way it checks `RefreshQuotes()` for `Interlocked.Increment(...)`.
 
-`GetSymbols()` runs `Parallel.ForEach(...)` and adds one item per symbol. `List<T>.Add` writes into an internal array and sometimes grows it, so parallel calls silently lose items, leave a null in the backing array for `OrderBy` to trip over, or throw. This is the failure the dashboard shows most often: a card is simply not there.
-
-`ConcurrentBag<T>` is built for this shape of work. It is unordered, it allows duplicates, and it gives each producing thread its own local storage so adds rarely contend at all.
-
-```cs
-    IReadOnlyList<StockSymbolModel> GetSymbols()
-    {
-        // ConcurrentBag collects results from parallel workers without a lock
-        ConcurrentBag<StockSymbolModel> symbols = [];
-
-        Parallel.ForEach(MarketDataService.Symbols, symbol =>
-        {
-            _latestQuotes.TryGetValue(symbol, out var quote);
-
-            symbols.Add(new StockSymbolModel(symbol, MarketDataService.GetCompanyName(symbol), quote));
-        });
-
-        return [.. symbols.OrderBy(static symbol => symbol.Symbol)];
-    }
-```
-
-Unordered is fine here because the last line sorts the results anyway. If you needed indexing or `List<T>` semantics, a bag would be the wrong answer.
-
-`List<T>` has no drop-in concurrent replacement. Pick by how you read the data back: keyed lookup is `ConcurrentDictionary<TKey, TValue>`, first in first out is `ConcurrentQueue<T>`, last in first out is `ConcurrentStack<T>`, and "just collect it and sort later" is `ConcurrentBag<T>`.
-
-One honest footnote, because someone always asks. `Symbols` is evaluated on Blazor's renderer on every render, and `Parallel.ForEach(...)` is a blocking call that holds that thread until the last partition finishes. Sixty dictionary lookups do not need sixty-way parallelism, and the partitioning costs more than the work. In real code this method would be a plain LINQ projection over `MarketDataService.Symbols`, with no concurrent collection needed at all, because a body that shares nothing cannot race. The parallel loop is here because it is the clearest place to watch `ConcurrentBag<T>` do its job.
-
-## 5. Guard the Timer With SemaphoreSlim
+## 5. Guard the Timer With SemaphoreSlim (Step 4)
 
 Nothing in the starter code orders `StartRefreshTimer()` against `StopRefreshTimer()`, so a component torn down mid-initialization can leave a disposed timer assigned or a live timer leaked. This is not a collection problem, so no concurrent collection can solve it.
+
+A leaked timer is worse than it sounds. Its callback reads `_disposeCancellationTokenSource.Token`, and once `DisposeAsync()` has disposed that source, the next tick throws `ObjectDisposedException` inside an `async void` timer callback. Nothing can catch that, and it ends the whole process. That is also why Step 4 will not call the starter's timer methods at the same time: until a `SemaphoreSlim` field exists, it reports the missing semaphore and skips the checks that would leak a timer inside the app that is running them.
 
 You cannot use `lock` here, because the guarded work contains an `await` and a lock cannot be held across an `await`. `SemaphoreSlim` with a count of one is the asynchronous lock:
 
@@ -160,7 +174,7 @@ Wait on it before touching the field, and release it in a `finally` so a throw i
     }
 ```
 
-## 6. Split Out the Unguarded Core
+## 6. Split Out the Unguarded Core (Step 4)
 
 `SemaphoreSlim` is not reentrant. The thread that holds it gets no special treatment, so a guarded method that calls another guarded method waits on a permit it is already holding and never returns.
 
@@ -192,9 +206,11 @@ That is why `StartRefreshTimer()` above does not call `StopRefreshTimer()`. The 
     }
 ```
 
+`OnInitializedAsync()` calls `StartRefreshTimer()`, so a `StartRefreshTimer()` that calls the guarded `StopRefreshTimer()` never lets the page finish loading. Every step renders a fresh dashboard first, so that mistake shows up as "A fresh dashboard finishes loading" failing on whichever step you run next.
+
 Notice the two different tokens. `StartRefreshTimer()` waits with the dispose token, so a component being torn down stops waiting immediately. `StopRefreshTimer()` waits with `CancellationToken.None`, because it is called from `DisposeAsync()` after that token has already been cancelled, and cleanup still has to run.
 
-## 7. Dispose the Semaphore
+## 7. Dispose the Semaphore (Step 4)
 
 `SemaphoreSlim` owns a wait handle, so dispose it with the rest of the component state:
 
@@ -216,6 +232,8 @@ The order matters, and it is worth being precise about what it buys you. Cancell
 
 One caveat, because someone will ask. `Timer.DisposeAsync()` waits for the callback delegate to return, and the callback here is an async lambda handed to `TimerCallback`, which returns `void`. An async void method returns to its caller at its first `await`, so disposing the timer does not by itself wait for an in-flight refresh to finish. Cancellation is what stops that refresh, which is the real reason cancel comes first.
 
+Once the semaphore exists, Step 4 checks all of this from the outside. It takes the semaphore itself and confirms that `StartRefreshTimer()` and `StopRefreshTimer()` each wait for it. It fires 400 start and stop calls at the same time, stops the timer one last time, and waits 2.5 seconds, longer than one tick, to confirm that no leaked timer is still applying quotes. Then it disposes the page the way a closed tab does and checks that `DisposeAsync()` finished and disposed the semaphore. A `StopRefreshTimer()` that waits with the dispose token fails that last check with a `TaskCanceledException`.
+
 ## 8. Run It and Count
 
 From the **2. Finish** folder, run the finished project and open [http://localhost:5006](http://localhost:5006):
@@ -223,6 +241,8 @@ From the **2. Finish** folder, run the finished project and open [http://localho
 ```console
 dotnet run --project StockWatch/StockWatch.csproj
 ```
+
+The workshop guide shows 4 of 4 steps pass once the checks that run after the app starts have finished. On the **Dashboard** beside it:
 
 1. Count the cards. There are 60, on the first paint and after every refresh.
 2. The "quotes applied" tile reads exactly 60 when the page first paints.

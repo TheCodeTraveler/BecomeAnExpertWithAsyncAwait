@@ -15,6 +15,11 @@ public static class Program
 		builder.Services.AddSingleton<TelemetryIngestService>();
 		builder.Services.AddHostedService<TelemetryProcessor>();
 
+		// Workshop plumbing: one StepVerifier holds every step's result. It is also a hosted service,
+		// so it checks your services against every step each time the app starts.
+		builder.Services.AddSingleton<StepVerifier>();
+		builder.Services.AddHostedService(static serviceProvider => serviceProvider.GetRequiredService<StepVerifier>());
+
 		var app = builder.Build();
 
 		if (!app.Environment.IsDevelopment())

@@ -20,6 +20,11 @@ public static class Program
 			.ConfigureHttpClient(static client => client.BaseAddress = new Uri("https://hacker-news.firebaseio.com/v0"))
 			.AddStandardResilienceHandler(static options => options.Retry = new WebHttpRetryStrategyOptions());
 
+		// Workshop plumbing: one StepVerifier holds every step's result. It is also a hosted service,
+		// so it checks your News page against every step each time the app starts.
+		builder.Services.AddSingleton<StepVerifier>();
+		builder.Services.AddHostedService(static serviceProvider => serviceProvider.GetRequiredService<StepVerifier>());
+
 		var app = builder.Build();
 
 		if (!app.Environment.IsDevelopment())

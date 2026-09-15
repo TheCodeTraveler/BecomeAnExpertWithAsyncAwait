@@ -11,8 +11,10 @@ public sealed class ImportService(OrderFileService orderFile, CustomerApiService
 		// Step 1: validate every row. This is CPU-bound work.
 		var validateStopwatch = Stopwatch.StartNew();
 
-		// ToDo Refactor: every row is scored on one thread while the other
+		// ToDo Refactor (Step 1): every row is scored on one thread while the other
 		// cores sit idle. Nothing here depends on the row before it.
+		// ToDo Refactor (Step 3): this loop never looks at the token, so a cancelled
+		// import still scores every row before anything notices.
 		foreach (var order in orders)
 		{
 			order.RiskScore = ScoreRisk(order);
@@ -23,7 +25,7 @@ public sealed class ImportService(OrderFileService orderFile, CustomerApiService
 		// Step 2: enrich every row from the customer API. This is I/O-bound work.
 		var enrichStopwatch = Stopwatch.StartNew();
 
-		// ToDo Refactor: Parallel.ForEach takes an Action, not a Func<Task>.
+		// ToDo Refactor (Step 2): Parallel.ForEach takes an Action, not a Func<Task>.
 		// This lambda is `async void`: ForEach starts each one and immediately
 		// considers it finished, so this returns long before any call completes
 		// and any exception inside it is rethrown where nothing can catch it.
@@ -37,7 +39,7 @@ public sealed class ImportService(OrderFileService orderFile, CustomerApiService
 		// Step 3: summarize by region.
 		var reportStopwatch = Stopwatch.StartNew();
 
-		// ToDo Refactor: this query runs on one thread
+		// ToDo Refactor (Step 3): this query runs on one thread, and it ignores the cancellation token
 		var regionTotals = orders
 			.GroupBy(static order => order.Region)
 			.Select(static group => new RegionTotal(
@@ -50,6 +52,8 @@ public sealed class ImportService(OrderFileService orderFile, CustomerApiService
 
 		reportStopwatch.Stop();
 
+		// ToDo Refactor (Step 2): this is the only await in the method. It yields
+		// the thread, but it does not wait for a single customer API call above.
 		await Task.Yield();
 
 		return new ImportReport(

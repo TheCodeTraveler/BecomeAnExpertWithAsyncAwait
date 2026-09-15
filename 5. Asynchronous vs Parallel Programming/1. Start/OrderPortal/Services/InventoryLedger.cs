@@ -16,6 +16,7 @@ public sealed class InventoryLedger : IDisposable
 
 	readonly List<string> _auditTrail = [];
 
+	// ToDo Refactor (Step 4): List<T> is not thread safe, and this reads it while the audit writer appends to it
 	public int AuditEntries => _auditTrail.Count;
 
 	public void Dispose() => _ledgerSemaphore.Dispose();
@@ -31,7 +32,7 @@ public sealed class InventoryLedger : IDisposable
 				return false;
 			}
 
-			// ToDo Refactor: this call also waits on _ledgerSemaphore, which this
+			// ToDo Refactor (Step 4): this call also waits on _ledgerSemaphore, which this
 			// method is already holding. SemaphoreSlim is not reentrant, so the
 			// thread waits for a permit it will never release. That is a deadlock.
 			await WriteAuditEntryAsync($"Reserved {quantity} of {sku}", token).ConfigureAwait(false);

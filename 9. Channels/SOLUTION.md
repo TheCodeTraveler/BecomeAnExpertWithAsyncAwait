@@ -2,9 +2,13 @@
 
 Use this during the guided walkthrough after the challenge and group review in [README.md](README.md).
 
-The completed project is **2. Finish/TelemetryPipeline**. Every real change happens in `Services/TelemetryIngestService.cs`. `EventStore`, `Program.cs`, `Models/TelemetryEvent.cs`, and the Blazor page do not change at all, `TelemetryProcessor` picks up a comment, and the only other difference is the port in `Properties/launchSettings.json`, so the finished copy can run beside your own. That is the point of this pattern: the producer and the consumer never had to learn anything about each other.
+The completed project is **2. Finish/TelemetryPipeline**. Almost every change happens in `Services/TelemetryIngestService.cs`. `TelemetryProcessor` gets the small shutdown fix in section 9, and the only other difference is the port in `Properties/launchSettings.json`, so the finished copy can run beside your own. `EventStore`, `Program.cs`, `Models/TelemetryEvent.cs`, and the Blazor page do not change at all. That is the point of this pattern: the producer and the consumer never had to learn anything about each other.
 
-## 1. Reference the Channels Namespace
+One member is already there in the starter. `CompleteWriting()` exists in **1. Start** as a stub that throws `NotImplementedException` with a hint, because Step 4 needs a named method to call. Everything else you write from scratch.
+
+Each section below names the workshop step it makes pass, so you can follow along in the workshop guide. The walkthrough builds the channel before it touches `AcceptAsync`, because the new accept path writes into that channel, so the Step 1 fix appears in section 4. **1. Start** and **2. Finish** share the same workshop plumbing: the `Steps` and `Verification` folders, and the layout with its workshop guide.
+
+## 1. Reference the Channels Namespace (Step 2)
 
 `Channel`, `Channel<T>`, `ChannelReader<T>`, `ChannelWriter<T>`, and `BoundedChannelOptions` all live in one namespace:
 
@@ -15,7 +19,7 @@ using System.Threading.Channels;
 
 `System.Threading.Channels` ships in the shared framework, so there is no package to install.
 
-## 2. Create the Bounded Channel
+## 2. Create the Bounded Channel (Step 2)
 
 The `List<TelemetryEvent>` goes away and a bounded channel takes its place:
 
@@ -45,7 +49,9 @@ Three decisions are packed into those options.
 
 `SingleReader` and `SingleWriter` are promises you make to the runtime so it can pick a cheaper implementation. They are not enforced. Both are `false` here because every browser session can post events and eight consumers read the same channel. A broken promise here does not throw, it corrupts, so leave these `false` unless the code structurally guarantees otherwise.
 
-## 3. Make the Counters Thread Safe
+Step 2 checks all three decisions against a fresh service. It posts readings one at a time until a write stops completing synchronously. With a capacity of 500 and `Wait`, all 500 go straight in, so the 400 reading burst fits, write 501 waits for room, `QueueDepth` reads 500, and cancelling that waiting write stops it without counting it as accepted. An unbounded queue, or a drop mode, takes 10,000 readings without anyone ever waiting, and the step says which of the two it found.
+
+## 3. Make the Counters Thread Safe (Step 2)
 
 The counters are now touched by the producer and by eight consumers at the same time:
 
@@ -62,9 +68,11 @@ The counters are now touched by the producer and by eight consumers at the same 
 
 `_accepted++` is a read, an add, and a write, which is why the increments in the next two steps use `Interlocked`. `Volatile.Read` on the way out is the matching half: it stops the compiler and the CPU from handing the page a value cached in a register, and it guarantees the page never reads a value older than the last increment it can observe. It does not freeze the value. The consumers are still running, so what the page renders is a snapshot that is already slightly stale, and for a counter that is fine.
 
+Step 2 lines 16 devices up behind a `Barrier` and has each post 25 readings at the same instant. With Step 1 fixed but the `List<TelemetryEvent>` and `++` still in place, one run of that check accepted 373 of 400 and queued only 361. A lost increment is still rare with only 400 readings, so the step also reads the compiled code to confirm that `AcceptAsync` calls `Interlocked` and that both getters call `Volatile.Read`.
+
 `QueueDepth` no longer counts a list. `Reader.Count` is the channel's current buffered depth. It is a snapshot too, and it is the single most useful number to put on a real dashboard, because a queue depth that keeps climbing tells you which half of your pipeline is losing.
 
-## 4. Accept Without Touching the Database
+## 4. Accept Without Touching the Database (Step 1)
 
 This is the fix the whole section is about:
 
@@ -84,9 +92,11 @@ The call to `eventStore.SaveAsync(...)` is gone from the accept path. Accepting 
 
 That `await` is also the only place backpressure can appear. With a capacity of 500 and a burst of 400 it never suspends, which is exactly why the measured average accept time is 0.0ms. Shrink the capacity below the burst size and this same line starts waiting for room, with no other change to the code.
 
-`Interlocked.Increment` replaces `_accepted++` because more than one caller can be in this method at once.
+`Interlocked.Increment` replaces `_accepted++` because more than one caller can be in this method at once. The starter's `_processed++` is gone from this method too. Only a consumer writes to the store, so only a consumer counts a reading as processed.
 
-## 5. Write the Consumer
+Step 1 sends a burst of 20 readings to a fresh service with no consumers running. The starter averages 41.0ms per accept and already reports 20 written. The fix averages well under the 5ms the step allows, reports 0 written and 20 waiting in the queue, and returns `ValueTask`.
+
+## 5. Write the Consumer (Step 3)
 
 The polling loop is replaced by an `await foreach`:
 
@@ -108,7 +118,7 @@ The polling loop is replaced by an `await foreach`:
 
 Notice what this method does not contain. There is no lock, no `Interlocked` around the queue itself, no check to see whether the producer is still running, and no `List<T>` that two threads mutate at once. The channel is thread safe by construction.
 
-## 6. Run Several Consumers Over One Reader
+## 6. Run Several Consumers Over One Reader (Step 3)
 
 One consumer at 40 milliseconds per write can only clear 25 events per second. Start eight of them:
 
@@ -130,11 +140,25 @@ Every consumer reads the same `ChannelReader<TelemetryEvent>`, and each event is
 
 `_consumerCount` is your degree of parallelism, and it is the honest place to set that limit, because it is also how much concurrent load you are putting on the database. Eight consumers doing 50 writes each at 40 milliseconds is 2 seconds of work, and the measured drain is 2.11 seconds.
 
+Step 3 measures the same thing on a smaller burst. It starts `DrainAsync` on an empty queue, confirms it keeps waiting, sends 80 readings, and allows 1.5 seconds for all of them to reach the store. Eight consumers finished in 0.41 seconds. One consumer took 3.30 seconds and failed. The step then cancels the token it passed to `DrainAsync` and expects every consumer to stop, which is why `token` goes all the way down to `ReadAllAsync` and `SaveAsync`.
+
 Say one thing out loud about `Task.WhenAll` here, because it is the trap in this shape. It does not fail fast. `EventStore.SaveAsync` in this sample cannot throw, but in your own pipeline it can. If one consumer throws, the other seven keep reading, `DrainAsync` does not complete, and nobody observes that fault until every consumer has finished, which for a pipeline that runs for the life of the process means shutdown. You would silently be down one eighth of your throughput. That is why a production consumer puts a `try` and `catch` inside the `await foreach`, around the work for a single event, so one poison event costs you one event instead of one consumer.
 
 Be clear about ordering too. Events leave the channel in the order they were written, but once eight consumers are running, completion order is whatever the store decides. If per device ordering matters in your own systems, give each device its own channel or key the work so one device always lands on the same consumer.
 
-## 7. Complete the Writer
+## 7. Complete the Writer (Step 4)
+
+The starter declares this method already, as a stub:
+
+```cs
+    // ToDo Refactor (Step 4): nothing tells the consumers that no more events are coming
+    public void CompleteWriting()
+    {
+        throw new NotImplementedException("TelemetryIngestService.CompleteWriting() is not implemented yet. Hint: mark the queue complete, so the consumers finish writing the backlog and then stop reading. Do not call it from RunBurstAsync: a completed queue is closed for good, and the next burst would throw. It belongs on the shutdown path, in TelemetryProcessor.");
+    }
+```
+
+Until it is implemented, Step 4 stops right away and shows that `TelemetryIngestService.CompleteWriting()` still throws `NotImplementedException`. The finished version is one line:
 
 ```cs
     // Marks the channel complete so DrainAsync finishes after the backlog is written
@@ -147,9 +171,9 @@ Completing does two things. It rejects every later write, with `WriteAsync` thro
 
 `TryComplete()` is used instead of `Complete()` because more than one code path could reasonably close this channel. It returns `false` when the channel is already complete rather than throwing.
 
-Nothing calls this during a burst, and that is deliberate. Call `CompleteWriting` from `RunBurstAsync` and the first burst still passes every acceptance check, but the second click of **Receive 400 events** throws, because the channel is closed for good. This is the method you call exactly once, when the app is going away, and that is the next step.
+Nothing calls this during a burst, and that is deliberate. Call `CompleteWriting` from `RunBurstAsync` and the first burst still passes every acceptance check, but the second click of **Receive 400 events** throws, because the channel is closed for good. Step 3 sends a second burst to the same service for exactly that reason, and reports the `ChannelClosedException`. This is the method you call exactly once, when the app is going away, and that is the next step.
 
-## 8. Report From the Channel
+## 8. Report From the Channel (Step 3)
 
 `RunBurstAsync` keeps its shape, and the first thing to point at is what is missing:
 
@@ -161,7 +185,7 @@ Nothing calls this during a burst, and that is deliberate. Call `CompleteWriting
         var slowestAccept = 0d;
 ```
 
-The call to `Reset()` is gone, and so is the method. Clearing the counters mid flight would now be wrong, because the consumers are still draining the previous burst in the background. The pipeline outlives any single button click, so the counters are cumulative. Restart the app when you want a clean measurement.
+The call to `Reset()` is gone, and so is the method. Clearing the counters mid flight would now be wrong, because the consumers are still draining the previous burst in the background. The pipeline outlives any single button click, so the counters are cumulative. Restart the app when you want a clean measurement. Step 3's second burst of 10 checks this too: after it, the service has to read 90 accepted and 90 written, not 10.
 
 The stats now come from the channel and the atomic counters instead of a list:
 
@@ -178,9 +202,33 @@ The stats now come from the channel and the atomic counters instead of a list:
 
 `Processed` and `QueueDepth` go into the record at the moment the burst returns, which is almost immediately. The **Written to store** card does not read that snapshot though. `Ingest.razor` binds it to `LiveProcessed` and `LiveQueueDepth`, and `Ingest.razor.cs` defines those as `Ingest.Processed` and `Ingest.QueueDepth`, so the card reads the singleton every time the page renders. That is why the card shows a full queue and an empty store the instant the burst returns, and why **Refresh counters** is what lets you watch it drain.
 
-## 9. Drain the Backlog on Shutdown
+## 9. Drain the Backlog on Shutdown (Step 4)
 
-`TelemetryProcessor` is where completion finally gets used:
+The starter's `TelemetryProcessor` is the obvious version:
+
+```cs
+// The consumer half of the pipeline.
+// ToDo Refactor (Step 4): when the app shuts down, nothing completes the queue first,
+// so the readings still waiting in it never reach the store.
+public sealed class TelemetryProcessor(TelemetryIngestService ingest) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            // ToDo Refactor (Step 4): the host cancels stoppingToken at shutdown, and cancelling
+            // the read loop abandons every reading that is still waiting in the queue
+            await ingest.DrainAsync(stoppingToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // Expected on shutdown
+        }
+    }
+}
+```
+
+The finished `TelemetryProcessor` is where completion finally gets used:
 
 ```cs
 namespace TelemetryPipeline;
@@ -216,6 +264,8 @@ The obvious version of `ExecuteAsync` takes the `stoppingToken` and passes it in
 
 So the read loop does not take the token at all. Shutdown is signalled by completing the channel instead. `ReadAllAsync` drains what is buffered and then ends on its own, `Task.WhenAll` returns, `ExecuteAsync` returns, and `base.StopAsync` sees the task finish. With completion wired in, the same run writes 400 of 400 and shutdown takes about two seconds instead of being instant.
 
+Step 4 runs that exact shutdown on fresh instances. It starts a `TelemetryProcessor`, sends a burst of 40, and calls `StopAsync` straight away with 32 readings still waiting. The starter's processor returns with 0 of 40 written. A processor that stops passing `stoppingToken` but never completes the channel waits out the step's 5 second shutdown timeout instead. The finished processor returns after 0.20 seconds with 40 of 40 written, and a reading posted afterwards is refused with `ChannelClosedException`.
+
 Two things keep this honest. `base.StopAsync` bounds its wait with the host's shutdown timeout, so a backlog that cannot drain in time does not hang the process forever. And completing the channel means a request still trying to accept a reading during shutdown gets a `ChannelClosedException`, which is the correct answer: the app is going away and cannot promise to store it.
 
 The registration in `Program.cs` did not change either:
@@ -236,7 +286,7 @@ From the **9. Channels** folder, run the finished project:
 dotnet run --project "2. Finish/TelemetryPipeline/TelemetryPipeline.csproj"
 ```
 
-Open [http://localhost:5014](http://localhost:5014) and click **Receive 400 events**. To watch your own refactor instead, run the project in **1. Start** and open [http://localhost:5013](http://localhost:5013). The two ports differ so both copies can run side by side.
+Open [http://localhost:5014](http://localhost:5014). The workshop guide shows 4 of 4 steps pass once the checks that run after the app starts have finished. On the **Ingest** page beside it, click **Receive 400 events**. To watch your own refactor instead, run the project in **1. Start** and open [http://localhost:5013](http://localhost:5013). The two ports differ so both copies can run side by side.
 
 Three numbers are worth pointing at on screen.
 
@@ -248,9 +298,11 @@ Third, **Written to store** starts near zero with the rest of the burst waiting 
 
 ## 11. Feel the Backpressure
 
-Change `_queueCapacity` from `500` to `50` and run the burst again. The burst no longer fits in the buffer, so `WriteAsync` starts waiting for room, and the average accept time climbs off zero. The producer has been throttled to the speed of the consumers, and no code in the app measured anything or decided to slow down. That single `await` did it.
+Change `_queueCapacity` from `500` to `50`, restart the app, and run the burst again. The burst no longer fits in the buffer, so `WriteAsync` starts waiting for room, and the average accept time climbs off zero. The producer has been throttled to the speed of the consumers, and no code in the app measured anything or decided to slow down. That single `await` did it.
 
 Now change `FullMode` to `BoundedChannelFullMode.DropOldest` and run it once more. Every write completes immediately again, the accept time drops back toward zero, and the written count settles below 400. Those events are gone, with no exception and no log line to tell you.
+
+The workshop guide stops at Step 2 during both experiments, and its hints name the problem each time: first that the queue cannot hold the burst, then that readings are being dropped. Put both settings back afterwards.
 
 That is the right behavior for a live gauge where only the latest reading matters, and the wrong behavior for readings a customer is billed for. Choosing between `Wait`, `DropNewest`, `DropOldest`, and `DropWrite` is a business decision, not a performance decision, and it is worth a comment next to the option so the person who edits this file in six months knows why.
 
@@ -262,4 +314,4 @@ Compare your implementation with the completed files:
 2. [2. Finish/TelemetryPipeline/Services/TelemetryProcessor.cs](2.%20Finish/TelemetryPipeline/Services/TelemetryProcessor.cs)
 3. [2. Finish/TelemetryPipeline/Services/EventStore.cs](2.%20Finish/TelemetryPipeline/Services/EventStore.cs)
 
-`EventStore.cs`, `Program.cs`, `Models/TelemetryEvent.cs`, and the Blazor page are identical between **1. Start** and **2. Finish**. The slow database write is still slow, the page still asks for 400 events, and the hosted service still calls `DrainAsync`. All that changed is where the work happens, and a channel is what made that change one file instead of a rewrite.
+`EventStore.cs`, `Program.cs`, `Models/TelemetryEvent.cs`, and the Blazor page are identical between **1. Start** and **2. Finish**. The slow database write is still slow, the page still asks for 400 events, and the hosted service still calls `DrainAsync`. All that changed is where the work happens, and a channel is what made that change one service and a few lines of its hosted service instead of a rewrite.

@@ -105,7 +105,7 @@ public partial class ProductPageBase : ComponentBase
 
 	// All five wrappers write here at once, from whichever Thread Pool thread
 	// their own service finished on, while Product.razor renders Panels with a
-	// foreach. Marshalling the write keeps every mutation on the renderer.
+	// foreach. Marshaling the write keeps every mutation on the renderer.
 	protected Task SetPanelAsync(string name, string status, string? detail, TimeSpan elapsed) =>
 		InvokeAsync(() =>
 		{

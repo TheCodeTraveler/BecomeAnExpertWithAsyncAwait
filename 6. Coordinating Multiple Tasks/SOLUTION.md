@@ -2,14 +2,16 @@
 
 Use this during the guided walkthrough after the challenge and group review in [README.md](README.md).
 
-The completed project is **2. Finish/ProductDetails**. Compare your decisions with the finished Blazor sample as we rebuild the solution step by step. Only one source file you will edit differs between **1. Start** and **2. Finish**: `Components/Pages/Product.razor.cs`. The only other difference is the port in `Properties/launchSettings.json`, so both apps can run side by side, with Start on 5009 and Finish on 5010. The five services, the models, and the Razor markup are already correct, which is worth saying out loud. Nothing about this problem is fixed by changing the backend.
+The completed project is **2. Finish/ProductDetails**. Compare your decisions with the finished Blazor sample as we rebuild the solution step by step. Each section below names the workshop step it makes pass, so you can follow along in the workshop guide.
+
+Only one source file you will edit differs between **1. Start** and **2. Finish**: `Components/Pages/Product.razor.cs`. The only other difference is the port in `Properties/launchSettings.json`, so both apps can run side by side, with Start on 5009 and Finish on 5010. Both share the same workshop plumbing: the `Steps` and `Verification` folders, and the workshop guide in `Components/Layout/WorkshopGuide.razor`. The five services, the models, and the Razor markup are already correct, which is worth saying out loud. Nothing about this problem is fixed by changing the backend.
 
 ## 1. Read the Starter Method Again
 
 The starter awaits each service on the same line that starts it:
 
 ```cs
-// ToDo Refactor: these five services do not depend on each other, but
+// ToDo Refactor (Step 1): these five services do not depend on each other, but
 // each await waits for the previous one to finish. The page costs the
 // sum of every latency instead of the slowest one.
 var inventory = await InventoryService.GetInventoryAsync(_sku, CancellationToken.None).ConfigureAwait(false);
@@ -24,7 +26,7 @@ await SetPanelAsync("Pricing", "ready", $"{pricing.YourPrice:C} (list {pricing.L
 The second problem is at the bottom of the same method:
 
 ```cs
-    // ToDo Refactor: this service is down. Every call shares one try block,
+    // ToDo Refactor (Step 2): this service is down. Every call shares one try block,
     // so its failure is the whole page's failure. Move it above Reviews and
     // two more panels go blank. One flaky service should degrade one panel.
     var recommendations = await RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
@@ -39,6 +41,7 @@ catch (HttpRequestException e)
     // The continuation is off Blazor's renderer, so these writes go back through it
     await InvokeAsync(() =>
     {
+        // ToDo Refactor (Step 2): one card's failure is reported here as a failure of the whole page
         PageError = "A backend service did not respond. Certain panel updates have been skipped.";
 
         // Anything still waiting when the load stopped will never arrive
@@ -49,7 +52,7 @@ catch (HttpRequestException e)
 
 One `try` block covers all five calls. When the recommendations service throws, control jumps straight to the `catch`, the page sets a page-level error, and the last `SetPanelAsync(...)` never runs at all, so the Recommendations card is marked `skipped` and reads `never requested`. Move that call above the reviews call and two more panels go blank. How much of the page dies has nothing to do with the failure and everything to do with where the call sits in the block.
 
-## 2. Start Every Call Before You Await Any of Them
+## 2. Start Every Call Before You Await Any of Them (Step 1)
 
 Replace the five sequential awaits with five calls that are all started before anything is awaited:
 
@@ -81,7 +84,11 @@ Every call still passes `CancellationToken.None`, exactly as the starter did. No
 
 Notice that `panelTasks` is a `List<Task>` and not a `List<Task<T>>`. Each service returns a different type, so there is no single result type to collect. Each wrapper records its own panel, and the list exists only so the page has something to wait on.
 
-## 3. Wrap Each Call So One Failure Degrades One Panel
+Step 1 renders your page in the background and times the load. It has to finish in about 1.2 seconds, and no later than 1.6, and no card may report a running total such as the starter's 1.6s, 2.8s or 3.4s. It also watches Blazor's renderer while the page waits, so a blocking `Task.WaitAll(...)` that happens to finish in 1.2 seconds does not pass. That wait holds the thread the page renders on, and `SetPanelAsync(...)` needs that thread, so a blocking wait here can deadlock the page outright.
+
+Starting every call at once is enough for Step 1 even with the original single `try` block still in place. Try it: wrap the five started calls in one `await Task.WhenAll(...)` inside that `try`, and Step 1 passes while Step 2 fails. The recommendations failure now surfaces after 1.2 seconds instead of 4.2, and all five cards read `never requested`.
+
+## 3. Wrap Each Call So One Failure Degrades One Panel (Step 2)
 
 The wrapper is where the failure is contained:
 
@@ -113,12 +120,14 @@ Catch the exception you actually expect. `HttpRequestException` is what a failin
 
 Because every failure is handled inside the wrapper, the `Task` the wrapper returns always completes successfully. That matters for the next step.
 
+Step 2 checks exactly this contract: the Recommendations card reads `failed` with a message that contains no exception text, the other four cards read `ready`, nothing on the page mentions the 503, the page-level warning banner is gone, and the page logged the full `HttpRequestException` server-side.
+
 One detail in the wrapper is worth stopping on. `SetPanelAsync(...)` is awaited, and it is awaited because it marshals its own write:
 
 ```cs
 // All five wrappers write here at once, from whichever Thread Pool thread
 // their own service finished on, while Product.razor renders Panels with a
-// foreach. Marshalling the write keeps every mutation on the renderer.
+// foreach. Marshaling the write keeps every mutation on the renderer.
 protected Task SetPanelAsync(string name, string status, string? detail, TimeSpan elapsed) =>
     InvokeAsync(() =>
     {
@@ -137,7 +146,23 @@ Writing through the `List<T>` indexer increments the list's internal version cou
 
 `InvokeAsync(...)` closes the window by putting the write on Blazor's renderer, where the render also runs. The renderer processes one work item at a time, so a write can no longer overlap a render. Note that it does not call `StateHasChanged()`. Recording the panel and repainting the page are two separate decisions here, and the next step is where the repaint belongs.
 
-## 4. Stream the Completions With Task.WhenEach
+## 4. Stream the Completions With Task.WhenEach (Step 3)
+
+The starter repaints exactly once after the calls start, at the very end:
+
+```cs
+await InvokeAsync(() =>
+{
+    TotalSeconds = stopwatch.Elapsed.TotalSeconds;
+    IsLoading = false;
+
+    // ToDo Refactor (Step 3): this is the only repaint after the service calls start,
+    // so no card reaches the screen until the whole load is over
+    StateHasChanged();
+}).ConfigureAwait(false);
+```
+
+`SetPanelAsync(...)` records a card, but recording is not repainting. The repaint belongs in the loop that observes each completion:
 
 ```cs
 // Task.WhenEach streams each task as it finishes, so every panel paints
@@ -154,13 +179,15 @@ await foreach (var finishedPanel in Task.WhenEach(panelTasks))
 
 `Task.WhenEach` was added in .NET 9. It returns an `IAsyncEnumerable<Task>` that hands you each task the moment that task completes, so `await foreach` runs its body five times at 0.6s, 0.7s, 0.8s, 0.9s, and 1.2s. In practice that is finishing order rather than the order you built the list in, and the documentation deliberately stops short of guaranteeing an exact order for tasks that finish at nearly the same instant. Depend on getting each task as soon as it is done, not on the sequence. There is no list to trim and no bookkeeping to forget.
 
-`Task.WhenEach` yields the `Task`, not the result, which is why the body awaits `finishedPanel`. Step 3 already caught the only failure the wrapper can produce, so that `await` observes completion and nothing more.
+`Task.WhenEach` yields the `Task`, not the result, which is why the body awaits `finishedPanel`. The wrapper from Step 2 already caught the only failure it can produce, so that `await` observes completion and nothing more.
 
-`InvokeAsync(StateHasChanged)` is what turns each completion into a repaint, and putting it here rather than inside `SetPanelAsync(...)` is deliberate. Every `await` in this method uses `ConfigureAwait(false)`, so the continuation may not be on Blazor's renderer, and the render has to be marshalled for the same reason the panel write was.
+`InvokeAsync(StateHasChanged)` is what turns each completion into a repaint, and putting it here rather than inside `SetPanelAsync(...)` is deliberate. Every `await` in this method uses `ConfigureAwait(false)`, so the continuation may not be on Blazor's renderer, and the render has to be marshaled for the same reason the panel write was.
 
 The ordering works out because `SetPanelAsync(...)` is awaited inside the wrapper. The panel write is already on the renderer and already done before that wrapper's task completes, so by the time `Task.WhenEach` hands the task back and this loop repaints, the new panel is there to draw. One repaint per completion, and each one draws exactly the panel that just arrived.
 
-## 5. Stop the Page From Owning a Panel's Failure
+Step 3 records every time the page paints. It expects at least three of the paints with 1, 2, 3 and 4 cards answered on the way to 5, a paint where Shipping (0.6s) is ready while Reviews (1.2s) is still waiting, and each card's timing within a moment of its own service's cost. Then it presses **Load product page** again and expects the same cards, in about 1.2 seconds, with `IsLoading` back to `false`.
+
+## 5. Stop the Page From Owning a Panel's Failure (Finishing Step 2)
 
 Every failure now belongs to a panel, so the page-level error has nothing left to report:
 
@@ -214,7 +241,7 @@ These two are not what **2. Finish** uses, but both are correct answers to the t
 await Task.WhenAll(panelTasks).ConfigureAwait(false);
 ```
 
-The difference is when the user sees anything. `Task.WhenAll` completes once, at 1.2 seconds, so all five cards appear together unless each wrapper repaints itself as it finishes. If you kept the wrappers and moved `InvokeAsync(StateHasChanged)` into `TrackPanelAsync`, `Task.WhenAll` passes every acceptance check in the challenge.
+The difference is when the user sees anything. `Task.WhenAll` completes once, at 1.2 seconds, so all five cards appear together unless each wrapper repaints itself as it finishes. That is exactly where the workshop steps draw the line: the wrappers with a single `await Task.WhenAll(panelTasks)` pass Steps 1 and 2 and stop at Step 3, because nothing repaints until the end. If you kept the wrappers and moved `InvokeAsync(StateHasChanged)` into `TrackPanelAsync`, `Task.WhenAll` passes every acceptance check in the challenge and every workshop step.
 
 `Task.WhenAll` is also the only one of the three that collects failures for you. If you had not wrapped each call, `await Task.WhenAll(...)` would rethrow only one exception, and it is the first faulted task in the order you passed them in, not the first one to fail. The rest are still there: hold on to the task, and after it faults, its `Exception` property is an `AggregateException` whose `InnerExceptions` holds every failure.
 
@@ -235,7 +262,7 @@ while (pending.Count > 0)
 }
 ```
 
-`pending.Remove(finished)` is the whole trick. `Task.WhenAny` hands back the task that finished, and a finished task stays finished, so leaving it in the list means the next call returns the same task again and the loop never ends. Awaiting `finished` after you remove it does the same job as step 4: it observes the completion so nothing is silently dropped if a wrapper ever does throw. `Task.WhenEach` exists so you never have to remember any of this.
+`pending.Remove(finished)` is the whole trick. `Task.WhenAny` hands back the task that finished, and a finished task stays finished, so leaving it in the list means the next call returns the same task again and the loop never ends. The workshop steps report that as a page that never finishes loading. Awaiting `finished` after you remove it does the same job as the `await finishedPanel` in the `Task.WhenEach` loop: it observes the completion so nothing is silently dropped if a wrapper ever does throw. `Task.WhenEach` exists so you never have to remember any of this.
 
 ## 7. Check It in the Browser
 
@@ -245,7 +272,7 @@ Run the finished app from **2. Finish**, which is configured for port 5010 so it
 dotnet run --project ProductDetails/ProductDetails.csproj
 ```
 
-Open [http://localhost:5010](http://localhost:5010) and confirm each of these:
+Open [http://localhost:5010](http://localhost:5010). The app opens on the Product page, and the workshop guide beside it shows 3 of 3 steps pass as soon as the app starts. Press **Load product page** and confirm each of these:
 
 1. Shipping lands first at 0.6s.
 2. Inventory follows at 0.7s.
@@ -253,7 +280,7 @@ Open [http://localhost:5010](http://localhost:5010) and confirm each of these:
 4. Pricing lands at 0.9s.
 5. Reviews lands last at 1.2s.
 6. The total page load tile reads 1.2s.
-7. There is no yellow banner across the top of the page.
+7. There is no yellow banner above the page panels.
 
 Same five services, same latencies, same broken dependency. The only thing that changed is when you awaited and where you caught.
 

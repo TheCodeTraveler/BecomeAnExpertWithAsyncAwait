@@ -1,0 +1,374 @@
+@page "/steps/{Number:int}"
+@inherits StepPageBase
+
+<PageTitle>@(Step is null ? "Step not found" : $"Step {Step.Number} · InternalsLab")</PageTitle>
+
+<section class="page">
+    @if (Step is null)
+    {
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">InternalsLab</p>
+                <h1>Step not found</h1>
+                <p class="hero-summary">There is no Step @Number. <a href="">Go back to every step</a>.</p>
+            </div>
+        </header>
+    }
+    else
+    {
+        var progress = Notebook.GetProgress(Step.Number);
+        var status = Notebook.GetStatus(Step.Number);
+        var isUnlocked = Notebook.IsUnlocked(Step.Number);
+        var run = progress.LatestRun;
+        var nextStep = NextStep;
+        var runBlockedReason = RunBlockedReason;
+
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Step @Step.Number · @Step.RecommendedMinutes minutes</p>
+                <h1>@Step.Scenario</h1>
+                <p class="hero-summary"><code>@Step.Title</code></p>
+            </div>
+
+            <div class="hero-actions">
+                <StepBadge Status="status" IsUnlocked="isUnlocked" />
+            </div>
+        </header>
+
+        <div class="layout">
+            <StepNav Notebook="Notebook" />
+
+            <div class="content">
+                @if (!isUnlocked)
+                {
+                    <div class="banner banner-locked"><span>Finish <a href="@($"steps/{Step.Number - 1}")">Step @(Step.Number - 1)</a> first. This step unlocks when every explain question there is answered correctly.</span></div>
+                }
+                else if (status is StepStatus.Passed)
+                {
+                    <div class="banner banner-passed banner-fresh" role="status">
+                        @if (nextStep is null)
+                        {
+                            <span>Step @Step.Number passed, and so did every step before it. Pause here for the group review.</span>
+                        }
+                        else
+                        {
+                            <span>Step @Step.Number passed. <a href="@($"steps/{nextStep.Number}")">Continue to Step @nextStep.Number</a>.</span>
+                        }
+                    </div>
+                }
+
+                @if (ErrorMessage is not null)
+                {
+                    <div class="banner banner-failed" role="alert"><span>@ErrorMessage</span></div>
+                }
+
+                <div class="panel">
+                    <h2>The story</h2>
+                    <p>@Step.Story</p>
+                    <dl class="facts">
+                        <dt>Experiment</dt>
+                        <dd><code>@Step.ExperimentFile</code></dd>
+                        <dt>Read</dt>
+                        <dd>Every <code>// Step @Step.Number:</code> comment, before you predict</dd>
+                        <dt>Recommended time</dt>
+                        <dd>@Step.RecommendedMinutes minutes</dd>
+                    </dl>
+                    <details class="clues">
+                        <summary>Try it, after this step passes</summary>
+                        <p class="panel-hint">These are the <code>// Try it:</code> comments in the experiment code. Nothing here is needed to pass.</p>
+                        <ul>
+                            @foreach (var suggestion in Step.TryIt)
+                            {
+                                <li>@suggestion</li>
+                            }
+                        </ul>
+                    </details>
+                </div>
+
+                @if (Step.ExperimentUrl is not null)
+                {
+                    <div class="panel">
+                        <h2>Sign in</h2>
+                        @if (SignedInUserName is null)
+                        {
+                            <p>This experiment reads the signed-in user, so sign in first. There is no password: the app stores the name you type in a sign-in cookie.</p>
+                            <a class="action" href="Account/SignIn">Sign in</a>
+                        }
+                        else
+                        {
+                            <p>You are signed in as <span class="value-pill value-name">@SignedInUserName</span>. Every cell in the experiment shows either that name or <span class="value-pill value-null">null</span>.</p>
+                            <p class="panel-hint"><a href="Account/SignIn">Sign out or switch user</a></p>
+                        }
+                    </div>
+                }
+
+                <div class="panel">
+                    <h2>1. Predict</h2>
+                    @if (CanPredict)
+                    {
+                        <p class="panel-hint">Read the experiment code, then choose what you expect at every checkpoint. Your predictions lock in when the experiment runs.</p>
+                    }
+                    else if (run is not null)
+                    {
+                        <p class="panel-hint">Your predictions locked in when the experiment ran.</p>
+                    }
+
+                    <div class="table-scroll">
+                        <table class="checklist predictions @(Step.Columns.Count > 1 ? "grid-predictions" : "")">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Checkpoint</th>
+                                    @foreach (var column in Step.Columns)
+                                    {
+                                        <th scope="col"><code>@BreakAfterDots(column.Header)</code></th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var checkpoint in Step.Checkpoints)
+                                {
+                                    <tr @key="checkpoint.Number">
+                                        <td>@checkpoint.Name</td>
+                                        @foreach (var column in Step.Columns)
+                                        {
+                                            var key = WorkshopStep.PredictionKey(checkpoint.Number, column.Id);
+
+                                            <td>
+                                                <select class="prediction" aria-label="@($"{checkpoint.Name}: {column.Header}")" disabled="@(!CanPredict)" value="@(progress.Predictions.GetValueOrDefault(key) ?? string.Empty)" @onchange="e => Predict(checkpoint.Number, column.Id, e)">
+                                                    <option value="">Choose…</option>
+                                                    @foreach (var choice in column.Choices)
+                                                    {
+                                                        <option value="@choice.Id">@choice.Label</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>2. Run the experiment</h2>
+                    <div class="run-row">
+                        <button class="action" type="button" disabled="@(!CanRun)" @onclick="RunExperimentAsync">
+                            @if (IsRunning)
+                            {
+                                <span class="spinner" aria-hidden="true"></span>
+                            }
+                            @(IsRunning ? "Running" : run is null ? "Run the experiment" : "Run it again")
+                        </button>
+
+                        @if (runBlockedReason is not null)
+                        {
+                            <span class="run-note">@runBlockedReason</span>
+                        }
+                        else if (run is not null)
+                        {
+                            <span class="run-note">Run @run.RunNumber finished at @run.RanAt.ToString("HH:mm:ss"). Run it as often as you like.</span>
+                        }
+                    </div>
+
+                    @if (run is not null)
+                    {
+                        var previousRun = progress.PreviousRun;
+
+                        <div class="table-scroll">
+                            @if (Step.Columns.Count is 1)
+                            {
+                                var column = Step.Columns[0];
+
+                                <table class="checklist results">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col"><span class="visually-hidden">Matches your prediction</span></th>
+                                            <th scope="col">Checkpoint</th>
+                                            <th scope="col">Thread</th>
+                                            <th scope="col">Pool thread</th>
+                                            <th scope="col">Actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var checkpoint in Step.Checkpoints)
+                                        {
+                                            var result = run.Results.FirstOrDefault(result => result.Checkpoint == checkpoint.Number);
+                                            var predictedId = run.Predictions.GetValueOrDefault(WorkshopStep.PredictionKey(checkpoint.Number, column.Id));
+                                            var predicted = column.Choices.FirstOrDefault(choice => choice.Id == predictedId);
+                                            var actual = result?.Values.GetValueOrDefault(column.Id);
+                                            var matches = actual is not null && actual.ChoiceId == predictedId;
+
+                                            <tr class="@(matches ? "check-passed" : "check-failed")" @key="checkpoint.Number">
+                                                <td>@(matches ? "✅" : "❌")</td>
+                                                <td>@checkpoint.Name</td>
+                                                <td>@(result?.ThreadId.ToString() ?? "–")</td>
+                                                <td>@(result?.IsThreadPoolThread switch { true => "yes", false => "no", null => "–" })</td>
+                                                <td>
+                                                    <strong>@(actual?.Display ?? "Not recorded")</strong>
+                                                    @if (result?.Details.Count > 0)
+                                                    {
+                                                        <span class="details">
+                                                            @foreach (var detail in result.Details)
+                                                            {
+                                                                <span>@detail</span>
+                                                            }
+                                                        </span>
+                                                    }
+                                                    @if (!matches)
+                                                    {
+                                                        <small class="previous">You predicted: @(predicted?.Label ?? "–")</small>
+                                                    }
+                                                </td>
+                                            </tr>
+
+                                            @if (!matches)
+                                            {
+                                                <tr class="check-hint">
+                                                    <td aria-hidden="true">💡</td>
+                                                    <td colspan="4"><span class="visually-hidden">Hint: </span>@Step.GetHint(checkpoint.Number, column.Id)</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <table class="checklist grid-results">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Checkpoint</th>
+                                            <th scope="col">Thread</th>
+                                            @foreach (var column in Step.Columns)
+                                            {
+                                                <th scope="col"><code>@BreakAfterDots(column.Header)</code></th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var checkpoint in Step.Checkpoints)
+                                        {
+                                            var result = run.Results.FirstOrDefault(result => result.Checkpoint == checkpoint.Number);
+                                            var previousResult = previousRun?.Results.FirstOrDefault(result => result.Checkpoint == checkpoint.Number);
+                                            var mismatchedColumns = Step.Columns
+                                                .Where(column => result?.Values.GetValueOrDefault(column.Id)?.ChoiceId != run.Predictions.GetValueOrDefault(WorkshopStep.PredictionKey(checkpoint.Number, column.Id)))
+                                                .ToList();
+
+                                            <tr class="@(mismatchedColumns.Count is 0 ? "check-passed" : "check-failed")" @key="checkpoint.Number">
+                                                <td>@checkpoint.Name</td>
+                                                <td>
+                                                    @(result?.ThreadId.ToString() ?? "–")
+                                                    @if (previousResult is not null)
+                                                    {
+                                                        <small class="previous">previous run: @previousResult.ThreadId</small>
+                                                    }
+                                                </td>
+                                                @foreach (var column in Step.Columns)
+                                                {
+                                                    var predictedId = run.Predictions.GetValueOrDefault(WorkshopStep.PredictionKey(checkpoint.Number, column.Id));
+                                                    var predicted = column.Choices.FirstOrDefault(choice => choice.Id == predictedId);
+                                                    var actual = result?.Values.GetValueOrDefault(column.Id);
+                                                    var matches = actual is not null && actual.ChoiceId == predictedId;
+
+                                                    <td>
+                                                        <span class="cell-result">
+                                                            <span>@(matches ? "✅" : "❌")</span>
+                                                            <span class="value-pill @(actual?.ChoiceId == "null" ? "value-null" : "value-name")">@(actual?.Display ?? "Not recorded")</span>
+                                                        </span>
+                                                        @if (!matches)
+                                                        {
+                                                            <small class="previous">You predicted: @(predicted?.Label ?? "–")</small>
+                                                        }
+                                                    </td>
+                                                }
+                                            </tr>
+
+                                            @foreach (var column in mismatchedColumns)
+                                            {
+                                                <tr class="check-hint">
+                                                    <td colspan="@(Step.Columns.Count + 2)"><span aria-hidden="true">💡 </span><span class="visually-hidden">Hint: </span><code>@column.Header</code>: @Step.GetHint(checkpoint.Number, column.Id)</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    }
+                </div>
+
+                @if (Step is Step2ExecutionContext && run is not null)
+                {
+                    var outcome = progress.TryItOutcome;
+
+                    <div class="panel">
+                        <h2>Try it: await inside the using block</h2>
+                        <p><code>AwaitInsideSuppressFlowAsync()</code>, at the bottom of <code>@Step.ExperimentFile</code>, is the end of <code>RunAsync()</code> with one change: it awaits the <code>Task.Run(...)</code> task inside <code>using (ExecutionContext.SuppressFlow())</code> instead of after the block. Predict what happens, then click Try it.</p>
+                        <div class="run-row">
+                            <button class="action" type="button" disabled="@IsTryingIt" @onclick="TryItAsync">
+                                @if (IsTryingIt)
+                                {
+                                    <span class="spinner" aria-hidden="true"></span>
+                                }
+                                @(IsTryingIt ? "Trying it" : "Try it")
+                            </button>
+                        </div>
+
+                        @if (outcome is not null && !IsTryingIt)
+                        {
+                            @if (outcome.ExceptionType is null)
+                            {
+                                <div class="banner banner-locked banner-fresh" role="status" @key="outcome.RanAt">
+                                    <span>No exception this time. The task had already finished when the await looked at it, so there was no continuation to schedule, and the using block ended on the thread that started it. Click Try it again.</span>
+                                    <span class="banner-note">Tried at @outcome.RanAt.ToString("HH:mm:ss")</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="banner banner-failed banner-fresh" role="alert" @key="outcome.RanAt">
+                                    <span>It threw <strong>@outcome.ExceptionType</strong>. The using block started on thread @(outcome.UsingBlockStartThreadId?.ToString() ?? "–"), but the await let the method return while flow was still suppressed there. The block ended later, in the continuation on thread @(outcome.UsingBlockEndThreadId?.ToString() ?? "–"), where flow was not suppressed, so disposing the thread-affine <code>AsyncFlowControl</code> threw. The full exception is in the terminal running the app.</span>
+                                    <span class="banner-note">Tried at @outcome.RanAt.ToString("HH:mm:ss")</span>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+
+                <div class="panel">
+                    <h2>3. Explain</h2>
+                    @if (run is null)
+                    {
+                        <p class="panel-hint">Run the experiment first. These questions are about what it shows.</p>
+                    }
+                    else
+                    {
+                        <p class="panel-hint">Answer every question correctly to pass this step. A wrong answer shows a hint, and you can choose again.</p>
+
+                        @foreach (var question in Step.Questions)
+                        {
+                            var selected = question.FindAnswer(progress.Answers.GetValueOrDefault(question.Id));
+                            var isAnsweredCorrectly = selected?.IsCorrect is true;
+
+                            <fieldset class="question" @key="@($"{Step.Number}-{question.Id}")">
+                                <legend>@question.Question</legend>
+                                @foreach (var answer in question.Answers)
+                                {
+                                    <label class="answer @(answer == selected ? isAnsweredCorrectly ? "answer-correct" : "answer-wrong" : "")">
+                                        <input type="radio" name="@($"{Step.Number}-{question.Id}")" value="@answer.Id" checked="@(answer == selected)" disabled="@(isAnsweredCorrectly || !isUnlocked)" @onchange="() => Answer(question.Id, answer.Id)" />
+                                        <span>@answer.Text</span>
+                                    </label>
+                                }
+
+                                @if (selected is not null)
+                                {
+                                    <p class="feedback @(isAnsweredCorrectly ? "feedback-correct" : "feedback-wrong")" role="status"><span aria-hidden="true">@(isAnsweredCorrectly ? "✅ " : "💡 ")</span>@selected.Feedback</p>
+                                }
+                            </fieldset>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</section>
