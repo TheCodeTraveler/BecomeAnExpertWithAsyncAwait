@@ -1,31 +1,47 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrincipalExample.Models;
 
 namespace PrincipalExample.Controllers;
 
-public class HomeController : Controller
+public class HomeController(IHttpContextAccessor httpContextAccessor) : Controller
 {
-	public IActionResult Index()
+	public IActionResult Index() => View();
+
+	[Authorize]
+	public async Task<IActionResult> RunExperiment()
 	{
-		// Access the current user's identity
-		var username = User.Identity?.Name;  // "testuser"
-		var isAuthenticated = User.Identity?.IsAuthenticated;  // true
-		var userRoles = User.IsInRole("Admin");  // true
+		var checkpoints = new List<Checkpoint>();
+		var signedInUser = HttpContext.User;
 
-		// Get all claims of the user
-		var claims = User.Claims.Select(c => new { c.Type, c.Value });
+		checkpoints.Add(Observe("1. Start of the action"));
 
-		// Use the principal (User) for authorization checks
-		if (User.IsInRole("Admin"))
+		Thread.CurrentPrincipal = signedInUser;
+
+		// Yields the current thread: the rest of this method runs later as a continuation on the thread pool
+		await Task.Yield();
+
+		checkpoints.Add(Observe("2. After await Task.Yield()"));
+
+		checkpoints.Add(await Task.Run(() => Observe("3. Inside Task.Run(...)")));
+
+		Task<Checkpoint> suppressedFlowTask;
+		using (ExecutionContext.SuppressFlow())
 		{
-			ViewData["Message"] = "Welcome, Admin!";
-		}
-		else
-		{
-			ViewData["Message"] = "Welcome, User!";
+			suppressedFlowTask = Task.Run(() => Observe("4. Inside Task.Run(...) started while ExecutionContext flow is suppressed"));
 		}
 
-		return View();
+		checkpoints.Add(await suppressedFlowTask);
+
+		return View(nameof(Index), checkpoints);
+
+		// Asks for the signed-in user's name four different ways, from whichever thread is running this code
+		Checkpoint Observe(string checkpoint) => new Checkpoint(
+			checkpoint,
+			Environment.CurrentManagedThreadId,
+			Thread.CurrentPrincipal?.Identity?.Name,
+			httpContextAccessor.HttpContext?.User.Identity?.Name,
+			HttpContext.User.Identity?.Name,
+			signedInUser.Identity?.Name);
 	}
 }
