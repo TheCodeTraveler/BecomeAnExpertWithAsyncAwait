@@ -1,0 +1,56 @@
+@{
+    var isSignedIn = User.Identity?.IsAuthenticated is true;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in · InternalsLab</title>
+    <link rel="stylesheet" href="~/app.css" />
+</head>
+<body>
+<header class="top-bar">
+    <nav class="top-bar-links" aria-label="InternalsLab">
+        <a class="top-bar-link" href="/">Workshop steps</a>
+        <a class="top-bar-link" href="/steps/3">Step 3 · Principal</a>
+    </nav>
+</header>
+
+<main class="shell">
+    <section class="page">
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Step 3 · Principal</p>
+                <h1>@(isSignedIn ? "You are signed in" : "Sign in")</h1>
+                <p class="hero-summary">There is no password. The app stores the name you type in a sign-in cookie, and every request after that reads it back.</p>
+            </div>
+        </header>
+
+        <div class="panel sign-in-panel">
+            @if (isSignedIn)
+            {
+                <p>You are signed in as <span class="value-pill value-name">@User.Identity?.Name</span></p>
+                <div class="form-row">
+                    <a class="action" href="/steps/3">Back to Step 3</a>
+                    <form method="post" asp-controller="Account" asp-action="Logout">
+                        <button type="submit" class="action action-quiet">Sign out</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <form class="form-row" method="post" asp-controller="Account" asp-action="Login">
+                    <label class="field">
+                        <span>Your first name</span>
+                        <input name="name" maxlength="40" required autofocus />
+                    </label>
+                    <button type="submit" class="action">Sign in</button>
+                </form>
+                <p class="panel-hint">You go back to Step 3 as soon as you sign in.</p>
+            }
+        </div>
+    </section>
+</main>
+</body>
+</html>

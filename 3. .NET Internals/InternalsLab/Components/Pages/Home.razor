@@ -1,0 +1,71 @@
+@page "/"
+@inherits HomePageBase
+
+<PageTitle>InternalsLab</PageTitle>
+
+<section class="page">
+    <header class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">.NET Internals</p>
+            <h1>InternalsLab</h1>
+            <p class="hero-summary">Four experiments about where .NET keeps the state your async code depends on. Predict every checkpoint, run the experiment, and explain what you see.</p>
+        </div>
+
+        <div class="hero-actions">
+            @if (NextStep is { } nextStep)
+            {
+                <a class="action" href="@($"steps/{nextStep.Number}")">@(PassedStepCount is 0 && Notebook.GetStatus(1) is StepStatus.NotStarted ? "Start" : "Continue with") Step @nextStep.Number</a>
+            }
+
+            <div class="status-tile">
+                <span class="status-value">@PassedStepCount of @Notebook.Steps.Count</span>
+                <span class="status-label">steps pass</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <StepNav Notebook="Notebook" />
+
+        <div class="content">
+            @if (NextStep is null)
+            {
+                <div class="banner banner-passed" role="status">
+                    <span>Every step passed. Pause here for the group review.</span>
+                </div>
+            }
+
+            <div class="panel">
+                <h2>Your challenge</h2>
+                <p>Investigate four pieces of ambient state that asynchronous code depends on: <code>[ThreadStatic]</code> fields, <code>ExecutionContext</code>, the signed-in user, and <code>SynchronizationContext</code>. Nothing in this app is broken, so there is nothing to fix. Your job is to predict, observe and explain.</p>
+                <p>For every step, read the experiment's code, predict what every checkpoint will see, run the experiment, compare the results with your predictions, and answer the explain questions. Your predictions do not have to be right. Your explanations do.</p>
+                <p>Recommended time: 40 minutes. Step 1 takes 8 minutes, Step 2 takes 12, Step 3 takes 10, and Step 4 takes 10. Work through the steps in order, and when every step passes, pause for the group review.</p>
+                <p>Want to watch it happen? Set a breakpoint in any experiment, run the app from your IDE's debugger, and inspect the threads and values at each checkpoint.</p>
+                <p class="ai-note"><strong>Please avoid letting AI Agents solve the challenges for you. You're smart. You got this.</strong> Use them to understand the experiment code, clarify runtime concepts, and interpret what you observe.</p>
+            </div>
+
+            <div class="panel">
+                <h2>How it works</h2>
+                <ol class="how-it-works">
+                    <li>Every step below is one experiment. Its code is in the <code>Experiments</code> folder, except Step 3, which is <code>Controllers/PrincipalController.cs</code>. Every <code>// Step N:</code> comment marks something to read before you predict.</li>
+                    <li>Choose a prediction for every checkpoint. Run the experiment unlocks when every prediction is chosen, and your predictions lock in when it runs.</li>
+                    <li>The results show what really happened next to what you predicted. Every result that does not match comes with a hint about what to look at.</li>
+                    <li>Answer the explain questions. A wrong answer shows a hint, and you can try again. A step passes when its experiment has run and every question is answered correctly, and the next step unlocks.</li>
+                    <li>Your lab notebook keeps everything for as long as the app runs, so reloading a page is safe. Stopping the app starts a fresh notebook, so explore the <code>// Try it:</code> comments with Hot Reload, or after the group review.</li>
+                </ol>
+            </div>
+
+            <div class="step-grid">
+                @foreach (var step in Notebook.Steps)
+                {
+                    <a class="step-card" href="@($"steps/{step.Number}")" @key="step.Number">
+                        <span class="step-card-number">Step @step.Number · @step.RecommendedMinutes minutes</span>
+                        <span class="step-card-scenario">@step.Scenario</span>
+                        <code class="step-card-title">@step.Title</code>
+                        <StepBadge Status="Notebook.GetStatus(step.Number)" IsUnlocked="Notebook.IsUnlocked(step.Number)" />
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,19 +1,27 @@
+/* HackerNews: the front page, with the workshop guide docked beside it as the pull request's code review */
+
 :root {
-	--canvas: #eef3f1;
-	--panel: #ffffff;
-	--panel-strong: #112a2d;
-	--ink: #18211f;
-	--muted: #62706d;
-	--line: #d7e0dd;
-	--accent: #f46a1f;
-	--accent-dark: #b94713;
-	--teal: #0f766e;
-	--gold: #c59d35;
-	--shadow: 0 18px 55px rgb(28 45 42 / 14%);
+	--hn-orange: #ff6600;
+	--hn-beige: #f6f6ef;
+	--hn-ink: #000000;
+	--hn-muted: #828282;
+	--review-canvas: #f6f8fa;
+	--review-panel: #ffffff;
+	--review-line: #d0d7de;
+	--review-ink: #1f2328;
+	--review-muted: #59636e;
+	--review-blue: #0969da;
+	--review-purple: #8250df;
+	--good: #1a7f37;
+	--good-strong: #1f883d;
+	--good-dark: #1c8139;
+	--bad: #cf222e;
+	--warn: #9a6700;
+	--guide-width: 460px;
 	color-scheme: light;
-	font-family: "Aptos", "Avenir Next", "Segoe UI", sans-serif;
-	background: var(--canvas);
-	color: var(--ink);
+	font-family: Verdana, Geneva, sans-serif;
+	background: #e9e9e2;
+	color: var(--hn-ink);
 }
 
 * {
@@ -23,119 +31,116 @@
 body {
 	margin: 0;
 	overflow-x: clip;
-	background:
-		linear-gradient(135deg, rgb(15 118 110 / 14%), transparent 32%),
-		radial-gradient(circle at top right, rgb(244 106 31 / 16%), transparent 30%),
-		var(--canvas);
+	background: #e9e9e2;
 }
 
-.shell {
+code {
+	font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+	font-size: 0.88em;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* The app and the guide share the screen */
+
+.workspace {
+	display: flex;
 	min-height: 100vh;
 }
 
-.news-page {
-	width: min(1120px, calc(100% - 32px));
+.app-pane {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 10px 16px 40px;
+}
+
+/* The front page */
+
+.hn {
+	width: min(980px, 100%);
 	margin: 0 auto;
-	padding: 32px 0 56px;
+	background: var(--hn-beige);
 }
 
-.hero-panel {
+.hn-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 10px;
+	padding: 4px 8px;
+	background: var(--hn-orange);
+	font-size: 0.82rem;
+}
+
+.hn-logo {
 	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 28px;
-	align-items: end;
-	margin-bottom: 22px;
-	padding: 30px;
-	border: 1px solid rgb(36 35 31 / 10%);
-	border-radius: 8px;
-	background: linear-gradient(135deg, var(--panel-strong), #15463e 58%, #6f3b17);
-	box-shadow: var(--shadow);
-	color: #f8fffc;
-}
-
-.hero-copy {
-	max-width: 680px;
-}
-
-.eyebrow {
-	margin: 0 0 10px;
-	font-size: 0.78rem;
-	font-weight: 800;
-	letter-spacing: 0;
-	text-transform: uppercase;
-	color: #ffd29d;
-}
-
-h1 {
-	margin: 0;
-	font-family: "Iowan Old Style", "Sitka Text", Georgia, serif;
-	font-size: 4.45rem;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	border: 1px solid #fff;
+	color: #fff;
 	font-weight: 700;
-	line-height: 0.95;
 }
 
-.hero-summary {
-	max-width: 560px;
-	margin: 16px 0 0;
-	font-size: 1rem;
-	line-height: 1.6;
-	color: #dcefeb;
-}
-
-.hero-actions {
-	display: grid;
-	gap: 12px;
-	min-width: 220px;
-}
-
-.status-tile {
-	display: grid;
-	gap: 2px;
-	padding: 16px;
-	border: 1px solid rgb(255 255 255 / 18%);
-	border-radius: 8px;
-	background: rgb(255 250 240 / 10%);
-	backdrop-filter: blur(10px);
-}
-
-.status-value {
-	font-family: "Iowan Old Style", "Sitka Text", Georgia, serif;
-	font-size: 2.35rem;
+.hn-name {
 	font-weight: 700;
-	line-height: 1;
 }
 
-.status-label {
-	font-size: 0.78rem;
-	font-weight: 700;
-	color: #dcefeb;
+.hn-links {
+	display: flex;
+	gap: 4px;
+}
+
+.hn-link + .hn-link::before {
+	content: "| ";
+}
+
+.hn-link.current {
+	color: #fff;
+}
+
+.hn-count {
+	margin-left: auto;
 }
 
 .refresh-button {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	gap: 10px;
-	min-height: 44px;
-	border: 0;
-	border-radius: 8px;
-	background: var(--accent);
-	color: #fff;
-	cursor: pointer;
+	gap: 6px;
+	padding: 2px 10px;
+	border: 1px solid rgb(0 0 0 / 35%);
+	border-radius: 2px;
+	background: var(--hn-beige);
+	color: var(--hn-ink);
 	font: inherit;
-	font-weight: 800;
-	padding: 10px 16px;
-	box-shadow: 0 10px 24px rgb(0 0 0 / 20%);
+	cursor: pointer;
+}
+
+.refresh-button:hover:not(:disabled) {
+	background: #fff;
 }
 
 .refresh-button:disabled {
 	cursor: progress;
-	opacity: 0.7;
+	opacity: 0.75;
 }
 
 .refresh-icon {
-	width: 15px;
-	height: 15px;
+	width: 11px;
+	height: 11px;
 	border: 2px solid currentcolor;
 	border-left-color: transparent;
 	border-radius: 50%;
@@ -145,32 +150,26 @@ h1 {
 	animation: spin 900ms linear infinite;
 }
 
+.hn-body {
+	padding: 10px 8px 24px;
+}
+
 .story-list {
 	display: grid;
-	gap: 10px;
+	gap: 6px;
 }
 
 .story-card {
 	display: grid;
-	grid-template-columns: 42px 1fr;
-	gap: 16px;
-	align-items: start;
-	padding: 16px;
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	background: rgb(255 255 255 / 88%);
-	box-shadow: 0 8px 24px rgb(28 45 42 / 8%);
+	grid-template-columns: 34px 1fr;
+	gap: 4px;
+	align-items: baseline;
 }
 
 .story-rank {
-	display: inline-grid;
-	place-items: center;
-	width: 42px;
-	height: 42px;
-	border-radius: 8px;
-	background: #e4efeb;
-	color: var(--accent-dark);
-	font-weight: 900;
+	color: var(--hn-muted);
+	font-size: 0.86rem;
+	text-align: right;
 }
 
 .story-content {
@@ -178,38 +177,37 @@ h1 {
 }
 
 .story-title {
-	color: var(--ink);
-	font-size: 1.02rem;
-	font-weight: 800;
+	color: var(--hn-ink);
+	font-size: 0.9rem;
 	line-height: 1.35;
 	text-decoration: none;
 }
 
+.story-title:visited {
+	color: var(--hn-muted);
+}
+
 .story-title:hover {
-	color: var(--accent-dark);
 	text-decoration: underline;
-	text-decoration-thickness: 2px;
-	text-underline-offset: 3px;
 }
 
 .story-meta {
-	margin: 6px 0 0;
-	font-size: 0.84rem;
-	font-weight: 650;
-	color: var(--muted);
+	margin: 2px 0 0;
+	color: var(--hn-muted);
+	font-size: 0.7rem;
 }
 
 .error-panel {
+	margin: 0 0 12px;
+	padding: 8px 10px;
 	border: 1px solid #cc4b24;
-	border-radius: 8px;
 	background: #fff4ee;
-	margin-bottom: 18px;
-	padding: 14px 16px;
 	color: #7f1d1d;
+	font-size: 0.82rem;
 }
 
 .error-panel p {
-	margin: 6px 0 0;
+	margin: 4px 0 0;
 	line-height: 1.45;
 }
 
@@ -219,21 +217,21 @@ h1 {
 
 .skeleton-line {
 	display: block;
-	height: 14px;
-	border-radius: 999px;
-	background: linear-gradient(90deg, #dbe6e2, #f7fbf9, #dbe6e2);
+	height: 11px;
+	border-radius: 2px;
+	background: linear-gradient(90deg, #e2e2d8, #fbfbf6, #e2e2d8);
 	background-size: 220% 100%;
 	animation: shimmer 1.4s ease-in-out infinite;
 }
 
 .title-line {
-	width: min(620px, 80%);
-	height: 18px;
+	width: min(560px, 80%);
+	height: 13px;
 }
 
 .meta-line {
-	width: min(360px, 58%);
-	margin-top: 10px;
+	width: min(300px, 50%);
+	margin-top: 5px;
 }
 
 @keyframes shimmer {
@@ -246,39 +244,663 @@ h1 {
 	}
 }
 
-@keyframes spin {
+/* The workshop guide: a pull request review, docked beside the front page */
+
+.guide {
+	position: sticky;
+	top: 0;
+	flex: 0 0 var(--guide-width);
+	height: 100vh;
+	overflow-y: auto;
+	border-left: 1px solid var(--review-line);
+	background: var(--review-canvas);
+	color: var(--review-ink);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+	font-size: 0.9rem;
+}
+
+.guide.collapsed {
+	flex-basis: 72px;
+	display: grid;
+	align-content: start;
+	justify-items: center;
+	gap: 12px;
+	padding: 12px 0;
+}
+
+button.action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 5px 16px;
+	border: 1px solid rgb(31 35 40 / 15%);
+	border-radius: 6px;
+	background: var(--good-strong);
+	color: #fff;
+	font: inherit;
+	font-weight: 600;
+	line-height: 20px;
+	cursor: pointer;
+}
+
+button.action:hover:not(:disabled) {
+	background: var(--good-dark);
+}
+
+button.action:disabled {
+	border-color: var(--review-line);
+	background: #94d3a2;
+	cursor: not-allowed;
+}
+
+button.action.secondary {
+	background: var(--review-canvas);
+	color: var(--review-ink);
+}
+
+button.action.secondary:hover:not(:disabled) {
+	background: #eef1f4;
+}
+
+.spinner {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	margin-right: 8px;
+	border: 2px solid rgb(255 255 255 / 40%);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+.banner .spinner {
+	border-color: rgb(154 103 0 / 25%);
+	border-top-color: var(--warn);
+	vertical-align: -2px;
+}
+
+.guide-header {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 16px 20px 12px;
+	border-bottom: 1px solid var(--review-line);
+	background: var(--review-panel);
+}
+
+.guide-eyebrow {
+	margin: 0 0 4px;
+	color: var(--review-muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.guide-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 1.35rem;
+	font-weight: 600;
+}
+
+.guide-title::after {
+	content: "Open";
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: var(--good-strong);
+	color: #fff;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.guide-subtitle {
+	margin: 6px 0 0;
+	color: var(--review-muted);
+}
+
+.guide-toggle {
+	flex: none;
+	align-self: start;
+	display: grid;
+	justify-items: center;
+	gap: 8px;
+	min-width: 32px;
+	padding: 4px 8px;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-canvas);
+	color: var(--review-ink);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.guide-toggle:hover {
+	background: #eef1f4;
+}
+
+.guide-rail-label {
+	color: var(--review-muted);
+	font-size: 0.72rem;
+	font-weight: 600;
+	writing-mode: vertical-rl;
+}
+
+.guide-rail {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.guide-rail-step {
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+	width: 48px;
+	padding: 6px 0;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-panel);
+	color: var(--review-ink);
+	font: inherit;
+	cursor: pointer;
+}
+
+.guide-rail-number {
+	font-weight: 600;
+}
+
+.guide-progress {
+	display: grid;
+	gap: 8px;
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--review-line);
+	background: var(--review-panel);
+}
+
+.progress-meter {
+	display: flex;
+	gap: 2px;
+	overflow: hidden;
+	border-radius: 6px;
+}
+
+.progress-segment {
+	flex: 1;
+	height: 8px;
+	background: var(--review-line);
+}
+
+.progress-segment.done {
+	background: var(--good-strong);
+}
+
+.guide-progress-row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.guide-progress-count {
+	margin: 0;
+	color: var(--review-muted);
+}
+
+.guide-progress-count strong {
+	color: var(--review-ink);
+}
+
+.guide-tabs {
+	display: grid;
+	margin: 16px 20px 0;
+	overflow: hidden;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-panel);
+}
+
+.guide-tab {
+	display: grid;
+	grid-template-columns: 24px 1fr auto;
+	gap: 10px;
+	align-items: center;
+	padding: 8px 12px;
+	border: 0;
+	border-top: 1px solid var(--review-line);
+	background: transparent;
+	color: var(--review-ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.guide-tab:first-child {
+	border-top: 0;
+}
+
+.guide-tab:hover {
+	background: var(--review-canvas);
+}
+
+.guide-tab.selected {
+	box-shadow: inset 3px 0 0 var(--hn-orange);
+	background: #fff8f2;
+	font-weight: 600;
+}
+
+.guide-tab-number {
+	display: grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #eef1f4;
+	color: var(--review-muted);
+	font-size: 0.78rem;
+	font-weight: 600;
+}
+
+.guide-tab.selected .guide-tab-number {
+	background: var(--hn-orange);
+	color: #fff;
+}
+
+.guide-body {
+	display: grid;
+	gap: 12px;
+	padding: 16px 20px 40px;
+}
+
+.guide-section {
+	padding: 14px 16px;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-panel);
+}
+
+.guide-section h3,
+.guide-section h4 {
+	margin: -14px -16px 12px;
+	padding: 8px 16px;
+	border-bottom: 1px solid var(--review-line);
+	border-radius: 6px 6px 0 0;
+	background: var(--review-canvas);
+	font-size: 0.88rem;
+	font-weight: 600;
+}
+
+.guide-section p {
+	margin: 0 0 10px;
+	line-height: 1.5;
+}
+
+.guide-section p:last-child {
+	margin-bottom: 0;
+}
+
+.guide-note {
+	color: var(--review-muted);
+	font-size: 0.85rem;
+}
+
+.step-header {
+	display: grid;
+	gap: 10px;
+}
+
+.step-eyebrow {
+	margin: 0;
+	color: var(--review-muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.step-title {
+	margin: 2px 0 4px;
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.step-members {
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: #eef1f4;
+	color: var(--review-ink);
+	overflow-wrap: anywhere;
+}
+
+.step-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.step-buttons {
+	display: flex;
+	gap: 8px;
+}
+
+.how-it-works,
+.task-list {
+	margin: 0 0 12px;
+	padding-left: 20px;
+	line-height: 1.5;
+}
+
+.how-it-works li + li,
+.task-list li + li {
+	margin-top: 6px;
+}
+
+.how-it-works {
+	margin-bottom: 0;
+}
+
+.facts {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 6px 12px;
+	margin: 0 0 12px;
+}
+
+.facts dt {
+	color: var(--review-muted);
+	font-weight: 600;
+}
+
+.facts dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.see-it {
+	padding: 8px 12px;
+	border-left: 3px solid var(--hn-orange);
+	border-radius: 6px;
+	background: #fff8f2;
+}
+
+.ai-note {
+	padding: 8px 12px;
+	border-left: 3px solid var(--review-purple);
+	border-radius: 6px;
+	background: #fbefff;
+	color: #512a97;
+}
+
+.clues {
+	padding: 8px 12px;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-canvas);
+}
+
+.clues summary,
+.guide-log summary {
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.clues ul {
+	margin: 10px 0 0;
+	padding-left: 20px;
+	line-height: 1.5;
+}
+
+.guide-log-count {
+	margin-left: 6px;
+	color: var(--review-muted);
+	font-weight: 400;
+}
+
+/* Step results, shown the way a pull request shows its checks */
+
+.badge {
+	display: inline-block;
+	padding: 1px 8px;
+	border: 1px solid var(--review-line);
+	border-radius: 999px;
+	background: var(--review-panel);
+	color: var(--review-muted);
+	font-size: 0.75rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.badge-compact {
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.badge-passed {
+	border-color: rgb(31 136 61 / 40%);
+	background: #dafbe1;
+	color: var(--good);
+}
+
+.badge-failed {
+	border-color: rgb(207 34 46 / 40%);
+	background: #ffebe9;
+	color: var(--bad);
+}
+
+.badge-running {
+	border-color: rgb(154 103 0 / 40%);
+	background: #fff8c5;
+	color: var(--warn);
+}
+
+.badge-compact.badge-passed,
+.badge-compact.badge-failed,
+.badge-compact.badge-running {
+	background: transparent;
+}
+
+.banner {
+	display: grid;
+	justify-items: start;
+	gap: 6px;
+	padding: 10px 14px;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-panel);
+	line-height: 1.5;
+}
+
+.banner-passed {
+	border-color: rgb(31 136 61 / 40%);
+	background: #dafbe1;
+	color: #116329;
+}
+
+.banner-failed {
+	border-color: rgb(207 34 46 / 40%);
+	background: #ffebe9;
+	color: #a40e26;
+}
+
+.banner-running {
+	border-color: rgb(154 103 0 / 40%);
+	background: #fff8c5;
+	color: #7d4e00;
+}
+
+.banner-locked {
+	color: var(--review-muted);
+}
+
+.banner-note {
+	font-size: 0.8rem;
+	opacity: 0.85;
+}
+
+/* @key recreates the banner for every new result, so this animation plays again after each click */
+.banner-fresh {
+	animation: banner-in 0.35s ease-out;
+}
+
+@keyframes banner-in {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+
 	to {
-		transform: rotate(360deg);
+		opacity: 1;
+		transform: none;
 	}
 }
 
-@media (max-width: 720px) {
-	.news-page {
-		width: min(100% - 24px, 1120px);
-		padding-top: 18px;
+.link-button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--review-blue);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.link-button:hover {
+	text-decoration: underline;
+}
+
+.check-list {
+	display: grid;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	list-style: none;
+}
+
+.check {
+	display: grid;
+	grid-template-columns: 22px 1fr;
+	gap: 8px;
+	padding: 10px 12px;
+	border-top: 1px solid var(--review-line);
+}
+
+.check:first-child {
+	border-top: 0;
+}
+
+.check-body {
+	min-width: 0;
+}
+
+.guide-section .check-description {
+	margin: 0 0 4px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.check-values {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 2px 10px;
+	margin: 0;
+	color: var(--review-muted);
+	font-size: 0.82rem;
+}
+
+.check-values dd {
+	margin: 0;
+	color: var(--review-ink);
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+
+/* A hint reads like a reviewer's comment on the line that failed */
+.guide-section .check-hint {
+	position: relative;
+	margin: 10px 0 0;
+	padding: 8px 12px;
+	border: 1px solid var(--review-line);
+	border-radius: 6px;
+	background: var(--review-canvas);
+	line-height: 1.5;
+}
+
+.table-scroll {
+	margin-top: 10px;
+	overflow-x: auto;
+}
+
+.step-log {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8rem;
+}
+
+.step-log th,
+.step-log td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--review-line);
+	text-align: left;
+	vertical-align: top;
+}
+
+.step-log th {
+	color: var(--review-muted);
+}
+
+.step-log td:nth-child(-n + 3) {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* Narrow screens stack the guide under the app */
+
+@media (max-width: 1080px) {
+	:root {
+		--guide-width: 380px;
+	}
+}
+
+@media (max-width: 860px) {
+	.workspace {
+		flex-direction: column;
 	}
 
-	.hero-panel {
-		grid-template-columns: 1fr;
-		padding: 22px;
+	.guide,
+	.guide.collapsed {
+		position: static;
+		flex-basis: auto;
+		height: auto;
+		border-top: 1px solid var(--review-line);
+		border-left: 0;
 	}
 
-	h1 {
-		font-size: 2.45rem;
+	.guide.collapsed {
+		grid-auto-flow: column;
+		justify-content: start;
+		padding: 12px 16px;
 	}
 
-	.hero-actions {
-		min-width: 0;
+	.guide.collapsed .guide-rail {
+		grid-auto-flow: column;
 	}
 
-	.story-card {
-		grid-template-columns: 34px 1fr;
-		gap: 12px;
-		padding: 14px;
+	.guide-rail-label {
+		writing-mode: horizontal-tb;
 	}
 
-	.story-rank {
-		width: 34px;
-		height: 34px;
+	.app-pane {
+		padding: 0;
+	}
+
+	.hn-count {
+		margin-left: 0;
 	}
 }

@@ -1,17 +1,20 @@
 @page "/"
 @inherits CheckoutPageBase
 
-<PageTitle>OrderPortal</PageTitle>
+<PageTitle>OrderPortal · Checkout</PageTitle>
 
-<section class="page">
-    <header class="hero-panel">
-        <div class="hero-copy">
-            <p class="eyebrow">OrderPortal</p>
-            <h1>Checkout load simulator</h1>
-            <p class="hero-summary">Concurrent checkout workers run against the same singleton services, like a burst of real traffic.</p>
-        </div>
+<div class="store">
+    <header class="store-bar">
+        <span class="store-logo"><span class="store-logo-mark" aria-hidden="true">◆</span> OrderPortal</span>
+        <span class="store-event">Black Friday · Checkout war room</span>
+    </header>
 
-        <div class="hero-actions">
+    <section class="store-hero">
+        <p class="sale-tag">Doors open at midnight</p>
+        <h1>Checkout load simulator</h1>
+        <p class="store-summary">@OrderCount.ToString("N0") customers check out at once against the same singleton services, like the first minute of the sale.</p>
+
+        <div class="store-actions">
             <button class="action" type="button" disabled="@IsBusy" @onclick="RunBurstAsync">
                 @if (IsBusy)
                 {
@@ -24,21 +27,21 @@
                 Reserve stock
             </button>
         </div>
-    </header>
+    </section>
 
     @if (Result is null && !IsBusy)
     {
-        <div class="panel">
+        <section class="store-panel">
             <h2>What to look for</h2>
-            <p class="panel-hint">Run the burst. Every card that turns red is a bug in a service that looked fine when one request hit it at a time. Then press Reserve stock and watch how long it takes.</p>
-        </div>
+            <p class="store-hint">Run the burst. Every card that turns red is a bug in a service that looked fine when one request hit it at a time. Then press Reserve stock and watch how long it takes.</p>
+        </section>
     }
 
     @if (Result is not null)
     {
-        <div class="panel">
+        <section class="store-panel">
             <h2>Checkout results</h2>
-            <p class="panel-hint">Every number below has a known correct value. Anything that does not match is a race condition.</p>
+            <p class="store-hint">Every number below has a known correct value. Anything that does not match is a race condition.</p>
 
             <div class="result-grid">
                 <div class="result-card @(Result.OrdersPlaced == OrderCount ? "ok" : "bad")">
@@ -61,19 +64,19 @@
 
                 <div class="result-card">
                     <span class="result-label">Elapsed</span>
-                    <span class="result-value timing">@Result.Elapsed.TotalSeconds.ToString("F2")s</span>
+                    <span class="result-value">@Result.Elapsed.TotalSeconds.ToString("F2")s</span>
                     <span class="result-note">@Result.TaxRateLookups tax lookups</span>
                 </div>
             </div>
-        </div>
+        </section>
     }
 
     @if (StockMessage is not null)
     {
-        <div class="panel">
+        <section class="store-panel">
             <h2>Stock reservation</h2>
-            <p class="panel-hint">Reserving stock writes an audit entry while holding the ledger lock.</p>
+            <p class="store-hint">Reserving stock writes an audit entry while holding the ledger lock.</p>
             <pre class="log">@StockMessage</pre>
-        </div>
+        </section>
     }
-</section>
+</div>

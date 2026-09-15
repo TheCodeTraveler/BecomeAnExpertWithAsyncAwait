@@ -12,24 +12,28 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 4. Build the project once so you can confirm your environment is ready.
 5. Run the project and leave it running while you read the code.
 
-The app runs at [http://localhost:5009](http://localhost:5009).
+The starter app runs at [http://localhost:5009](http://localhost:5009). The finished app runs at [http://localhost:5010](http://localhost:5010), so you can run both at the same time and compare them later.
+
+The app opens on the **Product page**, with the workshop guide docked beside it. Every step in the guide is one thing wrong with how the product page waits for its backend services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the terminal running the app shows the same result, with a hint.
 
 ## 2. Inspect the Starting Code
 
 1. Open **ProductDetails/Services/BackendServices.cs** and note what each service costs: inventory 700ms, pricing 900ms, reviews 1200ms, shipping 600ms, and recommendations 800ms.
 2. Notice that `RecommendationsService.GetRecommendationsAsync(...)` always throws `HttpRequestException`. The flaky service is always the one you depend on.
-3. Open **ProductDetails/Components/Pages/Product.razor.cs** and find each `// ToDo Refactor` comment.
+3. Open **ProductDetails/Components/Pages/Product.razor.cs** and find each `// ToDo Refactor (Step N)` comment. The step number tells you which step checks that line.
 4. Read `LoadProductAsync()` from top to bottom before you change anything.
 5. Open **ProductDetails/Components/Pages/Product.razor** and see how one card renders in each of its four states: `waiting`, `ready`, `failed`, and `skipped`.
+6. Open the **ProductDetails/Steps** folder. Each `Step*.cs` file renders your product page in the background with fresh copies of the five services, times it, and records every repaint, with comments that explain what each expected result checks and why. These files are your guide.
+7. Skim **ProductDetails/Verification** and **ProductDetails/Components/Layout/WorkshopGuide.razor**. They are the workshop plumbing that runs the steps and draws the guide beside the app. You do not need to change them.
 
-Now watch the app in the browser. The page loads once when it opens, and the **Load product page** button runs the same code again:
+Now watch the **Product page** beside the guide. The page loads once when it opens, and the **Load product page** button runs the same code again:
 
-1. Nothing happens for about four seconds. The button spins and all five cards say `waiting`.
+1. Nothing happens for about four seconds. The button spins, the launch price is a grey placeholder, and all five cards say `waiting`.
 2. Four cards then appear at the same instant, at the very end, instead of appearing as their services answer.
 3. The total page load tile reads **4.2s**.
 4. The per-card timings read 0.7s, 1.6s, 2.8s, and 3.4s. Those are running totals, and they add up to the sum of every service call.
 5. The Recommendations card shows `--` and the words `never requested` with a red left edge. Its service was next in line and never got called.
-6. A yellow banner sits across the top of the page: "The page load stopped. A backend service did not respond. Every panel below it was never requested." The banner does not name the service. The terminal running the app does: the logged `HttpRequestException` reads "Recommendations service returned 503 Service Unavailable".
+6. A yellow banner sits between the product details and the page panels: "The page load stopped. A backend service did not respond. Certain panel updates have been skipped." The banner does not name the service. The terminal running the app does: the logged `HttpRequestException` reads "Recommendations service returned 503 Service Unavailable".
 
 Pay attention to these clues:
 
@@ -40,37 +44,46 @@ Pay attention to these clues:
 5. One `catch (HttpRequestException)` covers all five calls, so the first failure skips everything after it.
 6. Move the recommendations call above the reviews call and two more cards go blank. How much of the page dies is decided by the shape of the code, not by the failure.
 
+The app walks you through the challenge one step at a time:
+
+1. The steps, in order, are **Start every call before awaiting any of them**, **Let one failing service break only its own card**, and **Paint each card as its service answers**.
+2. A step unlocks only after the step before it passes. Each step's tab in the guide tells the story behind the bug, how to see it on the Product page, which file to change, and a task list for that step. If you get stuck, it has clues.
+3. Each step renders your product page the way a browser tab does and shows a checklist of every expected result next to what actually happened: how long the page took, what every card says, and every time the page repainted. Every result that does not match comes with a hint, and the same hint is printed in the terminal running the app.
+4. Every time the app starts, it checks your code against every step, so the workshop guide always reflects the code you have now.
+5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** in the workshop guide instead.
+
 ## 3. Challenge: Coordinate the Product Page
 
 Recommended time: 20 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify how `Task.WhenAll`, `Task.WhenAny`, and `Task.WhenEach` differ, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
 
-Refactor **Product.razor.cs** so the five backend calls are all in flight at the same time and a single failing service can only damage its own card.
+Refactor **Product.razor.cs** so the five backend calls are all in flight at the same time and a single failing service can only damage its own card. Leave the services in **BackendServices.cs**, the models, and the markup in **Product.razor** alone.
 
-Requirements:
+Requirements, in the order the steps check them:
 
 1. Start all five backend calls before you await any of them.
 2. Coordinate them with `Task.WhenAll`, `Task.WhenAny`, or `Task.WhenEach`.
 3. Keep the total page load at the cost of the slowest service, not the sum of all five.
-4. Give each call its own error handling so a failure is recorded against one card.
-5. Set the failing card's status to `"failed"` and put a message the page owns on that card. Keep logging the full exception server-side the way the starter already does, and keep exception text out of the browser.
-6. Repaint the page as each service answers instead of once at the end.
-7. Keep each card's timing the elapsed time at which that service answered.
-8. Stop reporting a single card's failure as a failure of the whole page.
-9. Keep passing a `CancellationToken` to every service call. The starter passes `CancellationToken.None`, and so does the finished version, so keep it there and the call sites stay ready for a real token.
+4. Keep passing a `CancellationToken` to every service call. The starter passes `CancellationToken.None`, and so does the finished version, so keep it there and the call sites stay ready for a real token.
+5. Give each call its own error handling so a failure is recorded against one card. Catch `HttpRequestException`, the exception a failing HTTP dependency throws, rather than every exception.
+6. Set the failing card's status to `"failed"` and put a message the page owns on that card. Keep logging the full exception server-side the way the starter already does, and keep exception text out of the browser.
+7. Stop reporting a single card's failure as a failure of the whole page.
+8. Repaint the page as each service answers instead of once at the end.
+9. Keep each card's timing the elapsed time at which that service answered.
 10. Keep using `ConfigureAwait(false)`, and keep marshaling each repaint back through `InvokeAsync(StateHasChanged)`.
 
 Acceptance checks:
 
 1. **ProductDetails.slnx** builds.
-2. The total page load tile reads about **1.2s** instead of 4.2s.
-3. Cards fill in one at a time as their services answer, rather than all appearing together at the end.
-4. The per-card timings read roughly 0.6s, 0.7s, 0.8s, 0.9s, and 1.2s. No card reports 1.6s, 2.8s, or 3.4s.
-5. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with a failure message and its own timing, in the failure style with a red left edge, and the terminal running the app carries the full `HttpRequestException`. Every other panel is unaffected.
-6. The yellow banner across the top of the page is gone.
-7. Clicking **Load product page** again gives the same result every time.
-8. Your code is ready to compare with **2. Finish/ProductDetails**.
+2. The workshop guide shows 3 of 3 steps pass after the app starts.
+3. On the Product page, the total page load tile reads about **1.2s** instead of 4.2s.
+4. Cards fill in one at a time as their services answer, rather than all appearing together at the end.
+5. The per-card timings read roughly 0.6s, 0.7s, 0.8s, 0.9s, and 1.2s. No card reports 1.6s, 2.8s, or 3.4s.
+6. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with a failure message and its own timing, in the failure style with a red left edge, and the terminal running the app carries the full `HttpRequestException`. Every other panel is unaffected.
+7. The yellow banner above the page panels is gone.
+8. Clicking **Load product page** again gives the same result every time.
+9. Your code is ready to compare with **2. Finish/ProductDetails**.
 
 ## 4. Review the Solution
 

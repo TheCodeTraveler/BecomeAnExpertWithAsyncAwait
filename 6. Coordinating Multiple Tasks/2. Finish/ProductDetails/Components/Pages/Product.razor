@@ -1,34 +1,73 @@
 @page "/"
 @inherits ProductPageBase
 
-<PageTitle>ProductDetails</PageTitle>
+<PageTitle>Wireless Headphones · ProductDetails</PageTitle>
 
-<section class="page">
-    <header class="hero-panel">
-        <div class="hero-copy">
-            <p class="eyebrow">ProductDetails</p>
-            <h1>Wireless Headphones</h1>
-            <p class="hero-summary">This page needs five independent backend services. Watch how long it takes and when each panel appears.</p>
-        </div>
-
-        <div class="hero-actions">
-            <button class="action" type="button" disabled="@IsLoading" @onclick="LoadProductAsync">
-                @if (IsLoading)
-                {
-                    <span class="spinner" aria-hidden="true"></span>
-                }
-                @(IsLoading ? "Loading" : "Load product page")
-            </button>
-
-            @if (TotalSeconds is not null)
-            {
-                <div class="status-tile">
-                    <span class="status-value">@TotalSeconds.Value.ToString("F1")s</span>
-                    <span class="status-label">total page load</span>
-                </div>
-            }
-        </div>
+<div class="store">
+    <header class="store-bar">
+        <span class="store-logo"><span class="store-logo-mark" aria-hidden="true">◐</span> ProductDetails</span>
+        <span class="store-nav" aria-hidden="true">
+            <span>Audio</span>
+            <span>Wearables</span>
+            <span>Launches</span>
+        </span>
+        <span class="store-event">Launch day</span>
     </header>
+
+    <section class="product-hero">
+        <div class="product-stage" aria-hidden="true">
+            <div class="headphones">
+                <span class="headphones-band"></span>
+                <span class="headphones-cup left"></span>
+                <span class="headphones-cup right"></span>
+            </div>
+        </div>
+
+        <div class="product-copy">
+            <p class="product-eyebrow">New · Launch day deal</p>
+            <h1>Wireless Headphones</h1>
+            <p class="product-summary">Adaptive noise cancelling, forty hours of battery, and ear cushions you forget you are wearing.</p>
+
+            @{
+                var pricing = Panels.Find(static panel => panel.Name == "Pricing");
+            }
+
+            <div class="product-price @(pricing?.Status)">
+                <span class="product-price-label">Launch price</span>
+                @if (pricing is { Status: "ready" })
+                {
+                    <span class="product-price-value">@pricing.Detail</span>
+                }
+                else if (pricing is { Status: "waiting" })
+                {
+                    <span class="product-price-skeleton" aria-hidden="true"></span>
+                    <span class="visually-hidden">Waiting for the price</span>
+                }
+                else
+                {
+                    <span class="product-price-missing">Price not available right now</span>
+                }
+            </div>
+
+            <div class="product-actions">
+                <button class="action" type="button" disabled="@IsLoading" @onclick="LoadProductAsync">
+                    @if (IsLoading)
+                    {
+                        <span class="spinner" aria-hidden="true"></span>
+                    }
+                    @(IsLoading ? "Loading" : "Load product page")
+                </button>
+
+                @if (TotalSeconds is not null)
+                {
+                    <div class="status-tile">
+                        <span class="status-value">@TotalSeconds.Value.ToString("F1")s</span>
+                        <span class="status-label">total page load</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
 
     @if (PageError is not null)
     {
@@ -38,9 +77,11 @@
         </div>
     }
 
-    <div class="panel">
-        <h2>Page panels</h2>
-        <p class="panel-hint">Each panel is filled by its own backend service. The slowest service takes 1.2 seconds, and the recommendations service is down.</p>
+    <section class="panels">
+        <div class="panels-heading">
+            <h2>Page panels</h2>
+            <p class="panels-hint">Each panel is filled by its own backend service. The slowest service takes 1.2 seconds, and the recommendations service is down. Watch how long the page takes and when each panel appears.</p>
+        </div>
 
         <div class="result-grid">
             @foreach (var panel in Panels)
@@ -74,5 +115,5 @@
                 </div>
             }
         </div>
-    </div>
-</section>
+    </section>
+</div>

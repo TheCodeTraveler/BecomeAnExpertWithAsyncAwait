@@ -55,7 +55,7 @@ public partial class ProductPageBase : ComponentBase
 
 		try
 		{
-			// ToDo Refactor: these five services do not depend on each other, but
+			// ToDo Refactor (Step 1): these five services do not depend on each other, but
 			// each await waits for the previous one to finish. The page costs the
 			// sum of every latency instead of the slowest one.
 			var inventory = await InventoryService.GetInventoryAsync(_sku, CancellationToken.None).ConfigureAwait(false);
@@ -70,7 +70,7 @@ public partial class ProductPageBase : ComponentBase
 			var shipping = await ShippingService.GetShippingAsync(_sku, CancellationToken.None).ConfigureAwait(false);
 			await SetPanelAsync("Shipping", "ready", $"{shipping.Carrier}, arrives {shipping.EstimatedArrival:MMM d}", stopwatch.Elapsed).ConfigureAwait(false);
 
-			// ToDo Refactor: this service is down. Every call shares one try block,
+			// ToDo Refactor (Step 2): this service is down. Every call shares one try block,
 			// so its failure is the whole page's failure. Move it above Reviews and
 			// two more panels go blank. One flaky service should degrade one panel.
 			var recommendations = await RecommendationsService.GetRecommendationsAsync(_sku, CancellationToken.None).ConfigureAwait(false);
@@ -85,6 +85,7 @@ public partial class ProductPageBase : ComponentBase
 			// The continuation is off Blazor's renderer, so these writes go back through it
 			await InvokeAsync(() =>
 			{
+				// ToDo Refactor (Step 2): one card's failure is reported here as a failure of the whole page
 				PageError = "A backend service did not respond. Certain panel updates have been skipped.";
 
 				// Anything still waiting when the load stopped will never arrive
@@ -100,6 +101,8 @@ public partial class ProductPageBase : ComponentBase
 				TotalSeconds = stopwatch.Elapsed.TotalSeconds;
 				IsLoading = false;
 
+				// ToDo Refactor (Step 3): this is the only repaint after the service calls start,
+				// so no card reaches the screen until the whole load is over
 				StateHasChanged();
 			}).ConfigureAwait(false);
 		}
@@ -115,7 +118,7 @@ public partial class ProductPageBase : ComponentBase
 
 	// Product.razor renders Panels with a foreach, and every write here arrives
 	// from a service continuation rather than from the renderer. Writing straight
-	// to the List<T> would bump its version mid-render, so the write is marshalled.
+	// to the List<T> would bump its version mid-render, so the write is marshaled.
 	protected Task SetPanelAsync(string name, string status, string? detail, TimeSpan elapsed) =>
 		InvokeAsync(() =>
 		{

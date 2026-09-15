@@ -240,6 +240,14 @@ h1:focus {
 	font-size: 0.9rem;
 }
 
+.ai-note {
+	padding: 10px 14px;
+	border-left: 4px solid var(--note);
+	border-radius: 6px;
+	background: var(--note-soft);
+	color: var(--note);
+}
+
 .how-it-works {
 	margin: 0;
 	padding-left: 20px;

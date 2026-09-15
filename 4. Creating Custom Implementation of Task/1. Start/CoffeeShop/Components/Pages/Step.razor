@@ -71,7 +71,7 @@
                             <div class="banner banner-passed banner-fresh" role="status" @key="lastRunAt">
                                 @if (NextStep is null)
                                 {
-                                    <span>Step @Step.Number passed. Every station works.</span>
+                                    <span>Step @Step.Number passed. Every station works. Pause here for the group review.</span>
                                 }
                                 else
                                 {
@@ -93,7 +93,7 @@
                                 {
                                     <span>Step @Step.Number did not finish within @StepVerifier.AutomaticTimeout.TotalSeconds seconds. @Step.TimeoutHint</span>
                                 }
-                                <span class="banner-note">The timed-out run may still be blocking a thread. Restart the app after fixing CustomTask.cs. Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                                <span class="banner-note">If you paused at a breakpoint, just run the step again. Otherwise the timed-out run may still be blocking a thread, so restart the app after fixing CustomTask.cs. Last run at @lastRunAt.ToString("HH:mm:ss")</span>
                             </div>
                             break;
                         case StepStatus.Failed:

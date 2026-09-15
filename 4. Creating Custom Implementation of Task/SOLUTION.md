@@ -246,7 +246,7 @@ readonly struct CustomTaskAwaiter : INotifyCompletion
 
 The coffee shop code in **Steps** needs no changes either. It compiled against the starter's stubs from the beginning, and now every member it calls does real work. Its `await` statements work because the compiler generates the same `IsCompleted`, `OnCompleted(...)` and `GetResult()` calls for `CustomTask` that it generates for `Task`.
 
-There is one difference from `Task` that matters in a Blazor app. `CustomTask` never captures `SynchronizationContext`: `OnCompleted(...)` registers the continuation with `ContinueWith(...)`, and the continuation runs on a thread pool thread. After awaiting a `CustomTask`, a component is off Blazor's renderer, exactly as it is after `ConfigureAwait(false)`, so any component state change must go through `InvokeAsync(...)`. Step 3 checks this.
+There is one difference from `Task` that matters in a Blazor app. `CustomTask` never captures `SynchronizationContext`: `OnCompleted(...)` registers the continuation with `ContinueWith(...)`, and the continuation runs on a thread pool thread. After awaiting a `CustomTask`, a component is off Blazor's renderer, exactly as it is after `ConfigureAwait(false)`, so any component state change must go through `InvokeAsync(...)`. Step 3's log shows this.
 
 ## 8. Compare Against Finish
 
@@ -258,11 +258,11 @@ Compare your implementation with the completed files:
 
 [2. Finish/CoffeeShop/Steps](2.%20Finish/CoffeeShop/Steps)
 
-Run the completed app at [http://localhost:5016](http://localhost:5016). Steps 1 to 5 pass as soon as it starts, and Step 6 passes when you run it from its page. Thread IDs will differ on your machine, but every expected result should match:
+Run the completed app at [http://localhost:5016](http://localhost:5016). Steps 1 to 5 pass once the checks that run after the app starts have finished, and Step 6 passes when you run it from its page. Thread IDs will differ on your machine, but every expected result should match:
 
 1. Step 1, print the receipt: `Run()` returns before the receipt is rendered, the render runs on a thread pool thread, and `Wait()` returns on the thread that called it with `IsCompleted` now `True`.
 2. Step 2, brew a pour-over: `IsCompleted` is `False` right after `Delay()`, the first continuation runs after the delay, and the second continuation runs only after the first one completes.
-3. Step 3, prepare a mobile order: the `async` method returns to its caller at its first `await`, resumes on a thread pool thread after the delay without the `SynchronizationContext` it started on, and awaiting an already completed `CustomTask` keeps running on the same thread.
+3. Step 3, prepare a mobile order: the `async` method returns to its caller at its first `await`, resumes on a thread pool thread after the delay, and awaiting an already completed `CustomTask` keeps running on the same thread. Its log also shows that the continuation does not return to the `SynchronizationContext` it started on.
 4. Step 4, wrap the espresso machine's events: `IsCompleted` stays `False` while the shot brews, the `await` resumes only after `ShotPulled`, and completing the same `CustomTask` twice throws `InvalidOperationException`.
 5. Step 5, handle a jammed machine and an empty grinder: `await` rethrows the machine's exception, and `Wait()` rethrows the grinder's exception with a stack trace that still starts where it was thrown, not in `CustomTask.Wait()`.
 6. Step 6, rush hour: two customers waiting on the same order both resume, a 10,000-link `ContinueWith` chain completes without a stack overflow, and each continuation sees the `ExecutionContext` of the code that registered it, never the context of the thread that completed the `CustomTask`.

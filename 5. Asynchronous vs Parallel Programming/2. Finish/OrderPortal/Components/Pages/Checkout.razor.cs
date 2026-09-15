@@ -65,7 +65,7 @@ public partial class CheckoutPageBase : ComponentBase
 				message = "Reserved 1 of SKU-1000 and wrote the audit entry.";
 			}
 		}
-		catch (OperationCanceledException)
+		catch (OperationCanceledException) when (timeoutCancellationTokenSource.IsCancellationRequested)
 		{
 			message = "Timed out waiting for the ledger lock.";
 		}

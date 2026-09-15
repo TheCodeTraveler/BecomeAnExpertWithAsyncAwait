@@ -14,13 +14,13 @@ dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/Hacker
 
 ## 1. Install or Open an Editor
 
-One of these three is required. A plain text editor is not enough: the .NET Internals section on Day 1 is spent setting breakpoints and inspecting threads, and none of that works from `dotnet run`.
+One of these three is required. A plain text editor is not enough: the .NET Internals section on Day 1 invites you to set breakpoints and inspect threads, and we debug through its experiments together in the group review. None of that works from `dotnet run`.
 
 * [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) (18.0 or later) on Windows. .NET 10 is not offered by Visual Studio 2022, so if that is what you have, use Visual Studio Code or Rider instead.
 * [JetBrains Rider](https://www.jetbrains.com/rider/download/) (2025.3 or later) on Windows or macOS
 * [Visual Studio Code](https://code.visualstudio.com/) with the current [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension. This is the smallest install of the three.
 
-If your work laptop blocks all three, tell us before the workshop starts rather than on the morning. We can pair you with someone for the debugging exercises.
+If your work laptop blocks all three, tell us before the workshop starts rather than on the morning of the workshop. We can pair you with someone for the debugging exercises.
 
 ## 2. Install .NET 10 SDK
 
@@ -164,7 +164,7 @@ Then run the Blazor sample:
 dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews/HackerNews.csproj"
 ```
 
-Open [http://localhost:5002](http://localhost:5002). Confirm that the **HackerNews** Blazor app loads and displays top stories.
+Open [http://localhost:5002](http://localhost:5002). The **HackerNews** Blazor app opens on its **Top stories** page, with a workshop guide docked beside it. Confirm that the page displays top stories, and that the guide shows 5 of 5 steps pass once its checks finish, about 20 seconds after the app starts.
 
 To stop the app, return to the terminal and press **Ctrl+C**.
 
@@ -181,7 +181,7 @@ Before continuing to the workshop exercises, prove your machine is ready:
 3. Run `dotnet --version` and confirm it reports .NET 10.
 4. Build the completed HackerNews sample from step 4.
 5. Run the completed HackerNews sample from step 4.
-6. Open the local URL and confirm that the app displays top stories.
+6. Open the local URL and confirm that the app displays top stories, and that the workshop guide beside them shows 5 of 5 steps pass.
 7. Write down any blocker, exact error message, operating system, editor, and install path you used.
 
 If every check passes, you are ready for the workshop.
@@ -207,15 +207,16 @@ If `localhost:5002` does not load:
 * If port `5002` is already in use, run:
 
 ```console
-dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews/HackerNews.csproj" --urls http://localhost:5012
+dotnet run --project "2. Correcting Common Async Await Mistakes/2. Finish/HackerNews/HackerNews.csproj" --urls http://localhost:5099
 ```
 
-Then open [http://localhost:5012](http://localhost:5012).
+Then open [http://localhost:5099](http://localhost:5099).
 
 If your company blocks access to Hacker News:
 
 * The app can still build.
-* The live story list may show a refresh error until you are on a network that allows access to `https://hacker-news.firebaseio.com`.
+* The workshop guide still shows 5 of 5 steps pass, because its checks use an in-memory copy of Hacker News instead of the real site.
+* The live story list on **Top stories** may show a refresh error until you are on a network that allows access to `https://hacker-news.firebaseio.com`.
 
 ## 7. Maintainer Build Check
 

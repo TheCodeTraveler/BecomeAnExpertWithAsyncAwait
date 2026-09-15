@@ -1,5 +1,21 @@
 @inherits LayoutComponentBase
 
-<main class="shell">
-    @Body
-</main>
+<div class="workspace">
+    <main class="app-pane">
+        @* The dashboard and the workshop guide share one circuit. An exception the page does not handle would end that circuit, and the guide would stop responding with it. *@
+        <ErrorBoundary>
+            <ChildContent>
+                @Body
+            </ChildContent>
+
+            <ErrorContent>
+                <div class="feed-fault" role="alert">
+                    <p class="feed-fault-code">Feed fault</p>
+                    <p>The dashboard threw an exception and stopped updating. The terminal running the app has the details. Reload the browser tab to bring the dashboard back.</p>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+
+    <WorkshopGuide />
+</div>

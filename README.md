@@ -27,6 +27,8 @@ Each hands-on section follows the same rhythm:
 
 Coding challenges run 20 to 45 minutes depending on how much code they ask you to write. The shorter investigation challenges in the .NET Internals section focus on runtime observations and discussion rather than large code changes.
 
+Every challenge app walks you through its challenge one step at a time. Run the app and its **workshop guide** tells you which step to work on next, and unlocks each step when the one before it passes. Each step explains what to do and where to look, and shows what actually happened next to what was expected. Most steps also give you a hint for anything that does not match, with clues if you get stuck.
+
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use AI Agents to understand the existing code, clarify concepts, interpret errors, and ask questions that help you decide what to do next. The goal is to practice the reasoning yourself.
 
 ## Schedule
@@ -53,7 +55,7 @@ Day 2 covers parallel programming: using many threads on purpose, and keeping sh
 | 13:00 - 13:30 | 30 min | 3. .NET Internals (Lecture) |
 | 13:30 - 13:50 | 20 min | 3. .NET Internals (Coding "Challenge") |
 | 13:50 - 14:10 | 20 min | 3. .NET Internals (Group Review) |
-| 14:10 - 14:30 | 20 min | 4. Creating A Custom `Task` (Lecture) |
+| 14:10 - 14:30 | 20 min | 4. Creating a Custom `Task` (Lecture) |
 | 14:30 - 15:15 | 45 min | 4. Creating a Custom `Task` (Coding Challenge) |
 | 15:15 - 15:30 | 15 min | Afternoon break |
 | 15:30 - 16:00 | 15 min | 4. Creating a Custom `Task` (Challenge, continued) |

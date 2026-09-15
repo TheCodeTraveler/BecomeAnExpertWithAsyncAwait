@@ -3,22 +3,62 @@
 
 <PageTitle>StockWatch</PageTitle>
 
-<section class="dashboard">
-    <header class="hero-panel">
-        <div class="hero-copy">
-            <p class="eyebrow">StockWatch</p>
+<div class="terminal">
+    <header class="term-bar">
+        <span class="term-brand"><span class="term-brand-mark" aria-hidden="true">◆</span> StockWatch</span>
+
+        <span class="term-keys" aria-hidden="true">
+            <span class="term-key current">EQTY</span>
+            <span class="term-key">MOVERS</span>
+            <span class="term-key">NEWS</span>
+            <span class="term-key">ALERTS</span>
+        </span>
+
+        <span class="term-live"><span class="live-dot" aria-hidden="true"></span> Live feed · 2s refresh</span>
+    </header>
+
+    <section class="term-head">
+        <div class="term-heading">
+            <p class="term-eyebrow">US equities · 60 symbols · parallel feed</p>
             <h1>Market dashboard</h1>
-            <p class="hero-summary">Every symbol refreshes in parallel on Thread Pool threads.</p>
+            <p class="term-summary">Every symbol refreshes in parallel on Thread Pool threads.</p>
         </div>
 
         <div class="status-tile" aria-live="polite">
             <span class="status-value">@RefreshCount</span>
             <span class="status-label">quotes applied</span>
         </div>
-    </header>
+    </section>
+
+    @{
+        var symbols = Symbols;
+    }
+
+    <div class="tape" aria-hidden="true">
+        <div class="tape-track">
+            @for (var lap = 0; lap < 2; lap++)
+            {
+                @foreach (var symbol in symbols)
+                {
+                    <span class="tape-item @symbol.TrendCssClass">
+                        <span class="tape-symbol">@symbol.Symbol</span>
+                        @if (symbol.Quote is null)
+                        {
+                            <span class="tape-price">--</span>
+                        }
+                        else
+                        {
+                            <span class="tape-price">@symbol.Quote.CurrentPrice.ToString("0.00")</span>
+                            <span class="tape-change">@symbol.Quote.PercentChange.ToString("+0.00;-0.00;0.00")%</span>
+                        }
+                    </span>
+                }
+            }
+        </div>
+    </div>
 
     <div class="ticker-grid" aria-live="polite">
-        @foreach (var symbol in Symbols)
+        @foreach (var symbol in symbols)
         {
             <article class="ticker-card @symbol.TrendCssClass" @key="symbol.Symbol">
                 <div class="ticker-heading">
@@ -38,4 +78,4 @@
             </article>
         }
     </div>
-</section>
+</div>

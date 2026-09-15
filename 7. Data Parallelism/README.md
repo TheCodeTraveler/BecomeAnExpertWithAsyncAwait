@@ -13,15 +13,19 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5011](http://localhost:5011). The finished app runs at [http://localhost:5012](http://localhost:5012), so you can run both at the same time and compare them later.
 
+The app opens on the **Import page**, with the workshop guide docked beside it. Every step in the guide is one stage of the nightly import, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the terminal running the app shows the same result, with a hint.
+
 ## 2. Inspect the Starting Code
 
-1. Open **ImportPortal/Services/ImportService.cs** and find the three `// ToDo Refactor` comments. All three stages of the import live in `RunImportAsync(int, CancellationToken)`.
+1. Open **ImportPortal/Services/ImportService.cs** and find each `// ToDo Refactor (Step N)` comment. The step number tells you which step checks that line. All three stages of the import live in `RunImportAsync(int, CancellationToken)`.
 2. Read `ScoreRisk(OrderRow)` at the bottom of the same file. It is deliberately expensive, it is pure CPU work, and it never reads a value another row wrote.
-3. Open **ImportPortal/Services/CustomerApiService.cs**. `GetCustomerTierAsync(string, CancellationToken)` waits 10 milliseconds per call. That is I/O, not CPU.
+3. Open **ImportPortal/Services/CustomerApiService.cs**. `GetCustomerTierAsync(string, CancellationToken)` waits 10 milliseconds per call. That is I/O, not CPU. The service also counts how many calls are in flight, which is how the workshop steps see what the import really waited for. You do not need to change it.
 4. Open **ImportPortal/Models/OrderRow.cs** and note the two properties that are filled in later: `RiskScore` by the validation stage, and `CustomerTier` by the enrichment stage.
 5. Open **ImportPortal/Components/Pages/Import.razor** and **Import.razor.cs** to see where the report on screen comes from. You do not need to change either file.
+6. Open the **ImportPortal/Steps** folder. Each `Step*.cs` file runs your `ImportService` on fresh services, with comments that explain what each expected result checks and why. These files are your guide.
+7. Skim **ImportPortal/Verification** and **ImportPortal/Components/Layout/WorkshopGuide.razor**. They are the workshop plumbing that runs the steps and draws the guide beside the app. You do not need to change them.
 
-Now run the app and click **Run import**. The tile in the header tells you how many processors are available. Keep that number in mind while you read the four cards under **Import stages**:
+Now switch back to the browser and click **Run import** on the **Import page** beside the guide. The tile in the header tells you how many processors are available. Keep that number in mind while you read the four cards under **Import stages**:
 
 1. **Validated** reads 4,000 of 4,000 in about 2.12 seconds. That answer is correct, and one thread produced all of it.
 2. **Enriched** reads 0 of 4,000 in about 0.01 seconds, and the card is red. Not a single customer tier came back.
@@ -38,9 +42,17 @@ Pay attention to these clues:
 2. The enrichment stage calls `Parallel.ForEach` with an `async` lambda, and the compiler is perfectly happy with it.
 3. The body `Parallel.ForEach` takes here is an `Action<T>`, and no overload of it accepts a `Task`-returning body. Ask yourself what an `async` lambda turns into when it is bound to a delegate that returns `void`.
 4. The stage that never touches the network reports the longest time, and the stage that should be waiting on 4,000 calls at 10 milliseconds each reports 0.01 seconds.
-5. `RunImportAsync` is an `async` method whose only `await` is `await Task.CompletedTask.ConfigureAwait(false)`.
+5. `RunImportAsync` is an `async` method whose only `await` is `await Task.Yield()`.
 6. The method already receives a `CancellationToken`, and nothing except the customer API call ever uses it.
 7. The regional summary runs as a single-threaded LINQ query after every row is already in memory.
+
+The app walks you through the challenge one step at a time:
+
+1. Step 1 scores every row on every core, Step 2 enriches every row and waits for it, and Step 3 summarizes with PLINQ and stops when the import is cancelled.
+2. A step unlocks only after the step before it passes. Each step in the guide tells the story behind the bug, how to see it on the Import page, which file to change, and a task list for that step. If you get stuck, it has clues.
+3. Each step runs your `ImportService` on fresh services and measures what it really did: how many cores validation kept busy, how many customer API calls were still in flight when the import returned, and how much CPU time a cancelled import burned. It shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is printed in the terminal running the app.
+4. Every time the app starts, it checks your code against every step, so the workshop guide always reflects the code you have now.
+5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** in the workshop guide instead.
 
 ## 3. Challenge: Fix the Nightly Import
 
@@ -48,29 +60,31 @@ Recommended time: 25 minutes.
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify parallel programming concepts, interpret errors, and ask questions that help you decide what to change. The goal is to practice the reasoning yourself.
 
-Refactor **Services/ImportService.cs** so all three stages use the data parallelism primitive that fits them. Do not change **CustomerApiService.cs**, **OrderFileService.cs**, **OrderRow.cs**, or the page.
+Refactor **Services/ImportService.cs** so all three stages use the data parallelism primitive that fits them. Do not change **CustomerApiService.cs**, **OrderFileService.cs**, **OrderRow.cs**, or the Import page.
 
-Requirements:
+Requirements, in the order the steps check them:
 
-1. Set `MaxDegreeOfParallelism` and `CancellationToken` through `ParallelOptions`, using the token that `RunImportAsync` already receives. The CPU stage and the I/O stage do not have to agree on the same ceiling.
-2. Replace the sequential validation `foreach` so every processor scores rows at the same time.
-3. Leave `ScoreRisk(OrderRow)` exactly as it is. The goal is to run it on more threads, not to make it cheaper.
-4. Fix the enrichment stage so all 4,000 rows really are enriched, and so `RunImportAsync` does not return until they are.
-5. Use the `Parallel` overload that is built for asynchronous bodies, and forward the `CancellationToken` that overload hands to your body.
-6. Bound the enrichment stage so you do not fire 4,000 calls at the customer API at once. Pick a limit and be ready to explain the number you picked.
-7. Turn the regional summary into a PLINQ query that honors the cancellation token.
-8. Do not add a shared counter, list, or dictionary that parallel bodies write to. If you find yourself wanting one, stop and work out why you do not need it here.
+1. Replace the sequential validation `foreach` so every processor scores rows at the same time.
+2. Leave `ScoreRisk(OrderRow)` exactly as it is. The goal is to run it on more threads, not to make it cheaper.
+3. Fix the enrichment stage so all 4,000 rows really are enriched, and so `RunImportAsync` does not return until they are.
+4. Use the `Parallel` overload that is built for asynchronous bodies, and forward the `CancellationToken` that overload hands to your body.
+5. Bound the enrichment stage so you do not fire 4,000 calls at the customer API at once. Pick a limit and be ready to explain the number you picked.
+6. Turn the regional summary into a PLINQ query that honors the cancellation token.
+7. Set `MaxDegreeOfParallelism` and `CancellationToken` through `ParallelOptions`, using the token that `RunImportAsync` already receives, so a cancelled import stops before it scores a single row. The CPU stage and the I/O stage do not have to agree on the same ceiling.
+8. Let the `OperationCanceledException` reach the caller. A cancelled import has no report to return.
+9. Do not add a shared counter, list, or dictionary that parallel bodies write to. If you find yourself wanting one, stop and work out why you do not need it here.
 
 Acceptance checks:
 
 1. **ImportPortal.slnx** builds.
-2. At [http://localhost:5011](http://localhost:5011), **Validated** still reads 4,000 of 4,000, and its time is a fraction of the validation time you wrote down before you changed anything.
-3. **Enriched** reads 4,000 of 4,000, and its card is green instead of red.
-4. The **Enriched** time is now measured in seconds rather than hundredths of a second, because the app is finally making 4,000 real API calls. Divide 4,000 by the limit you chose and multiply by the 10 millisecond call time to predict roughly what the card should say, then check it against your prediction.
-5. On a machine with several processors, the **Total** card is at or below the total you recorded from the starter, even though the app is now doing thousands of calls it used to skip.
-6. **Regional summary** still shows US-CA, US-NY, US-TX, and US-WA with 1,000 orders each, and the revenue for each region is unchanged.
-7. Clicking **Run import** several times in a row gives the same counts every time, and no card turns red.
-8. Your code is ready to compare with **2. Finish/ImportPortal**.
+2. The workshop guide shows 3 of 3 steps pass after the app starts.
+3. On the Import page at [http://localhost:5011](http://localhost:5011), **Validated** still reads 4,000 of 4,000, and its time is a fraction of the validation time you wrote down before you changed anything.
+4. **Enriched** reads 4,000 of 4,000, and its card is green instead of red.
+5. The **Enriched** time is now measured in seconds rather than hundredths of a second, because the app is finally making 4,000 real API calls. Divide 4,000 by the limit you chose and multiply by the 10 millisecond call time to predict roughly what the card should say, then check it against your prediction.
+6. On a machine with several processors, the **Total** card is at or below the total you recorded from the starter, even though the app is now doing thousands of calls it used to skip.
+7. **Regional summary** still shows US-CA, US-NY, US-TX, and US-WA with 1,000 orders each, and the revenue for each region is unchanged.
+8. Clicking **Run import** several times in a row gives the same counts every time, and no card turns red.
+9. Your code is ready to compare with **2. Finish/ImportPortal**.
 
 ## 4. Review the Solution
 

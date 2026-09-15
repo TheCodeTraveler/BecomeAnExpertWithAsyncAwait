@@ -2,7 +2,9 @@
 
 Use this during the guided walkthrough after the challenge and group review in [README.md](README.md).
 
-The completed project is **2. Finish/ImportPortal**, which runs at [http://localhost:5012](http://localhost:5012). Compare your decisions with the finished Blazor sample as we rebuild the import one stage at a time.
+The completed project is **2. Finish/ImportPortal**, which runs at [http://localhost:5012](http://localhost:5012). Compare your decisions with the finished Blazor sample as we rebuild the import one stage at a time. Each section below names the workshop step it makes pass, so you can follow along in the workshop guide beside the Import page.
+
+**1. Start** and **2. Finish** share the same workshop plumbing: the `Steps` and `Verification` folders, the workshop guide in `Components/Layout/WorkshopGuide.razor`, and the call counters in `CustomerApiService`. The only differences are `Services/ImportService.cs` and the port in `Properties/launchSettings.json`.
 
 ## 1. Start From the Numbers
 
@@ -19,9 +21,9 @@ The finished app, same machine, same 4,000 rows:
 
 Read those two lists together. The finished app makes 4,000 API calls that the starter never made, and it still finishes the whole import sooner. Correctness and speed turned out to be the same fix.
 
-## 2. Create ParallelOptions for the CPU Stage
+## 2. Create ParallelOptions for the CPU Stage (Steps 1 and 3)
 
-Every `Parallel` method has an overload that takes a `ParallelOptions`, so build one at the top of the method for the CPU-bound stage. The enrichment stage gets its own in step 5, because it needs a completely different ceiling:
+Every `Parallel` method has an overload that takes a `ParallelOptions`, so build one at the top of the method for the CPU-bound stage. The enrichment stage gets its own in section 5, because it needs a completely different ceiling:
 
 ```cs
 var parallelOptions = new ParallelOptions
@@ -33,9 +35,24 @@ var parallelOptions = new ParallelOptions
 
 `CancellationToken` is the token `RunImportAsync` was handed. With it set, the loop checks between iterations and throws `OperationCanceledException` out of the `Parallel` call when cancellation is requested, instead of running to the end of a job nobody is waiting for anymore.
 
+This is the line Step 3 depends on. It starts an import with a token that is already cancelled and measures the CPU time the import used before it threw. With the token on these options, `Parallel.ForEach` throws before it scores a single row. Without it, the import scores every row first and only then notices the cancellation at the enrichment stage, having burned about as much CPU time as a full import.
+
 `MaxDegreeOfParallelism` caps how many iterations run at once. For `Parallel.ForEach` it defaults to `-1`, which lets the runtime decide and leaves the thread pool as the only real limit. `Environment.ProcessorCount` is the right ceiling for CPU-bound work: more threads than cores does not create more cores, it only adds context switching to the same amount of work.
 
-## 3. Validate Every Row On Every Core
+## 3. Validate Every Row On Every Core (Step 1)
+
+The starter scores rows one at a time:
+
+```cs
+// ToDo Refactor (Step 1): every row is scored on one thread while the other
+// cores sit idle. Nothing here depends on the row before it.
+// ToDo Refactor (Step 3): this loop never looks at the token, so a cancelled
+// import still scores every row before anything notices.
+foreach (var order in orders)
+{
+    order.RiskScore = ScoreRisk(order);
+}
+```
 
 The validation loop becomes one line:
 
@@ -54,16 +71,18 @@ The lambda is `static`, which means it captures nothing from the enclosing scope
 
 `Parallel.ForEach` returns a `ParallelLoopResult`. Nothing here calls `Break()` or `Stop()`, so `IsCompleted` would always be `true` and the sample ignores it. In a loop that can end early, check it.
 
-One honest caveat about this sample. `Parallel.ForEach` blocks, and here it blocks Blazor's circuit, because `RunImportAsync` is reached from the page's `@onclick` handler. The component cannot process another event until the CPU stage finishes. That is acceptable for a demo whose only other UI is a spinner. In an app where the circuit has real work to do, hand the blocking loop to the thread pool with `await Task.Run(() => Parallel.ForEach(orders, parallelOptions, ...), token)` so the circuit stays responsive while the cores stay busy.
+One honest caveat about this sample. `Parallel.ForEach` blocks, and here it blocks Blazor's circuit, because `RunImportAsync` is reached from the page's `@onclick` handler. Nothing on that circuit, including the workshop guide beside the page, can process another event until the CPU stage finishes. That is acceptable for a demo whose only other UI is a spinner and a guide that can wait a fifth of a second. In an app where the circuit has real work to do, hand the blocking loop to the thread pool with `await Task.Run(() => Parallel.ForEach(orders, parallelOptions, ...), token)` so the circuit stays responsive while the cores stay busy.
 
 On the reference machine this stage went from 2.12 seconds to 0.18 seconds.
 
-## 4. Understand Why Enrichment Enriched Nothing
+Step 1 does not trust a stopwatch alone, because a faster laptop would make the starter look fixed. It compares the CPU time the import used with how long validation took. One thread can use at most one second of CPU time per second, however hard it works, so the starter keeps about 1.0 cores busy. The finished loop keeps close to every processor busy, and the step asks for at least 2 cores, or 1.5 on a machine with 2 or 3 processors.
+
+## 4. Understand Why Enrichment Enriched Nothing (Step 2)
 
 Before fixing the second stage, look at exactly what the starter did:
 
 ```cs
-// ToDo Refactor: Parallel.ForEach takes an Action, not a Func<Task>.
+// ToDo Refactor (Step 2): Parallel.ForEach takes an Action, not a Func<Task>.
 // This lambda is `async void`: ForEach starts each one and immediately
 // considers it finished, so this returns long before any call completes
 // and any exception inside it is rethrown where nothing can catch it.
@@ -79,7 +98,9 @@ At runtime, `Parallel.ForEach` calls the lambda, the lambda runs until its first
 
 The other half of the damage does not show up in this sample, because nothing here throws. An exception inside an `async void` body never reaches the caller, and it is not swallowed either. The state machine rethrows it on the captured `SynchronizationContext`, or on the thread pool when there is none, where nothing is waiting to catch it. On the thread pool that is an unhandled exception, and an unhandled exception takes the process down. So you get neither the data nor a catchable error: the `try` block you wrote around the loop never runs, and what you are left with is a crash whose stack trace points at a lambda with no line of your calling code on it. Point a real customer API at this loop, let it return one 500, and that is your night.
 
-## 5. Enrich With Parallel.ForEachAsync
+The workshop steps had to design around exactly this. A cancelled `CancellationToken` makes `Task.Delay` throw inside `GetCustomerTierAsync`, so handing the starter a token that gets cancelled would end the whole app, verifier and all. That is why Steps 1 and 2 always pass `CancellationToken.None`, and why Step 3 reads `ImportService`'s compiled code to confirm no `async void` lambda is left before it cancels an import.
+
+## 5. Enrich With Parallel.ForEachAsync (Step 2)
 
 ```cs
 // Step 2: enrich every row from the customer API. I/O-bound, so use the
@@ -110,9 +131,27 @@ Three things changed, and each one matters.
 
 On the reference machine this stage went from 0 rows in 0.01 seconds to 4,000 rows in 1.44 seconds. Slower on the clock, infinitely better on the only measure that counts.
 
-One quiet side effect: the starter needed `await Task.CompletedTask.ConfigureAwait(false);` near the end of the method to justify the `async` keyword. The finished file does not have that line, because the method now awaits something real.
+Step 2 watches the calls rather than the clock. A fresh `CustomerApiService` counts how many calls are in flight, so the step can check that every row has a tier when `RunImportAsync` returns, that no call is still running at that moment, and that more than one call ran at a time without every row being sent at once. The finished app peaks at exactly 32. If you left `MaxDegreeOfParallelism` off, the step still passes, and its log points out that your peak matches the processor count, which is the default you did not choose.
 
-## 6. Summarize With PLINQ
+One quiet side effect: the starter needed an `await` near the end of the method to justify the `async` keyword:
+
+```cs
+// ToDo Refactor (Step 2): this is the only await in the method. It yields
+// the thread, but it does not wait for a single customer API call above.
+await Task.Yield();
+```
+
+The finished file does not have that line, because the method now awaits something real.
+
+## 6. Summarize With PLINQ (Step 3)
+
+The starter groups the rows on one thread, and never looks at the token:
+
+```cs
+// ToDo Refactor (Step 3): this query runs on one thread, and it ignores the cancellation token
+var regionTotals = orders
+    .GroupBy(static order => order.Region)
+```
 
 ```cs
 // Step 3: summarize by region. PLINQ is the declarative sibling of
@@ -143,6 +182,8 @@ Be honest about this stage. Four groups over 4,000 rows is close to the line whe
 
 The final `OrderBy` gives a deterministic order in the report even though PLINQ does not preserve source order by default. When you need the original ordering rather than a sort, that is what `AsOrdered()` is for, and it is not free.
 
+A one millisecond query leaves nothing to time, so Step 3 checks this stage two ways. It compares the regional summary with totals worked out straight from the uploaded file, and it reads `ImportService`'s compiled code for calls to `AsParallel()` and `WithCancellation()`.
+
 ## 7. Report What Actually Happened
 
 ```cs
@@ -163,7 +204,7 @@ Nothing about this line changed between Start and Finish, and that is the point.
 
 `ScoreRisk(OrderRow)` also stays exactly as it was. The lesson here is to spread expensive work across the cores you already paid for, not to make the work cheaper. Real validation passes hash, parse, and run rules, and they do not get faster because you wanted them to.
 
-The blocking `Parallel.ForEach` in step 3 also stays on the circuit's thread, for the reason given there: this page has nothing else to do while the import runs. That is a deliberate choice for a teaching sample, not a pattern to copy into a page that has other work.
+The blocking `Parallel.ForEach` in section 3 also stays on the circuit's thread, for the reason given there: this page has nothing else to do while the import runs. That is a deliberate choice for a teaching sample, not a pattern to copy into a page that has other work.
 
 ## 9. Compare Against Finish
 
@@ -175,4 +216,4 @@ And with the code you started from:
 
 [1. Start/ImportPortal/Services/ImportService.cs](1.%20Start/ImportPortal/Services/ImportService.cs)
 
-Run both apps side by side, [http://localhost:5011](http://localhost:5011) and [http://localhost:5012](http://localhost:5012), and click **Run import** in each. Focus on the reasons behind each change, not only on whether your code is textually identical to mine.
+Run both apps side by side, [http://localhost:5011](http://localhost:5011) and [http://localhost:5012](http://localhost:5012). The finished app's workshop guide shows 3 of 3 steps pass once the checks that run after the app starts have finished, while the starter's stops at Step 1. Then click **Run import** on the Import page in each. Focus on the reasons behind each change, not only on whether your code is textually identical to mine.
