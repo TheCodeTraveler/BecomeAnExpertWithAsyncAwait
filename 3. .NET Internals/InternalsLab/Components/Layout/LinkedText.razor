@@ -1,0 +1,24 @@
+@inherits LinkedTextBase
+
+@foreach (var segment in StepText.Parse(Text))
+{
+    if (segment.Target is null)
+    {
+        @segment.Text
+    }
+    else if (segment.Target.StartsWith('#'))
+    {
+        if (Anchors.Contains(segment.Target[1..]))
+        {
+            <a href="@($"steps/{StepNumber}{segment.Target}")">@segment.Text</a>
+        }
+        else
+        {
+            <strong>@segment.Text</strong>
+        }
+    }
+    else
+    {
+        <CodeLink Location="FindLocation(segment.Target)" Editor="Editor" Label="@segment.Text" />
+    }
+}

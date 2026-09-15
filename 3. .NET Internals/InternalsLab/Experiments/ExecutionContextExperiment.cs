@@ -69,7 +69,7 @@ public sealed class ExecutionContextExperiment(CheckpointLog<ExecutionContextVal
 		await suppressedExecutionContextTask;
 	}
 
-	// Try it: the Try it button on the Step 2 page runs this method. It is the end of RunAsync() with one change:
+	// Try it: the Try it button, which appears below the results on the Step 2 page once you run the experiment, runs this method. It is the end of RunAsync() with one change:
 	// it awaits inside the using block instead of after it. Predict what happens before you click the button.
 	public async Task AwaitInsideSuppressFlowAsync()
 	{

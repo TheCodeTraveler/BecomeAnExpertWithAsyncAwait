@@ -22,7 +22,7 @@ public sealed class Step3StopWhenThePageGoesAway : WorkshopStep
 		+ "The other half of ending well is failing well: when Hacker News is down, the page has to say so in words a user can act on, while the details go to the server log.";
 
 	public override string SeeItInTheApp => "On the Top stories page, press Refresh, and reload the browser tab straight away. The page is gone from your browser, but its refresh keeps running on the server until the 2 second minimum ends. "
-		+ "If you are offline, or your network blocks Hacker News, the page shows its refresh error instead of stories: a short message you can act on, with the details in the terminal.";
+		+ "If you are offline, or your network blocks Hacker News, the page shows its refresh error instead of stories: a short message you can act on, with the details in the app's log output (your IDE's Run or Debug output window, or the terminal).";
 
 	public override string FileToChange => "Components/Pages/News.razor.cs";
 

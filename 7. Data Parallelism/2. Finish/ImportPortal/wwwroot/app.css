@@ -1299,6 +1299,32 @@ button.action.small {
 	opacity: 0.8;
 }
 
+/* The full exception, stack trace included, printed like a log in the runbook */
+.exception {
+	justify-self: stretch;
+	max-height: 320px;
+	overflow: auto;
+	margin: 6px 0 2px;
+	padding: 10px 12px;
+	border: 1px solid var(--rb-line);
+	border-radius: 6px;
+	background: var(--rb-bg);
+	color: #d3d8de;
+	font-family: var(--mono);
+	font-size: 0.78rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	scrollbar-color: #3a414b var(--rb-bg);
+}
+
+.guide .exception code {
+	padding: 0;
+	background: none;
+	color: inherit;
+	font-size: inherit;
+}
+
 /* @key recreates the banner for every new result, so this animation plays again after each click */
 .banner-fresh {
 	animation: banner-in 0.35s ease-out;

@@ -276,7 +276,7 @@ Open [http://localhost:5010](http://localhost:5010). The app opens on the Produc
 
 1. Shipping lands first at 0.6s.
 2. Inventory follows at 0.7s.
-3. Recommendations fails at 0.8s, and its card turns red with `Unavailable`, a failure message, and its own timing. The 503 itself is in the terminal running the app, not in the browser.
+3. Recommendations fails at 0.8s, and its card turns red with `Unavailable`, a failure message, and its own timing. The 503 itself is in the app's log output (your IDE's Run or Debug output window, or the terminal), not in the browser.
 4. Pricing lands at 0.9s.
 5. Reviews lands last at 1.2s.
 6. The total page load tile reads 1.2s.

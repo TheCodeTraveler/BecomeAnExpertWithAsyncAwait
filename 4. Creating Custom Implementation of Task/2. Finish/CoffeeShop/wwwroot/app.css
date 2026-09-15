@@ -379,6 +379,22 @@ h1:focus {
 	opacity: 0.85;
 }
 
+/* The full exception from a crashed step or a failed click, scrollable so a long stack trace cannot push the page away */
+.exception {
+	max-height: 320px;
+	overflow: auto;
+	margin: 6px 0 2px;
+	padding: 10px 12px;
+	border-radius: 6px;
+	background: var(--espresso);
+	color: #fffaf3;
+	font-family: "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+	font-size: 0.85rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
 .banner-running .spinner {
 	display: inline-block;
 	vertical-align: -2px;

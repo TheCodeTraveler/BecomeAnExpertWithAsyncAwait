@@ -13,7 +13,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5013](http://localhost:5013). The finished app runs at [http://localhost:5014](http://localhost:5014), so you can run both at the same time and compare them later.
 
-The app opens on the **Ingest** page, with the **workshop guide** docked beside it. Every step in the guide is one problem in the ingest path, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the terminal running the app shows the same result, with a hint.
+The app opens on the **Ingest** page, with the **workshop guide** docked beside it. Every step in the guide is one problem in the ingest path, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1. Open that step to see every result that did not match, with a hint for each one.
 
 ## 2. Inspect the Starting Code
 
@@ -46,7 +46,7 @@ The app walks you through the challenge one step at a time:
 
 1. Step 1 answers the device right away, Step 2 queues into a bounded channel, Step 3 drains it with several consumers, and Step 4 drains the backlog on shutdown.
 2. A step unlocks only after the step before it passes. Select a step in the guide to read the story behind the problem, how to see it on the Ingest page, which file to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step drives your code the way the device fleet does and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is printed in the terminal running the app.
+3. Each step drives your code the way the device fleet does and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is printed in the app's log output (your IDE's Run or Debug output window, or the terminal).
 4. Every time the app starts, it checks your code against every step, so the guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** at the top of the guide instead.
 
@@ -83,7 +83,7 @@ Acceptance checks. Restart the app, then click **Receive 400 events** on the Ing
 5. **Burst duration** reads 0.00s. The button no longer spins.
 6. **Written to store** starts near zero, with the rest of the burst waiting in the queue.
 7. Click **Refresh counters** once a second. The written count climbs, the waiting count falls, and about two seconds after the burst it reads 400 written with 0 waiting.
-8. Click **Receive 400 events** and then press Ctrl+C in the terminal straight away, while the queue still has items waiting. The app pauses for roughly two seconds before it exits, because it is finishing the backlog first. It shuts down instead of hanging, and it does not quit instantly either.
+8. Your IDE's Stop button usually ends the process at once and skips the shutdown this check is about, so stop the app in your IDE and start it with `dotnet run` in the **1. Start/TelemetryPipeline** folder instead. Click **Receive 400 events** and then press Ctrl+C in that terminal straight away, while the queue still has items waiting. The app pauses for roughly two seconds before it exits, because it is finishing the backlog first. It shuts down instead of hanging, and it does not quit instantly either.
 9. There is no `List<TelemetryEvent>` and no `Task.Delay` left in the service.
 10. Your code is ready to compare with **2. Finish/TelemetryPipeline**.
 

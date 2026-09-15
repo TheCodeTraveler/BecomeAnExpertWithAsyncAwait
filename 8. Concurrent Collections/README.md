@@ -14,9 +14,9 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5005](http://localhost:5005). The finished app runs at [http://localhost:5006](http://localhost:5006), so you can run both at the same time and compare them later.
 
-The app opens on the **Dashboard**, with the **workshop guide** docked beside it. Every step in the guide is one bug in the dashboard's code-behind, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the terminal running the app shows the same result, with a hint.
+The app opens on the **Dashboard**, with the **workshop guide** docked beside it. Every step in the guide is one bug in the dashboard's code-behind, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the app's log output (your IDE's Run or Debug output window, or the terminal if you started the app with `dotnet run`) shows the same result, with a hint.
 
-> **Note:** This app has a race condition, not a guaranteed crash. Some runs look perfect. Reload the page several times before you decide the bug is not there. The page is also blank for a moment on every load while the Blazor circuit connects, which is normal. If a **Feed fault** panel replaces the dashboard, check the `dotnet run` terminal: a collection that many threads touched at once threw while the dashboard loaded or rendered. Reload the browser tab to bring the dashboard back.
+> **Note:** This app has a race condition, not a guaranteed crash. Some runs look perfect. Reload the page several times before you decide the bug is not there. The page is also blank for a moment on every load while the Blazor circuit connects, which is normal. If a **Feed fault** panel replaces the dashboard, read the exception it shows: a collection that many threads touched at once threw while the dashboard loaded or rendered. Reload the browser tab to bring the dashboard back.
 
 ## 2. Inspect the Starting Code
 
@@ -31,7 +31,7 @@ The app opens on the **Dashboard**, with the **workshop guide** docked beside it
 
 Now watch what the **Dashboard** beside the guide actually does:
 
-1. Count the cards in the grid. There should be 60. You will usually count somewhere in the forties or fifties, and the number is different on every reload. Every so often the render throws instead: the torn `List<T>` leaves a null in its backing array, and `OrderBy` dereferences it. A **Feed fault** panel replaces the dashboard until you reload, and the `dotnet run` terminal shows a `NullReferenceException`. That stack trace is expected in the starter project.
+1. Count the cards in the grid. There should be 60. You will usually count somewhere in the forties or fifties, and the number is different on every reload. Every so often the render throws instead: the torn `List<T>` leaves a null in its backing array, and `OrderBy` dereferences it. A **Feed fault** panel replaces the dashboard until you reload, and shows the `NullReferenceException` with its stack trace. That stack trace is expected in the starter project.
 2. Look at the cards that did render. Some of them show `--` instead of a price. `GetSymbols()` builds a card for all 60 symbols either way, so a card showing `--` is a quote that never made it into `_latestQuotes`. A card that is missing entirely is an item that never made it into the `List`. Two different bugs, two different symptoms.
 3. Look at the "quotes applied" tile. The first render should read 60, one per symbol. Every so often it reads 59 instead, more often on a machine with more cores. This is the quietest of the bugs: one lost increment out of sixty, with nothing to tell you it happened.
 4. Wait 2 seconds. The tile should climb by exactly 60 on every tick. It usually does, and every so often it climbs by 59.
@@ -52,7 +52,7 @@ The app walks you through the challenge one step at a time:
 
 1. Step 1 shows every card, Step 2 keeps every quote and keeps the newest, Step 3 counts every quote, and Step 4 guards the refresh timer.
 2. A step unlocks only after the step before it passes. Select a step in the guide to read the story behind the bug, how to see it on the Dashboard, which lines to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step renders a fresh dashboard, drives your code from many threads at once, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is printed in the terminal running the app.
+3. Each step renders a fresh dashboard, drives your code from many threads at once, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is written to the app's log output (your IDE's Run or Debug output window, or the terminal if you started the app with `dotnet run`).
 4. Every time the app starts, it checks your code against every step, so the guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** at the top of the guide instead.
 
@@ -88,7 +88,7 @@ Acceptance checks:
 5. Two seconds later it reads 120, then 180, then 240. It climbs by exactly 60 on every tick.
 6. Reload the browser eight times in a row and get 60 cards and a first render of 60 every single time.
 7. Prices and percent changes keep updating, and no card is stuck showing `--`.
-8. Leave the page open for a minute, then reload the browser. The prices keep updating after the reload, and the `dotnet run` terminal shows no exception.
+8. Leave the page open for a minute, then reload the browser. The prices keep updating after the reload, and your IDE's Run or Debug output window (or the terminal, if you started the app with `dotnet run`) shows no exception.
 9. Your code is ready to compare with **2. Finish/StockWatch**.
 
 If you finish early, swap the collection you chose in `GetSymbols()` for a different type from `System.Collections.Concurrent` and confirm Step 1 still passes and the dashboard still renders all 60 cards. Watch out: this is not always a pure type swap, because not every one of these collections exposes an `Add` method. Then work out why the `OrderBy` on the last line of `GetSymbols()` is what makes the two interchangeable here, and which of the two you would actually ship.

@@ -325,6 +325,74 @@ h1:focus {
 	overflow-wrap: anywhere;
 }
 
+.facts-note {
+	display: block;
+	margin-top: 6px;
+	color: var(--muted);
+	font-size: 0.88rem;
+}
+
+/* A link to a line of code, shown as File.cs:line */
+.code-link {
+	display: inline-block;
+	padding: 0 6px;
+	border-radius: 4px;
+	background: #ece6ff;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.panel a.code-link,
+.code-link {
+	color: var(--accent-dark);
+}
+
+.code-link:hover {
+	background: #ddd2ff;
+	text-decoration: underline;
+}
+
+.checkpoint-name {
+	display: block;
+	margin-bottom: 4px;
+}
+
+.check-hint .code-link {
+	background: rgb(255 255 255 / 70%);
+}
+
+.editor-picker {
+	display: inline-flex;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+}
+
+.editor-option {
+	padding: 4px 12px;
+	border: 0;
+	background: var(--panel);
+	color: var(--ink);
+	font: inherit;
+	font-size: 0.88rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.editor-option + .editor-option {
+	border-left: 1px solid var(--line);
+}
+
+.editor-option:hover {
+	background: var(--canvas);
+}
+
+.editor-option-selected,
+.editor-option-selected:hover {
+	background: var(--accent);
+	color: #fff;
+}
+
 .ai-note {
 	padding: 10px 14px;
 	border-left: 4px solid var(--warn);
@@ -397,6 +465,11 @@ h1:focus {
 	overflow-wrap: anywhere;
 }
 
+.step-card-file {
+	font-size: 0.85rem;
+	overflow-wrap: anywhere;
+}
+
 .badge {
 	justify-self: start;
 	padding: 2px 10px;
@@ -456,6 +529,37 @@ h1:focus {
 .banner-note {
 	font-size: 0.85rem;
 	opacity: 0.85;
+}
+
+/* The bottom of a step page, once every explain question is answered correctly */
+.banner-next {
+	grid-template-columns: 1fr auto;
+	gap: 10px 16px;
+	align-items: center;
+}
+
+.banner a.action {
+	color: #fff;
+}
+
+/* A full exception, stack trace included, so nobody has to go looking for it */
+.exception {
+	max-height: 360px;
+	margin: 6px 0 2px;
+	padding: 12px 14px;
+	overflow: auto;
+	border-radius: 6px;
+	background: var(--panel-strong);
+	color: #f3efff;
+	font-size: 0.8rem;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+/* Keeps the question fully visible below the top of the window when a link scrolls to a panel */
+[id] {
+	scroll-margin-top: 16px;
 }
 
 /* @key recreates the banner for every new result, so this animation plays again after each click */
@@ -739,6 +843,10 @@ h1:focus {
 	}
 
 	.facts {
+		grid-template-columns: 1fr;
+	}
+
+	.banner-next {
 		grid-template-columns: 1fr;
 	}
 }

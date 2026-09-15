@@ -60,7 +60,13 @@
 
                 @if (ErrorMessage is not null)
                 {
-                    <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+                    <div class="banner banner-failed" role="alert">
+                        <span>@ErrorMessage</span>
+                        @if (ErrorDetails is not null)
+                        {
+                            <pre class="exception"><code>@ErrorDetails</code></pre>
+                        }
+                    </div>
                 }
 
                 @if (!IsRunning && state.CompletedAt is { } lastRunAt)
@@ -81,7 +87,7 @@
                             </div>
                             break;
                         case StepStatus.NotImplemented:
-                            <div class="banner banner-missing banner-fresh" role="alert" @key="lastRunAt"><span><code>@state.MissingMember</code> still throws NotImplementedException. Open CustomTask.cs and read its hint (it is also in the terminal).</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            <div class="banner banner-missing banner-fresh" role="alert" @key="lastRunAt"><span><code>@state.MissingMember</code> still throws NotImplementedException. Open CustomTask.cs and read its hint.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
                             break;
                         case StepStatus.TimedOut:
                             <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
@@ -100,7 +106,14 @@
                             <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Some expected results did not match.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
                             break;
                         case StepStatus.Crashed:
-                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Step @Step.Number threw an unexpected @state.ExceptionType. The terminal running the app has the details.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
+                                <span>Step @Step.Number threw an unexpected @state.ExceptionType:</span>
+                                @if (state.Exception is not null)
+                                {
+                                    <pre class="exception"><code>@state.Exception</code></pre>
+                                }
+                                <span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
                             break;
                         case StepStatus.Stopped:
                             <div class="banner banner-locked banner-fresh" role="status" @key="lastRunAt"><span>Step @Step.Number was stopped before it finished.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
@@ -119,7 +132,7 @@
                     </dl>
                     @if (!Step.VerifyOnStartup)
                     {
-                        <p class="panel-hint">This step is not checked on startup. If the app exits while it runs, the terminal shows why: usually continuations running inline until the stack overflows.</p>
+                        <p class="panel-hint">This step is not checked on startup. If the app exits while it runs, your IDE's Run or Debug output window (or the terminal, if you started the app with <code>dotnet run</code>) shows why: usually continuations running inline until the stack overflows.</p>
                     }
                 </div>
 

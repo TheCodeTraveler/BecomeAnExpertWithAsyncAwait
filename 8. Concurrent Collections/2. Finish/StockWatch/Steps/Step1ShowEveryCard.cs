@@ -24,7 +24,7 @@ public sealed class Step1ShowEveryCard : WorkshopStep
 		+ "Cards silently go missing, a different number on every reload, and every so often the render throws and the quote board stops updating altogether.";
 
 	public override string SeeItInTheApp => "On the Dashboard page, count the cards. There should be 60, and you will usually count somewhere in the forties or fifties. "
-		+ "Reload a few times and the number changes. Every so often a Feed fault panel replaces the whole dashboard until you reload, and the terminal running the app shows a NullReferenceException from OrderBy.";
+		+ "Reload a few times and the number changes. Every so often a Feed fault panel replaces the whole dashboard until you reload, and shows the NullReferenceException from OrderBy.";
 
 	public override string FileToChange => "Components/Pages/Dashboard.razor.cs";
 

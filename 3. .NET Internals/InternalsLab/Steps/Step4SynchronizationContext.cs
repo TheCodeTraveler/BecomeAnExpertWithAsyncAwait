@@ -17,7 +17,7 @@ public sealed class Step4SynchronizationContext : WorkshopStep
 
 	public override string Story => "Steps 2 and 3 showed the values that ride on ExecutionContext. await captures one more piece of ambient state: SynchronizationContext.Current, the place it posts the continuation back to. "
 		+ "In Blazor Server that is the renderer's RendererSynchronizationContext, which is what makes it safe to change component state, and it is exactly what ConfigureAwait(false) opts out of. "
-		+ "The experiment is a refresh shaped like RefreshAsync() from Correcting Common Async Await Mistakes, with a simulated story feed instead of Hacker News. "
+		+ "The experiment, RefreshAsync() in [Experiments/SynchronizationContextExperiment.cs](Experiments/SynchronizationContextExperiment.cs#public async Task RefreshAsync), is a refresh shaped like RefreshAsync() from Correcting Common Async Await Mistakes, with a simulated story feed instead of Hacker News. "
 		+ "Run the experiment calls it straight from this page's click handler, so it starts on Blazor's renderer. Predict SynchronizationContext.Current at every checkpoint.";
 
 	public override int RecommendedMinutes => 10;
@@ -26,8 +26,8 @@ public sealed class Step4SynchronizationContext : WorkshopStep
 
 	public override IReadOnlyList<string> TryIt { get; } =
 	[
-		"Remove ConfigureAwait(false) from the await before checkpoint 4 and apply the change with Hot Reload, then click Run it again. Which checkpoints change?",
-		"Remove the top story from the cache in Experiments/SimulatedStoryFeed.cs and apply the change with Hot Reload. What does checkpoint 3 see now?",
+		"Remove ConfigureAwait(false) from the await before checkpoint 4 in [SynchronizationContextExperiment.cs](Experiments/SynchronizationContextExperiment.cs#Try it: remove ConfigureAwait) and apply the change with Hot Reload, then click Run it again. Which checkpoints change?",
+		"Remove the top story from the cache in [SimulatedStoryFeed.cs](Experiments/SimulatedStoryFeed.cs#Try it: remove the top story) and apply the change with Hot Reload. What does checkpoint 3 see now?",
 	];
 
 	public override IReadOnlyList<ExperimentCheckpoint> Checkpoints { get; } =
@@ -63,7 +63,7 @@ public sealed class Step4SynchronizationContext : WorkshopStep
 		]),
 		new ExplainQuestion("synchronous-completion", "Checkpoint 3 comes after ConfigureAwait(false), but still reports RendererSynchronizationContext. Why?",
 		[
-			new ExplainAnswer("a", "The cached story's ValueTask had already completed, so the await never scheduled a continuation. The method kept running on the same thread, in the same context.", true,
+			new ExplainAnswer("a", "The cached story's ValueTask had already completed, so the await never scheduled a thread switch. The method kept running on the same thread, in the same context.", true,
 				"Right. ConfigureAwait(false) only affects continuations that are actually scheduled, so it never guarantees that the code after it leaves the context."),
 			new ExplainAnswer("b", "ConfigureAwait(false) only works on Task, not on ValueTask.", false,
 				"Checkpoint 4 awaits a ValueTask from the same method, with ConfigureAwait(false), and does leave the context. What is different about the story it asks for?"),
@@ -85,7 +85,7 @@ public sealed class Step4SynchronizationContext : WorkshopStep
 	{
 		1 => "Blazor runs every event handler through its renderer, and RefreshAsync() has not awaited anything yet. What is SynchronizationContext.Current while an event handler runs?",
 		2 => "A plain await captures SynchronizationContext.Current and posts the continuation back to it. Compare the Thread column with checkpoint 1: the thread can change while the context stays the same.",
-		3 => "The top story was already in the feed's cache, so its ValueTask had completed before the await looked at it. ConfigureAwait(false) only changes where a continuation is scheduled. Was one scheduled?",
+		3 => "The top story was already in the feed's cache, in [SimulatedStoryFeed.cs](Experiments/SimulatedStoryFeed.cs#A cached story comes back), so its ValueTask had completed before the await looked at it. ConfigureAwait(false) only changes where a continuation is scheduled. Was one scheduled?",
 		4 => "This story had to wait for the simulated network, so the await scheduled a continuation, and ConfigureAwait(false) told it not to capture the context. What posts that continuation back to the renderer?",
 		5 => "A plain await captures whatever SynchronizationContext is current when that await runs. What was current at checkpoint 4?",
 		_ => "InvokeAsync(...) runs the lambda through Blazor's renderer. Compare the Thread column with checkpoint 5: the thread can be the same while the context is not.",

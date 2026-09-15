@@ -19,7 +19,7 @@ public sealed class Step2ContainEachFailure : WorkshopStep
 
 	const string _exceptionTextHint = "The page shows part of the exception. Anything the page renders reaches the browser, so show a message the page owns and keep the exception in the log.";
 
-	const string _loggingHint = "The terminal is where a failure can be acted on, so it needs the whole exception. Pass the HttpRequestException itself to Logger.LogError, the way the starter does, not just its message.";
+	const string _loggingHint = "The app's log output (your IDE's Run or Debug output window, or the terminal) is where a failure can be acted on, so it needs the whole exception. Pass the HttpRequestException itself to Logger.LogError, the way the starter does, not just its message.";
 
 	// Words from the exception RecommendationsService throws. None of them belongs in the browser.
 	static readonly string[] _exceptionText = ["503", "Service Unavailable", nameof(HttpRequestException)];
@@ -35,7 +35,7 @@ public sealed class Step2ContainEachFailure : WorkshopStep
 		+ "One shared try block turns one broken dependency into a broken page, and how much of the page dies is decided by where the call sits in the method, not by what failed.";
 
 	public override string SeeItInTheApp => "On the Product page, the Recommendations card reads -- and never requested, and a yellow banner says the page load stopped. The banner does not say which service failed. "
-		+ "The terminal running the app does: the logged HttpRequestException reads Recommendations service returned 503 Service Unavailable. "
+		+ "The app's log output (your IDE's Run or Debug output window, or the terminal) does: the logged HttpRequestException reads Recommendations service returned 503 Service Unavailable. "
 		+ "If you already start every call at once inside that same try block, the other four cards may read never requested too.";
 
 	public override string FileToChange => "Components/Pages/Product.razor.cs";

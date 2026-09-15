@@ -8,10 +8,11 @@
                 @Body
             </ChildContent>
 
-            <ErrorContent>
+            <ErrorContent Context="exception">
                 <div class="feed-fault" role="alert">
                     <p class="feed-fault-code">Feed fault</p>
-                    <p>The dashboard threw an exception and stopped updating. The terminal running the app has the details. Reload the browser tab to bring the dashboard back.</p>
+                    <p>The dashboard threw an exception and stopped updating. Reload the browser tab to bring the dashboard back.</p>
+                    <pre class="exception"><code>@exception.ToString()</code></pre>
                 </div>
             </ErrorContent>
         </ErrorBoundary>

@@ -15,7 +15,7 @@ public sealed class Step1ThreadStatic : WorkshopStep
 	public override string Title => "[ThreadStatic] static int _threadSpecificValue";
 
 	public override string Story => "Before async and await, ambient data such as the current user or an open database transaction usually lived in thread-local storage, and [ThreadStatic] is the simplest way to get it: "
-		+ "a static field with a separate copy for every thread. The experiment is a small console-style program. Its main thread assigns 100, two background threads each read the field and then assign a random value of their own, "
+		+ "a static field with a separate copy for every thread. The experiment, [Experiments/ThreadStaticExperiment.cs](Experiments/ThreadStaticExperiment.cs), is a small console-style program. Its main thread assigns 100, two background threads each read the field and then assign a random value of their own, "
 		+ "and finally the main thread awaits Task.Yield(), which moves the rest of the method to a thread pool thread. Predict what the field holds at every checkpoint.";
 
 	public override int RecommendedMinutes => 8;
@@ -24,8 +24,8 @@ public sealed class Step1ThreadStatic : WorkshopStep
 
 	public override IReadOnlyList<string> TryIt { get; } =
 	[
-		"Remove [ThreadStatic], then stop and run the app again. Restarting starts a fresh notebook, so try this one after the group review. Which checkpoints change, and which threads share the value now?",
-		"Replace the field with static readonly AsyncLocal<int> and read and write its Value, then run the app again. Which checkpoints change? Step 2 explains why.",
+		"Remove [ThreadStatic] from _threadSpecificValue in [ThreadStaticExperiment.cs](Experiments/ThreadStaticExperiment.cs#Try it: remove [ThreadStatic]), then stop and run the app again. Restarting starts a fresh notebook, so try this one after the group review. Which checkpoints change, and which threads share the value now?",
+		"Replace _threadSpecificValue in [ThreadStaticExperiment.cs](Experiments/ThreadStaticExperiment.cs#static int _threadSpecificValue;) with static readonly AsyncLocal<int>, read and write its Value, then run the app again. Which checkpoints change? Step 2 explains why.",
 	];
 
 	public override IReadOnlyList<ExperimentCheckpoint> Checkpoints { get; } =
@@ -84,7 +84,7 @@ public sealed class Step1ThreadStatic : WorkshopStep
 
 	public override string GetHint(int checkpoint, string columnId) => checkpoint switch
 	{
-		1 => "Checkpoint 1 reads the field on the same thread that just assigned it. Look at the line right above log.Record(1, ...).",
+		1 => "Checkpoint 1 reads the field on the same thread that just assigned it. Look at the line right above log.Record(1, ...) in [ThreadStaticExperiment.cs](Experiments/ThreadStaticExperiment.cs#Step 1: checkpoint 1.).",
 		2 or 4 => "This thread has not assigned anything yet. The main thread assigned 100 before starting it, but whose copy of the field did that assignment change? What does a thread's own copy start as?",
 		3 or 5 => "This thread just assigned Random.Shared.Next(1, 100) to the field. Compare its Thread column with checkpoint 1: whose copy is it reading?",
 		6 => "Both background threads have written to _threadSpecificValue by now. Checkpoint 6 runs on the same thread as checkpoint 1, so ask which copy the background threads wrote to.",

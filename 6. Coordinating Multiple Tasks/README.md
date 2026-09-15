@@ -14,7 +14,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5009](http://localhost:5009). The finished app runs at [http://localhost:5010](http://localhost:5010), so you can run both at the same time and compare them later.
 
-The app opens on the **Product page**, with the workshop guide docked beside it. Every step in the guide is one thing wrong with how the product page waits for its backend services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the terminal running the app shows the same result, with a hint.
+The app opens on the **Product page**, with the workshop guide docked beside it. Every step in the guide is one thing wrong with how the product page waits for its backend services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the app's log output (your IDE's Run or Debug output window, or the terminal) shows the same result, with a hint.
 
 ## 2. Inspect the Starting Code
 
@@ -33,7 +33,7 @@ Now watch the **Product page** beside the guide. The page loads once when it ope
 3. The total page load tile reads **4.2s**.
 4. The per-card timings read 0.7s, 1.6s, 2.8s, and 3.4s. Those are running totals, and they add up to the sum of every service call.
 5. The Recommendations card shows `--` and the words `never requested` with a red left edge. Its service was next in line and never got called.
-6. A yellow banner sits between the product details and the page panels: "The page load stopped. A backend service did not respond. Certain panel updates have been skipped." The banner does not name the service. The terminal running the app does: the logged `HttpRequestException` reads "Recommendations service returned 503 Service Unavailable".
+6. A yellow banner sits between the product details and the page panels: "The page load stopped. A backend service did not respond. Certain panel updates have been skipped." The banner does not name the service. The app's log output (your IDE's Run or Debug output window, or the terminal) does: the logged `HttpRequestException` reads "Recommendations service returned 503 Service Unavailable".
 
 Pay attention to these clues:
 
@@ -48,7 +48,7 @@ The app walks you through the challenge one step at a time:
 
 1. The steps, in order, are **Start every call before awaiting any of them**, **Let one failing service break only its own card**, and **Paint each card as its service answers**.
 2. A step unlocks only after the step before it passes. Each step's tab in the guide tells the story behind the bug, how to see it on the Product page, which file to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step renders your product page the way a browser tab does and shows a checklist of every expected result next to what actually happened: how long the page took, what every card says, and every time the page repainted. Every result that does not match comes with a hint, and the same hint is printed in the terminal running the app.
+3. Each step renders your product page the way a browser tab does and shows a checklist of every expected result next to what actually happened: how long the page took, what every card says, and every time the page repainted. Every result that does not match comes with a hint, and the same hint is written to the app's log output.
 4. Every time the app starts, it checks your code against every step, so the workshop guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** in the workshop guide instead.
 
@@ -80,7 +80,7 @@ Acceptance checks:
 3. On the Product page, the total page load tile reads about **1.2s** instead of 4.2s.
 4. Cards fill in one at a time as their services answer, rather than all appearing together at the end.
 5. The per-card timings read roughly 0.6s, 0.7s, 0.8s, 0.9s, and 1.2s. No card reports 1.6s, 2.8s, or 3.4s.
-6. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with a failure message and its own timing, in the failure style with a red left edge, and the terminal running the app carries the full `HttpRequestException`. Every other panel is unaffected.
+6. The recommendations service still fails, because you cannot fix somebody else's 503. Its card now reads `Unavailable` with a failure message and its own timing, in the failure style with a red left edge, and the app's log output carries the full `HttpRequestException`. Every other panel is unaffected.
 7. The yellow banner above the page panels is gone.
 8. Clicking **Load product page** again gives the same result every time.
 9. Your code is ready to compare with **2. Finish/ProductDetails**.

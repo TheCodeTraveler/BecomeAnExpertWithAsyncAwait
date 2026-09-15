@@ -30,7 +30,8 @@ public sealed class Step4DrainBacklogOnShutdown : WorkshopStep
 		+ "Nothing ever tells DrainAsync that the producer is finished: the only thing that stops it is cancellation at shutdown, and cancelling the read loop throws the whole backlog away. "
 		+ "The readings never reach the store, and nothing logs a thing.";
 
-	public override string SeeItInTheApp => "Once Step 3 passes, click Receive 400 events on the Ingest page, and press Ctrl+C in the terminal straight away, while readings are still waiting in the queue. "
+	public override string SeeItInTheApp => "Your IDE's Stop button usually ends the process at once and skips the shutdown this step is about, so once Step 3 passes, stop the app in your IDE and start it with dotnet run in the TelemetryPipeline project folder instead. "
+		+ "Click Receive 400 events on the Ingest page, and press Ctrl+C in that terminal straight away, while readings are still waiting in the queue. "
 		+ "Today the app quits instantly and the backlog is gone. Once this step passes, the app pauses for roughly two seconds before it exits, because it is finishing the backlog first.";
 
 	public override string FileToChange => "Services/TelemetryIngestService.cs, Services/TelemetryProcessor.cs";

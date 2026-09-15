@@ -59,27 +59,38 @@
 
                 @if (ErrorMessage is not null)
                 {
-                    <div class="banner banner-failed" role="alert"><span>@ErrorMessage</span></div>
+                    <div class="banner banner-failed" role="alert">
+                        <span>@ErrorMessage</span>
+                        @if (ErrorDetails is not null)
+                        {
+                            <pre class="exception"><code>@ErrorDetails</code></pre>
+                        }
+                    </div>
                 }
 
                 <div class="panel">
                     <h2>The story</h2>
-                    <p>@Step.Story</p>
+                    <p><LinkedText Text="@Step.Story" Editor="CodeEditor" StepNumber="Step.Number" Anchors="Anchors" /></p>
                     <dl class="facts">
                         <dt>Experiment</dt>
-                        <dd><code>@Step.ExperimentFile</code></dd>
-                        <dt>Read</dt>
-                        <dd>Every <code>// Step @Step.Number:</code> comment, before you predict</dd>
+                        <dd><CodeLink Location="SourceCode.Find(Step.ExperimentFile)" Editor="CodeEditor" Label="@Step.ExperimentFile" /></dd>
+                        <dt>Before you predict</dt>
+                        <dd>Read every <code>// Step @Step.Number:</code> comment in <code>@Path.GetFileName(Step.ExperimentFile)</code>. Every checkpoint in <strong>1. Predict</strong> links to the line of code that records it.</dd>
+                        <dt>Code links open</dt>
+                        <dd>
+                            <CodeEditorPicker @bind-Editor="CodeEditor" />
+                            <span class="facts-note">GitHub opens the linked line in a new browser tab, and works with any editor, including Visual Studio and Rider. VS Code opens your own copy of the file at that line.</span>
+                        </dd>
                         <dt>Recommended time</dt>
                         <dd>@Step.RecommendedMinutes minutes</dd>
                     </dl>
                     <details class="clues">
                         <summary>Try it, after this step passes</summary>
-                        <p class="panel-hint">These are the <code>// Try it:</code> comments in the experiment code. Nothing here is needed to pass.</p>
+                        <p class="panel-hint">Each suggestion links to the code it changes, where a <code>// Try it:</code> comment describes it too. Nothing here is needed to pass.</p>
                         <ul>
                             @foreach (var suggestion in Step.TryIt)
                             {
-                                <li>@suggestion</li>
+                                <li><LinkedText Text="@suggestion" Editor="CodeEditor" StepNumber="Step.Number" Anchors="Anchors" /></li>
                             }
                         </ul>
                     </details>
@@ -106,7 +117,7 @@
                     <h2>1. Predict</h2>
                     @if (CanPredict)
                     {
-                        <p class="panel-hint">Read the experiment code, then choose what you expect at every checkpoint. Your predictions lock in when the experiment runs.</p>
+                        <p class="panel-hint">Click the link under each checkpoint to open the line of code that records it, and read the code that runs before it. Then choose what you expect at every checkpoint. Your predictions lock in when the experiment runs.</p>
                     }
                     else if (run is not null)
                     {
@@ -128,7 +139,10 @@
                                 @foreach (var checkpoint in Step.Checkpoints)
                                 {
                                     <tr @key="checkpoint.Number">
-                                        <td>@checkpoint.Name</td>
+                                        <td>
+                                            <span class="checkpoint-name">@checkpoint.Name</span>
+                                            <CodeLink Location="SourceCode.FindCheckpoint(Step, checkpoint.Number)" Editor="CodeEditor" />
+                                        </td>
                                         @foreach (var column in Step.Columns)
                                         {
                                             var key = WorkshopStep.PredictionKey(checkpoint.Number, column.Id);
@@ -201,7 +215,10 @@
 
                                             <tr class="@(matches ? "check-passed" : "check-failed")" @key="checkpoint.Number">
                                                 <td>@(matches ? "✅" : "❌")</td>
-                                                <td>@checkpoint.Name</td>
+                                                <td>
+                                                    <span class="checkpoint-name">@checkpoint.Name</span>
+                                                    <CodeLink Location="SourceCode.FindCheckpoint(Step, checkpoint.Number)" Editor="CodeEditor" />
+                                                </td>
                                                 <td>@(result?.ThreadId.ToString() ?? "–")</td>
                                                 <td>@(result?.IsThreadPoolThread switch { true => "yes", false => "no", null => "–" })</td>
                                                 <td>
@@ -226,7 +243,7 @@
                                             {
                                                 <tr class="check-hint">
                                                     <td aria-hidden="true">💡</td>
-                                                    <td colspan="4"><span class="visually-hidden">Hint: </span>@Step.GetHint(checkpoint.Number, column.Id)</td>
+                                                    <td colspan="4"><span class="visually-hidden">Hint: </span><LinkedText Text="@Step.GetHint(checkpoint.Number, column.Id)" Editor="CodeEditor" StepNumber="Step.Number" Anchors="Anchors" /></td>
                                                 </tr>
                                             }
                                         }
@@ -256,7 +273,10 @@
                                                 .ToList();
 
                                             <tr class="@(mismatchedColumns.Count is 0 ? "check-passed" : "check-failed")" @key="checkpoint.Number">
-                                                <td>@checkpoint.Name</td>
+                                                <td>
+                                                    <span class="checkpoint-name">@checkpoint.Name</span>
+                                                    <CodeLink Location="SourceCode.FindCheckpoint(Step, checkpoint.Number)" Editor="CodeEditor" />
+                                                </td>
                                                 <td>
                                                     @(result?.ThreadId.ToString() ?? "–")
                                                     @if (previousResult is not null)
@@ -287,7 +307,7 @@
                                             @foreach (var column in mismatchedColumns)
                                             {
                                                 <tr class="check-hint">
-                                                    <td colspan="@(Step.Columns.Count + 2)"><span aria-hidden="true">💡 </span><span class="visually-hidden">Hint: </span><code>@column.Header</code>: @Step.GetHint(checkpoint.Number, column.Id)</td>
+                                                    <td colspan="@(Step.Columns.Count + 2)"><span aria-hidden="true">💡 </span><span class="visually-hidden">Hint: </span><code>@column.Header</code>: <LinkedText Text="@Step.GetHint(checkpoint.Number, column.Id)" Editor="CodeEditor" StepNumber="Step.Number" Anchors="Anchors" /></td>
                                                 </tr>
                                             }
                                         }
@@ -302,9 +322,9 @@
                 {
                     var outcome = progress.TryItOutcome;
 
-                    <div class="panel">
+                    <div class="panel" id="@TryItAnchor">
                         <h2>Try it: await inside the using block</h2>
-                        <p><code>AwaitInsideSuppressFlowAsync()</code>, at the bottom of <code>@Step.ExperimentFile</code>, is the end of <code>RunAsync()</code> with one change: it awaits the <code>Task.Run(...)</code> task inside <code>using (ExecutionContext.SuppressFlow())</code> instead of after the block. Predict what happens, then click Try it.</p>
+                        <p><code>AwaitInsideSuppressFlowAsync()</code>, at <CodeLink Location="SourceCode.Find(Step.ExperimentFile, AwaitInsideSuppressFlowMarker)" Editor="CodeEditor" />, is the end of <code>RunAsync()</code> with one change: it awaits the <code>Task.Run(...)</code> task inside the <code>using (ExecutionContext.SuppressFlow())</code> block instead of after it. Predict what happens, then click Try it.</p>
                         <div class="run-row">
                             <button class="action" type="button" disabled="@IsTryingIt" @onclick="TryItAsync">
                                 @if (IsTryingIt)
@@ -320,14 +340,19 @@
                             @if (outcome.ExceptionType is null)
                             {
                                 <div class="banner banner-locked banner-fresh" role="status" @key="outcome.RanAt">
-                                    <span>No exception this time. The task had already finished when the await looked at it, so there was no continuation to schedule, and the using block ended on the thread that started it. Click Try it again.</span>
+                                    <span>No exception this time. The task had already finished when the <code>await</code> checked it, so the method never paused, and the <code>using</code> block ended on the thread that started it. That was luck, not correct code. Click Try it again.</span>
                                     <span class="banner-note">Tried at @outcome.RanAt.ToString("HH:mm:ss")</span>
                                 </div>
                             }
                             else
                             {
                                 <div class="banner banner-failed banner-fresh" role="alert" @key="outcome.RanAt">
-                                    <span>It threw <strong>@outcome.ExceptionType</strong>. The using block started on thread @(outcome.UsingBlockStartThreadId?.ToString() ?? "–"), but the await let the method return while flow was still suppressed there. The block ended later, in the continuation on thread @(outcome.UsingBlockEndThreadId?.ToString() ?? "–"), where flow was not suppressed, so disposing the thread-affine <code>AsyncFlowControl</code> threw. The full exception is in the terminal running the app.</span>
+                                    <span>It threw <strong>@outcome.ExceptionType</strong>.</span>
+                                    <span>The <code>using</code> block started on thread @(outcome.UsingBlockStartThreadId?.ToString() ?? "–"). The <code>await</code> inside it paused the method before the block could end, so the rest of the method, including the end of the block, ran later on thread @(outcome.UsingBlockEndThreadId?.ToString() ?? "–"). A <code>using (ExecutionContext.SuppressFlow())</code> block has to end on the same thread that started it, so ending it on another thread threw this exception:</span>
+                                    @if (outcome.Exception is not null)
+                                    {
+                                        <pre class="exception"><code>@outcome.Exception</code></pre>
+                                    }
                                     <span class="banner-note">Tried at @outcome.RanAt.ToString("HH:mm:ss")</span>
                                 </div>
                             }
@@ -362,12 +387,28 @@
 
                                 @if (selected is not null)
                                 {
-                                    <p class="feedback @(isAnsweredCorrectly ? "feedback-correct" : "feedback-wrong")" role="status"><span aria-hidden="true">@(isAnsweredCorrectly ? "✅ " : "💡 ")</span>@selected.Feedback</p>
+                                    <p class="feedback @(isAnsweredCorrectly ? "feedback-correct" : "feedback-wrong")" role="status"><span aria-hidden="true">@(isAnsweredCorrectly ? "✅ " : "💡 ")</span><LinkedText Text="@selected.Feedback" Editor="CodeEditor" StepNumber="Step.Number" Anchors="Anchors" /></p>
                                 }
                             </fieldset>
                         }
                     }
                 </div>
+
+                @if (status is StepStatus.Passed)
+                {
+                    <div class="banner banner-passed banner-next">
+                        @if (nextStep is null)
+                        {
+                            <span>Every question is answered correctly, and every step passed. Pause here for the group review.</span>
+                            <a class="action" href="">Back to Workshop steps</a>
+                        }
+                        else
+                        {
+                            <span>Every question is answered correctly, so Step @Step.Number passed.</span>
+                            <a class="action" href="@($"steps/{nextStep.Number}")">Continue to Step @nextStep.Number: @nextStep.Scenario</a>
+                        }
+                    </div>
+                }
             </div>
         </div>
     }

@@ -206,7 +206,7 @@ public sealed class StepVerifier(ILogger<StepVerifier> logger, IHostApplicationL
 
 			logger.LogInformation("Step {StepNumber} {Result} ({PassedChecks}/{TotalChecks} checks)", step.Number, status is StepStatus.Passed ? "passed" : "failed", passedChecks, checks.Count);
 
-			// The hints belong in the terminal too, next to anything the app logged while the step ran
+			// The hints belong in the app's log output too, next to anything the app logged while the step ran
 			foreach (var check in checks.Where(static check => !check.Passed))
 			{
 				logger.LogWarning("Step {StepNumber}: {Description}. Expected {Expected}, actual {Actual}. Hint: {Hint}", step.Number, check.Description, check.Expected, check.Actual, check.Hint);
@@ -226,7 +226,7 @@ public sealed class StepVerifier(ILogger<StepVerifier> logger, IHostApplicationL
 		catch (Exception e)
 		{
 			logger.LogError(e, "Step {StepNumber} threw an unexpected exception", step.Number);
-			return new StepState(StepStatus.Crashed, report, e.GetType().Name);
+			return new StepState(StepStatus.Crashed, report, e.GetType().Name, e.ToString());
 		}
 	}
 }

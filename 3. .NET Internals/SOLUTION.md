@@ -130,7 +130,7 @@ await experimentTask.WaitAsync(Timeout, token).ConfigureAwait(false);
 
 ### Try it: await inside the using block
 
-The **Try it** button on the Step 2 page runs `AwaitInsideSuppressFlowAsync()`, the version that awaits inside the block:
+The **Try it** button, which appears below the results on the Step 2 page once the experiment has run, runs `AwaitInsideSuppressFlowAsync()`, the version that awaits inside the block:
 
 ```cs
 public async Task AwaitInsideSuppressFlowAsync()
@@ -148,14 +148,15 @@ public async Task AwaitInsideSuppressFlowAsync()
 }
 ```
 
-The `await` lets the method return while flow is still suppressed on the thread that entered the block. The rest of the method, including the end of the `using` block, runs later as a continuation on a thread pool thread where flow is not suppressed, so disposing the `AsyncFlowControl` throws. The page shows the exception type and the two thread IDs, and the terminal running the app logs the full exception:
+The `await` pauses the method before the `using` block ends, so the rest of the method, including the end of the block, runs later on a thread pool thread. A `using (ExecutionContext.SuppressFlow())` block has to end on the thread that started it, so ending it there throws. The page shows the two thread IDs and the full exception:
 
-```console
+```text
 System.InvalidOperationException: AsyncFlowControl object must be used on the thread where it was created.
    at System.Threading.AsyncFlowControl.Undo()
+   at InternalsLab.ExecutionContextExperiment.AwaitInsideSuppressFlowAsync() in Experiments/ExecutionContextExperiment.cs:line 85
 ```
 
-In the rare run where the task has already finished when the `await` looks at it, there is no continuation to schedule, the block ends on the thread that started it, and nothing throws. That does not make the code correct. It makes the bug intermittent.
+In the rare run where the task has already finished when the `await` checks it, the method never pauses, the block ends on the thread that started it, and nothing throws. That does not make the code correct. It makes the bug intermittent.
 
 ## 3. Principal (Step 3)
 
@@ -261,7 +262,7 @@ Checkpoint 1 stays `null` on every run, even when the request lands on a thread 
 
 At checkpoint 4 both columns are `null`. The task was created while flow was suppressed, so no `ExecutionContext` was captured for it, and its lambda ran with the default, empty context. The thread does not decide the result: in the run above, checkpoint 4 ran on thread 15, the same thread as checkpoint 3, and still saw `null`, because `ExecutionContext` belongs to the work item, not to the thread. The `httpContextAccessor` object itself was still reachable at checkpoint 4; only the `AsyncLocal<T>` lookup behind its `HttpContext` property came back empty.
 
-As in the previous sample, `ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. Create the task inside the `using` block, leave the block so flow is restored on the same thread, and only then await the task. Awaiting inside the block would let the method return before the block ends. The continuation runs with flow no longer suppressed, often on a different thread, so disposing the `AsyncFlowControl` at the end of the block throws `InvalidOperationException` even when the thread happens to be the same. Step 2's **Try it** button shows exactly that.
+As in the previous sample, a `using (ExecutionContext.SuppressFlow())` block has to end on the thread that started it. Create the task inside the block, let the block end, and only then await the task. An `await` inside the block would pause the method before the block ends, and the end of the block would run later, usually on another thread, where it throws `InvalidOperationException`. It throws even when the continuation happens to land on the same thread, because by then flow is no longer suppressed there. Step 2's **Try it** button shows exactly that.
 
 ### What only looks like it flowed
 

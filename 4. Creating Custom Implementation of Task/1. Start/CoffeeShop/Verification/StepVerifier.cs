@@ -305,13 +305,13 @@ public sealed class StepVerifier(ILogger<StepVerifier> logger, IHostApplicationL
 	{
 		if (FindMissingMember(exception) is { } missingMember)
 		{
-			// The stub's message is the hint, so it belongs in the terminal
+			// The stub's message is the hint, so it belongs in the app's log output too
 			logger.LogWarning(exception, "Step {StepNumber}: {MissingMember} still throws NotImplementedException", step.Number, missingMember);
 			return new StepState(StepStatus.NotImplemented, report, missingMember);
 		}
 
 		logger.LogError(exception, "Step {StepNumber} threw an unexpected exception", step.Number);
-		return new StepState(StepStatus.Crashed, report, ExceptionType: exception.GetType().Name);
+		return new StepState(StepStatus.Crashed, report, ExceptionType: exception.GetType().Name, Exception: exception.ToString());
 	}
 
 	// Stands in for a barista at startup: waits until a shot is brewing, then presses the button a moment later

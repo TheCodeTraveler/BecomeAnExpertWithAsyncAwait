@@ -8,6 +8,8 @@ public sealed class LabNotebook
 	readonly Lock _lock = new();
 	readonly StepProgress[] _progress;
 
+	CodeEditor _codeEditor;
+
 	public LabNotebook()
 	{
 		_progress = [.. Steps.Select(static _ => StepProgress.Empty)];
@@ -20,6 +22,25 @@ public sealed class LabNotebook
 		new Step3Principal(),
 		new Step4SynchronizationContext(),
 	];
+
+	// Where the code links on every step page open. You choose it on a step page.
+	public CodeEditor CodeEditor
+	{
+		get
+		{
+			lock (_lock)
+			{
+				return _codeEditor;
+			}
+		}
+		set
+		{
+			lock (_lock)
+			{
+				_codeEditor = value;
+			}
+		}
+	}
 
 	public WorkshopStep? FindStep(int number) => Steps.FirstOrDefault(step => step.Number == number);
 

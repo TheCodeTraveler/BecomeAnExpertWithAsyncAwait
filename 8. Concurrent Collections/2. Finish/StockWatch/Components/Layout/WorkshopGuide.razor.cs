@@ -29,6 +29,9 @@ public partial class WorkshopGuideBase : ComponentBase, IAsyncDisposable
 
 	public string? ErrorMessage { get; private set; }
 
+	// The full exception behind ErrorMessage, when there is one
+	public string? ErrorDetails { get; private set; }
+
 	public int PassedStepCount => Verifier.Steps.Count(step => Verifier.GetState(step.Number).Status is StepStatus.Passed);
 
 	public bool IsCheckingSteps => _isStartingCheck || Verifier.IsCheckingAllSteps;
@@ -68,6 +71,7 @@ public partial class WorkshopGuideBase : ComponentBase, IAsyncDisposable
 		SelectedTab = tab;
 		IsCollapsed = false;
 		ErrorMessage = null;
+		ErrorDetails = null;
 	}
 
 	protected void ToggleCollapsed() => IsCollapsed = !IsCollapsed;
@@ -76,8 +80,10 @@ public partial class WorkshopGuideBase : ComponentBase, IAsyncDisposable
 	{
 		var token = _disposeCancellationTokenSource.Token;
 		string? errorMessage = null;
+		string? errorDetails = null;
 
 		ErrorMessage = null;
+		ErrorDetails = null;
 		_isStartingCheck = true;
 
 		// Show the activity indicator before the check starts
@@ -97,13 +103,15 @@ public partial class WorkshopGuideBase : ComponentBase, IAsyncDisposable
 		{
 			Logger.LogError(e, "Checking every step failed");
 
-			errorMessage = "Checking the steps failed. The terminal running the app has the details.";
+			errorMessage = "Checking the steps failed:";
+			errorDetails = e.ToString();
 		}
 
 		// The continuation is off Blazor's renderer, so every component state change goes back through it
 		await InvokeAsync(() =>
 		{
 			ErrorMessage = errorMessage;
+			ErrorDetails = errorDetails;
 			_isStartingCheck = false;
 
 			StateHasChanged();
@@ -117,8 +125,10 @@ public partial class WorkshopGuideBase : ComponentBase, IAsyncDisposable
 
 		var token = _disposeCancellationTokenSource.Token;
 		string? errorMessage = null;
+		string? errorDetails = null;
 
 		ErrorMessage = null;
+		ErrorDetails = null;
 		_startingRunStepNumber = step.Number;
 
 		// Show the activity indicator before the run starts
@@ -138,13 +148,15 @@ public partial class WorkshopGuideBase : ComponentBase, IAsyncDisposable
 		{
 			Logger.LogError(e, "Running Step {StepNumber} failed", step.Number);
 
-			errorMessage = "The step could not be run. The terminal running the app has the details.";
+			errorMessage = "The step could not be run:";
+			errorDetails = e.ToString();
 		}
 
 		// The continuation is off Blazor's renderer, so every component state change goes back through it
 		await InvokeAsync(() =>
 		{
 			ErrorMessage = errorMessage;
+			ErrorDetails = errorDetails;
 			_startingRunStepNumber = null;
 
 			StateHasChanged();

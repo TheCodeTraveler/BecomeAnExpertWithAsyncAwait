@@ -13,7 +13,7 @@ The **1. Start** folder contains the intentionally imperfect code you will edit.
 
 The starter app runs at [http://localhost:5007](http://localhost:5007). The finished app runs at [http://localhost:5008](http://localhost:5008), so you can run both at the same time and compare them later.
 
-The app opens on the **Checkout page**, with the **workshop guide** docked beside it. Every step in the guide is one bug in OrderPortal's shared services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1, and the terminal running the app shows the same result, with a hint.
+The app opens on the **Checkout page**, with the **workshop guide** docked beside it. Every step in the guide is one bug in OrderPortal's shared services, and every time the app starts it checks your code against them. Right now the guide says it stopped at Step 1.
 
 ## 2. Inspect the Starting Code
 
@@ -49,7 +49,7 @@ The app walks you through the challenge one step at a time:
 
 1. Step 1 counts every order, Step 2 adds up the revenue, Step 3 builds the tax table once, and Step 4 reserves stock without deadlocking.
 2. A step unlocks only after the step before it passes. Select a step in the guide to read the story behind the bug, how to see it on the Checkout page, which file to change, and a task list for that step. If you get stuck, it has clues.
-3. Each step drives your code from many threads at once, the way a sale does, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint, and the same hint is printed in the terminal running the app.
+3. Each step drives your code from many threads at once, the way a sale does, and shows a checklist of every expected result next to what actually happened. Every result that does not match comes with a hint.
 4. Every time the app starts, it checks your code against every step, so the guide always reflects the code you have now.
 5. Stop and run the app again after each change. If your IDE applied the change with Hot Reload, click **Run every step** at the top of the guide instead.
 

@@ -1069,6 +1069,28 @@ button.action.small {
 	opacity: 0.85;
 }
 
+/* A full exception, stack trace included, wraps and scrolls inside its note so it fits the narrow guide */
+.exception {
+	justify-self: stretch;
+	max-height: 320px;
+	overflow: auto;
+	margin: 6px 0 2px;
+	padding: 10px 12px;
+	border-radius: 4px;
+	background: var(--ink);
+	box-shadow: inset 0 0 0 1px rgb(0 0 0 / 25%);
+	color: var(--pad-slip);
+	font-family: var(--mono);
+	font-size: 0.78rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.exception code {
+	font-size: inherit;
+}
+
 /* @key recreates the banner for every new result, so this animation plays again after each click */
 .banner-fresh {
 	animation: banner-in 0.35s ease-out;

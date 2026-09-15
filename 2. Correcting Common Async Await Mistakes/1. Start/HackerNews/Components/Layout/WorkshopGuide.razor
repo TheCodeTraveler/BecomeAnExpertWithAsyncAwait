@@ -75,7 +75,13 @@
         <div class="guide-body">
             @if (ErrorMessage is not null)
             {
-                <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+                <div class="banner banner-failed" role="alert">
+                    <span>@ErrorMessage</span>
+                    @if (ErrorDetails is not null)
+                    {
+                        <pre class="exception"><code>@ErrorDetails</code></pre>
+                    }
+                </div>
             }
 
             @if (SelectedStep is not { } step)
@@ -109,7 +115,7 @@
                                     {
                                         StepStatus.Failed => "some expected results did not match.",
                                         StepStatus.TimedOut => $"it did not finish within {StepVerifier.Timeout.TotalSeconds} seconds. {lastCheckedStep.TimeoutHint}",
-                                        StepStatus.Crashed => $"it threw an unexpected {lastState.ExceptionType}. The terminal running the app has the details.",
+                                        StepStatus.Crashed => $"it threw an unexpected {lastState.ExceptionType}.",
                                         _ => "it was stopped before it finished.",
                                     })
                                 </span>
@@ -211,7 +217,14 @@
                             <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Some expected results did not match. Read the hint under each one.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
                             break;
                         case StepStatus.Crashed:
-                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Step @step.Number threw an unexpected @state.ExceptionType. The terminal running the app has the details.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
+                                <span>Step @step.Number threw an unexpected @state.ExceptionType:</span>
+                                @if (state.Exception is not null)
+                                {
+                                    <pre class="exception"><code>@state.Exception</code></pre>
+                                }
+                                <span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
                             break;
                         case StepStatus.Stopped:
                             <div class="banner banner-locked banner-fresh" role="status" @key="lastRunAt"><span>Step @step.Number was stopped before it finished.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>

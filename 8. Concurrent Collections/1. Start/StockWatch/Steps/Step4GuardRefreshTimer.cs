@@ -44,7 +44,7 @@ public sealed class Step4GuardRefreshTimer : WorkshopStep
 		+ "and the timer it leaks keeps refreshing a page nobody is looking at. When that timer next fires, the CancellationTokenSource its callback reads has already been disposed, and an exception in an async void timer callback ends the whole process.";
 
 	public override string SeeItInTheApp => "You will rarely see this one in the browser, which is exactly what makes it dangerous. It needs a page torn down at the same moment it starts its timer, such as a tab closed or reloaded while the dashboard is still loading. "
-		+ "The Feed fault panel cannot catch this one: the exception is thrown on a timer thread, not while the page renders, so the whole app exits and the browser just loses its connection. The terminal running the app is the only place that tells you why.";
+		+ "The Feed fault panel cannot catch this one: the exception is thrown on a timer thread, not while the page renders, so the whole app exits and the browser just loses its connection. Your IDE's Run or Debug output window (or the terminal, if you started the app with dotnet run) is the only place that tells you why.";
 
 	public override string FileToChange => "Components/Pages/Dashboard.razor.cs";
 

@@ -58,7 +58,7 @@
                         {
                             case StepStatus.NotImplemented:
                                 <div class="banner banner-missing banner-fresh" role="alert" @key="checkedAt">
-                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: <code>@lastState.MissingMember</code> still throws NotImplementedException. Open CustomTask.cs and read its hint (it is also in the terminal).</span>
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: <code>@lastState.MissingMember</code> still throws NotImplementedException. Open CustomTask.cs and read its hint.</span>
                                     <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
                                 </div>
                                 break;
@@ -76,7 +76,7 @@
                                 break;
                             case StepStatus.Crashed:
                                 <div class="banner banner-failed banner-fresh" role="alert" @key="checkedAt">
-                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: it threw an unexpected @lastState.ExceptionType. The terminal running the app has the details.</span>
+                                    <span>Stopped at <a href="@stepLink">Step @lastCheckedStep.Number</a>: it threw an unexpected @lastState.ExceptionType.</span>
                                     <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
                                 </div>
                                 break;
@@ -93,7 +93,13 @@
 
             @if (ErrorMessage is not null)
             {
-                <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+                <div class="banner banner-failed" role="alert">
+                    <span>@ErrorMessage</span>
+                    @if (ErrorDetails is not null)
+                    {
+                        <pre class="exception"><code>@ErrorDetails</code></pre>
+                    }
+                </div>
             }
 
             <div class="panel">
@@ -110,7 +116,7 @@
                     <li>Every time the app starts, it checks your CustomTask against Steps 1 to 5 automatically. Step 6 runs only from its own page.</li>
                     <li>A step unlocks when the step before it passes. Open a step to read its story, run it again, and compare every expected result with what actually happened.</li>
                     <li>Stop and run the app again after each change to <code>CustomTask.cs</code>. If your IDE applied the change with Hot Reload, click Run Steps 1-5 instead. Results from before your change are not trusted.</li>
-                    <li>If the app exits, or the browser shows that it is reconnecting, a CustomTask member threw on a thread pool thread. The terminal running the app shows which one. Fix it and run the app again.</li>
+                    <li>If the app exits, or the browser shows that it is reconnecting, a CustomTask member threw on a thread pool thread. Your IDE's Run or Debug output window shows which one (or the terminal, if you started the app with <code>dotnet run</code>). Fix it and run the app again.</li>
                 </ol>
             </div>
 

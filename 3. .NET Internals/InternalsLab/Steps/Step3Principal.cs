@@ -25,7 +25,7 @@ public sealed class Step3Principal : WorkshopStep
 	public override string Title => "Thread.CurrentPrincipal, IHttpContextAccessor, HttpContext.User";
 
 	public override string Story => "Step 2 showed ExecutionContext flowing through a console app. This experiment shows the same mechanism inside an ASP.NET Core request, where the ambient values are the signed-in user and the current HttpContext. "
-		+ "PrincipalController.RunExperiment() records four checkpoints, and at each one it asks for the signed-in user's name four different ways. "
+		+ "RunExperiment() in [Controllers/PrincipalController.cs](Controllers/PrincipalController.cs#Task<IActionResult> RunExperiment) records four checkpoints, and at each one it asks for the signed-in user's name four different ways. "
 		+ "Some of those values are still there after an await because ExecutionContext carried them. Others are simply object references the code already holds. Predict every cell as your name or null.";
 
 	public override int RecommendedMinutes => 10;
@@ -36,8 +36,8 @@ public sealed class Step3Principal : WorkshopStep
 
 	public override IReadOnlyList<string> TryIt { get; } =
 	[
-		"Delete Thread.CurrentPrincipal = signedInUser; and apply the change with Hot Reload, then click Run it again. Which cells change at checkpoints 2 and 3?",
-		"Replace await Task.Yield() with await Task.Delay(1).ConfigureAwait(false) and apply it with Hot Reload. Does httpContextAccessor still find the HttpContext at checkpoint 2?",
+		"Delete Thread.CurrentPrincipal = signedInUser; in [PrincipalController.cs](Controllers/PrincipalController.cs#Try it: delete this line) and apply the change with Hot Reload, then click Run it again. Which cells change at checkpoints 2 and 3?",
+		"Replace await Task.Yield() in [PrincipalController.cs](Controllers/PrincipalController.cs#Try it: replace this line) with await Task.Delay(1).ConfigureAwait(false) and apply it with Hot Reload. Does httpContextAccessor still find the HttpContext at checkpoint 2?",
 	];
 
 	public override IReadOnlyList<ExperimentCheckpoint> Checkpoints { get; } =
@@ -72,9 +72,9 @@ public sealed class Step3Principal : WorkshopStep
 			new ExplainAnswer("a", "Nothing in ASP.NET Core assigns it. The authentication middleware assigns HttpContext.User, and Thread.CurrentPrincipal only holds a user if your own code puts it there.", true,
 				"Right. In ASP.NET Core, HttpContext.User, also exposed as the controller's User property, is the principal to use."),
 			new ExplainAnswer("b", "The sign-in cookie is not read until the action's first await.", false,
-				"Three columns already show your name at checkpoint 1, so the cookie was read before the action ran. Open Program.cs to see what reads it."),
+				"Three columns already show your name at checkpoint 1, so the cookie was read before the action ran. [Program.cs](Program.cs#Step 3: reads the sign-in cookie) shows what reads it."),
 			new ExplainAnswer("c", "[Authorize] clears Thread.CurrentPrincipal before the action runs.", false,
-				"[Authorize] only checks HttpContext.User. Look in Program.cs and AccountController.cs for anything that assigns Thread.CurrentPrincipal."),
+				"[Authorize] only checks HttpContext.User. Look in [Program.cs](Program.cs#Step 3: reads the sign-in cookie) and [AccountController.cs](Controllers/AccountController.cs#Writes the sign-in cookie) for anything that assigns Thread.CurrentPrincipal."),
 		]),
 		new ExplainQuestion("run-to-run", "Run the experiment a few times. What changes from run to run, and why?",
 		[
@@ -103,15 +103,15 @@ public sealed class Step3Principal : WorkshopStep
 
 	public override string GetHint(int checkpoint, string columnId) => (columnId, checkpoint) switch
 	{
-		(_threadCurrentPrincipalColumn, 1) => "Nothing in RunExperiment() has assigned Thread.CurrentPrincipal yet. Open Program.cs and AccountController.cs: does anything in ASP.NET Core assign it for you?",
-		(_threadCurrentPrincipalColumn, 2) => "The action assigned Thread.CurrentPrincipal right before await Task.Yield(), and the continuation usually runs on a different thread. What does await capture and restore on the new thread?",
+		(_threadCurrentPrincipalColumn, 1) => "Nothing in RunExperiment() has assigned Thread.CurrentPrincipal yet. Open [Program.cs](Program.cs#Step 3: reads the sign-in cookie) and [AccountController.cs](Controllers/AccountController.cs#Writes the sign-in cookie): does anything in ASP.NET Core assign it for you?",
+		(_threadCurrentPrincipalColumn, 2) => "The action assigned Thread.CurrentPrincipal right before await Task.Yield(), in [PrincipalController.cs](Controllers/PrincipalController.cs#Thread.CurrentPrincipal = signedInUser;), and the continuation usually runs on a different thread. What does await capture and restore on the new thread?",
 		(_threadCurrentPrincipalColumn, 3) => "Task.Run(...) captured ExecutionContext when the action created the task, after Thread.CurrentPrincipal was assigned.",
 		(_threadCurrentPrincipalColumn, _) => "This task was created inside using (ExecutionContext.SuppressFlow()). Thread.CurrentPrincipal is stored in ExecutionContext, so ask what the task captured.",
-		(_httpContextAccessorColumn, 1) => "The authentication middleware assigned HttpContext.User before the controller ran, and IHttpContextAccessor finds the HttpContext of the request that is running.",
+		(_httpContextAccessorColumn, 1) => "The authentication middleware, added in [Program.cs](Program.cs#Step 3: reads the sign-in cookie), assigned HttpContext.User before the controller ran, and IHttpContextAccessor finds the HttpContext of the request that is running.",
 		(_httpContextAccessorColumn, 2 or 3) => "IHttpContextAccessor.HttpContext is looked up in an AsyncLocal<T>, and the code is on a different thread now. What carries AsyncLocal<T> values to that thread?",
 		(_httpContextAccessorColumn, _) => "The httpContextAccessor object is still reachable here, but its HttpContext property is an AsyncLocal<T> lookup. What did a task created with flow suppressed capture?",
 		(_controllerHttpContextColumn, _) => "HttpContext is a property of the controller instance, which MVC assigned when it created the controller. Does reading a property of an object you hold depend on the thread, or on ExecutionContext?",
-		_ => "signedInUser is a local variable that the Observe local function uses, so the compiler keeps it in a closure object shared by the async state machine and both lambdas. Which threads can read it?",
+		_ => "signedInUser is a local variable that the Observe local function in [PrincipalController.cs](Controllers/PrincipalController.cs#Checkpoint Observe) uses, so the compiler keeps it in a closure object shared by the async state machine and both lambdas. Which threads can read it?",
 	};
 
 	// Step 3 runs in an MVC request, not in this Blazor circuit: the page loads ExperimentUrl, and PrincipalController records the results

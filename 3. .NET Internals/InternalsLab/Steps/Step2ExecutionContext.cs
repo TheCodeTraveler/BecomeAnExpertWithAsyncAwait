@@ -19,7 +19,7 @@ public sealed class Step2ExecutionContext : WorkshopStep
 
 	public override string Story => "Step 1 showed that [ThreadStatic] values stay behind when async code moves to another thread. ExecutionContext is what .NET uses instead: "
 		+ "it carries CultureInfo.CurrentCulture, Thread.CurrentPrincipal and every AsyncLocal<T> value, and await, Task.Run(...) and new threads capture it and restore it wherever the code runs next. "
-		+ "The experiment is the console app from the slides. Its main thread assigns a culture, a principal and an AsyncLocal<string> value, a background thread assigns values of its own, "
+		+ "The experiment, [Experiments/ExecutionContextExperiment.cs](Experiments/ExecutionContextExperiment.cs), is the console app from the slides. Its main thread assigns a culture, a principal and an AsyncLocal<string> value, a background thread assigns values of its own, "
 		+ "and every checkpoint records what the code can see. Predict whose values each checkpoint sees.";
 
 	public override int RecommendedMinutes => 12;
@@ -28,8 +28,8 @@ public sealed class Step2ExecutionContext : WorkshopStep
 
 	public override IReadOnlyList<string> TryIt { get; } =
 	[
-		"Click Try it after you run the experiment. It runs AwaitInsideSuppressFlowAsync(), which awaits inside the using block instead of after it.",
-		"Comment out the three assignments at the start of the background thread and apply the change with Hot Reload, then click Run it again. What does checkpoint 2 see now, and what does that tell you about new Thread(...)?",
+		"The Try it button appears below the results once you run the experiment in 2. Run the experiment. [Click Try it](#try-it) to run AwaitInsideSuppressFlowAsync() in [ExecutionContextExperiment.cs](Experiments/ExecutionContextExperiment.cs#Task AwaitInsideSuppressFlowAsync), which awaits inside the using block instead of after it.",
+		"Comment out the three assignments at the start of the background thread in [ExecutionContextExperiment.cs](Experiments/ExecutionContextExperiment.cs#Try it: comment out these three assignments) and apply the change with Hot Reload, then click Run it again. What does checkpoint 2 see now, and what does that tell you about new Thread(...)?",
 	];
 
 	public override IReadOnlyList<ExperimentCheckpoint> Checkpoints { get; } =
@@ -75,19 +75,19 @@ public sealed class Step2ExecutionContext : WorkshopStep
 		new ExplainQuestion("await-after-the-using-block", "Why is the checkpoint 6 task created inside using (ExecutionContext.SuppressFlow()) but awaited only after the block ends?",
 		[
 			new ExplainAnswer("a", "Awaiting inside the block would deadlock the main thread.", false,
-				"Nothing blocks a thread here. Click Try it to see what really happens when the await is inside the block."),
+				"Nothing blocks a thread here. [Click Try it](#try-it), in the Try it panel below the results, to see what really happens when the await is inside the block."),
 			new ExplainAnswer("b", "The task does not start running until the using block ends.", false,
 				"Task.Run(...) queues the work right away. The using block only decides whether ExecutionContext is captured."),
-			new ExplainAnswer("c", "SuppressFlow() returns a thread-affine AsyncFlowControl. An await inside the block lets the continuation end the block, often on another thread and with flow no longer suppressed, and disposing the AsyncFlowControl there throws InvalidOperationException.", true,
-				"Right. Create the task inside the block, leave the block on the thread that entered it, and only then await."),
+			new ExplainAnswer("c", "A using (ExecutionContext.SuppressFlow()) block has to end on the same thread that started it. An await inside the block pauses the method before the block ends, and the rest of the method, including the end of the block, runs later on another thread, where ending the block throws InvalidOperationException.", true,
+				"Right. Start the task inside the block, let the block end, and only then await the task."),
 		]),
 	];
 
 	public override string GetHint(int checkpoint, string columnId) => checkpoint switch
 	{
-		1 => "Checkpoint 1 runs right after the main thread assigns CultureInfo.CurrentCulture, Thread.CurrentPrincipal and _asyncLocalData.Value. Look at the three lines above it.",
+		1 => "Checkpoint 1 runs right after the main thread assigns CultureInfo.CurrentCulture, Thread.CurrentPrincipal and _asyncLocalData.Value. Look at the three lines above it in [ExecutionContextExperiment.cs](Experiments/ExecutionContextExperiment.cs#Step 2: checkpoint 1.).",
 		2 => "The background thread assigned three values of its own just before checkpoint 2. Those assignments change the ExecutionContext of the thread that made them.",
-		3 => "Look at the first argument to ExecutionContext.Run(...). The callback runs on the background thread (compare the Thread column with checkpoint 2), but with a context that was captured somewhere else.",
+		3 => "Look at the first argument to ExecutionContext.Run(...) in [ExecutionContextExperiment.cs](Experiments/ExecutionContextExperiment.cs#ExecutionContext.Run). The callback runs on the background thread (compare the Thread column with checkpoint 2), but with a context that was captured somewhere else.",
 		4 => "The background thread assigned its own values and then finished. Did its assignments change the main thread's ExecutionContext, or only its own?",
 		5 => "Task.Run(...) captured ExecutionContext when the task was created. Which thread created it, and which values did that thread have at the time?",
 		_ => "This task was created inside using (ExecutionContext.SuppressFlow()). What can Task.Run(...) capture while flow is suppressed?",
@@ -121,6 +121,7 @@ public sealed class Step2ExecutionContext : WorkshopStep
 		var log = new CheckpointLog<ExecutionContextValues>();
 		var experiment = new ExecutionContextExperiment(log);
 		string? exceptionType = null;
+		string? exception = null;
 
 		try
 		{
@@ -128,15 +129,17 @@ public sealed class Step2ExecutionContext : WorkshopStep
 		}
 		catch (InvalidOperationException e)
 		{
-			// Expected: the full exception belongs in the terminal, not in the browser
+			// Expected: the Step 2 page shows this exception, because seeing it is the point of Try it. The terminal logs it too.
 			logger.LogInformation(e, "Try it: awaiting inside using (ExecutionContext.SuppressFlow()) threw, as expected");
 			exceptionType = e.GetType().Name;
+			exception = SourceCode.WithRelativePaths(e.ToString());
 		}
 
 		var observations = log.Observations;
 
 		return new TryItOutcome(
 			exceptionType,
+			exception,
 			observations.FirstOrDefault(static observation => observation.Checkpoint is 1)?.ThreadId,
 			observations.FirstOrDefault(static observation => observation.Checkpoint is 3)?.ThreadId,
 			DateTimeOffset.Now);

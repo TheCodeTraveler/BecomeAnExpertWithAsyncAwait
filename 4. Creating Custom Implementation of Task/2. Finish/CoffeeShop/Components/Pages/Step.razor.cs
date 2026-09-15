@@ -27,6 +27,9 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 
 	public string? ErrorMessage { get; private set; }
 
+	// The full exception behind ErrorMessage, when there is one
+	public string? ErrorDetails { get; private set; }
+
 	public StepState State => Verifier.GetState(Number);
 
 	// The run lives in the verifier, not in this page, so leaving and coming back still shows it
@@ -64,6 +67,7 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 		Step = Verifier.FindStep(Number);
 		IsBaristaAutomatic = true;
 		ErrorMessage = null;
+		ErrorDetails = null;
 	}
 
 	protected async Task RunStepAsync()
@@ -73,8 +77,10 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 
 		var token = _disposeCancellationTokenSource.Token;
 		string? errorMessage = null;
+		string? errorDetails = null;
 
 		ErrorMessage = null;
+		ErrorDetails = null;
 		_isStartingRun = true;
 
 		// Show the activity indicator before the run starts
@@ -94,13 +100,15 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 		{
 			Logger.LogError(e, "Running Step {StepNumber} failed", Number);
 
-			errorMessage = "The step could not be run. The terminal running the app has the details.";
+			errorMessage = "The step could not be run:";
+			errorDetails = e.ToString();
 		}
 
 		// The continuation is off Blazor's renderer, so every component state change goes back through it
 		await InvokeAsync(() =>
 		{
 			ErrorMessage = errorMessage;
+			ErrorDetails = errorDetails;
 			_isStartingRun = false;
 
 			StateHasChanged();
@@ -112,6 +120,7 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 	protected async Task PressBaristaButtonAsync(BaristaAction action)
 	{
 		ErrorMessage = null;
+		ErrorDetails = null;
 
 		try
 		{
@@ -121,7 +130,11 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 		{
 			Logger.LogError(e, "Pressing {BaristaAction} failed", action);
 
-			await InvokeAsync(() => ErrorMessage = "The espresso machine did not respond. The terminal running the app has the details.").ConfigureAwait(false);
+			await InvokeAsync(() =>
+			{
+				ErrorMessage = "The espresso machine did not respond:";
+				ErrorDetails = e.ToString();
+			}).ConfigureAwait(false);
 		}
 
 		await InvokeAsync(StateHasChanged).ConfigureAwait(false);

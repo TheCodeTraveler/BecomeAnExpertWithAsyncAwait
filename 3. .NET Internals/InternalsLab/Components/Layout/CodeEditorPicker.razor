@@ -1,0 +1,6 @@
+@inherits CodeEditorPickerBase
+
+<span class="editor-picker" role="group" aria-label="Open code links in">
+    <button type="button" class="@CssClass(CodeEditor.GitHub)" aria-pressed="@IsPressed(CodeEditor.GitHub)" @onclick="() => ChooseAsync(CodeEditor.GitHub)">GitHub</button>
+    <button type="button" class="@CssClass(CodeEditor.VisualStudioCode)" aria-pressed="@IsPressed(CodeEditor.VisualStudioCode)" @onclick="() => ChooseAsync(CodeEditor.VisualStudioCode)">VS Code</button>
+</span>

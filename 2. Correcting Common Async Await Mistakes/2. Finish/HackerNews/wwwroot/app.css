@@ -742,6 +742,27 @@ button.action.secondary:hover:not(:disabled) {
 	opacity: 0.85;
 }
 
+/* The full exception, stack trace included, the way a reviewer pastes a failing build log into a comment */
+.exception {
+	justify-self: stretch;
+	max-height: 320px;
+	overflow: auto;
+	margin: 6px 0 2px;
+	padding: 10px 12px;
+	border-radius: 6px;
+	background: var(--review-ink);
+	color: var(--review-canvas);
+	font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+	font-size: 0.78rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.exception code {
+	font-size: inherit;
+}
+
 /* @key recreates the banner for every new result, so this animation plays again after each click */
 .banner-fresh {
 	animation: banner-in 0.35s ease-out;

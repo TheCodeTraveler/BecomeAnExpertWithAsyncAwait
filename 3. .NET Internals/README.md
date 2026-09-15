@@ -24,11 +24,11 @@ The app opens on **Workshop steps**. Step 1 is unlocked, and every later step un
 The app walks you through the investigation one step at a time:
 
 1. Step 1 is ThreadStatic, Step 2 is ExecutionContext, Step 3 is Principal, and Step 4 is SynchronizationContext.
-2. A step unlocks only after the step before it passes. Each step page tells the story behind the experiment, names the file to read, and asks you to predict what every checkpoint will see.
+2. A step unlocks only after the step before it passes. Each step page tells the story behind the experiment, links to the experiment's file and to the line of code behind every checkpoint, and asks you to predict what every checkpoint will see. Choose whether those links open on GitHub or in VS Code.
 3. **Run the experiment** stays disabled until you choose a prediction for every checkpoint, and your predictions lock in when it runs. They do not have to be right.
 4. The results show what really happened next to what you predicted, with ✅ or ❌, and a hint about what to look at under every result that does not match.
 5. Each step ends with explain questions. A wrong answer shows a hint, and you can choose again. A step passes when its experiment has run and every question is answered correctly.
-6. The lab notebook keeps your predictions, results, and answers for as long as the app runs, so reloading a page is safe. Stopping the app starts a fresh notebook, so explore the `// Try it:` comments with Hot Reload, or after the group review.
+6. The lab notebook keeps your predictions, results, and answers for as long as the app runs, so reloading a page is safe. Stopping the app starts a fresh notebook, so explore each step's **Try it** suggestions, which link to their `// Try it:` comments, with Hot Reload, or after the group review.
 
 ## 3. Challenge: Investigate the Internals
 
@@ -36,7 +36,7 @@ Recommended time: 40 minutes in total. Step 1 takes 8 minutes, Step 2 takes 12, 
 
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
-Work through the steps in order on the Workshop steps page. For each one, read the experiment code before you predict. If you want to see it happen, set a breakpoint on a checkpoint and inspect the threads in your debugger.
+Work through the steps in order on the Workshop steps page. For each one, open the code behind every checkpoint from its link on the step page, and read it before you predict. If you want to see it happen, set a breakpoint on a checkpoint and inspect the threads in your debugger.
 
 ### Step 1: ThreadStatic
 
@@ -57,7 +57,7 @@ Recommended time: 12 minutes.
 4. Explain what changes when `ExecutionContext.Run(...)` is used.
 5. Explain what changes when `Task.Run(...)` flows `ExecutionContext` automatically.
 6. Explain why the task created inside `using (ExecutionContext.SuppressFlow())` sees default values.
-7. Explain why the task is awaited only after leaving the `using` block, then click **Try it** to see what happens when it is awaited inside the block.
+7. Explain why the task is awaited only after leaving the `using` block, then click **Try it**, the button that appears below the results once the experiment has run, to see what happens when it is awaited inside the block.
 
 ### Step 3: Principal
 

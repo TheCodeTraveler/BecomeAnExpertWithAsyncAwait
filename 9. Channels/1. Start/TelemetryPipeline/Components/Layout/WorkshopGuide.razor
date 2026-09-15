@@ -75,7 +75,13 @@
         <div class="guide-body">
             @if (ErrorMessage is not null)
             {
-                <div class="banner banner-failed" role="alert">@ErrorMessage</div>
+                <div class="banner banner-failed" role="alert">
+                    <span>@ErrorMessage</span>
+                    @if (ErrorDetails is not null)
+                    {
+                        <pre class="exception"><code>@ErrorDetails</code></pre>
+                    }
+                </div>
             }
 
             @if (SelectedStep is not { } step)
@@ -103,7 +109,7 @@
                         else if (lastState.Status is StepStatus.NotImplemented)
                         {
                             <div class="banner banner-missing banner-fresh" role="alert" @key="checkedAt">
-                                <span>Stopped at Step @lastCheckedStep.Number: <code>@lastState.MissingMember</code> still throws NotImplementedException. Open that method and read its hint (it is also in the terminal).</span>
+                                <span>Stopped at Step @lastCheckedStep.Number: <code>@lastState.MissingMember</code> still throws NotImplementedException. Open that method and read its hint.</span>
                                 <button class="link-button" type="button" @onclick="() => SelectTab(lastCheckedStep.Number)">Open Step @lastCheckedStep.Number to see what to change →</button>
                                 <span class="banner-note">Checked at @checkedAt.ToString("HH:mm:ss")</span>
                             </div>
@@ -117,7 +123,7 @@
                                     {
                                         StepStatus.Failed => "some expected results did not match.",
                                         StepStatus.TimedOut => $"it did not finish within {StepVerifier.Timeout.TotalSeconds} seconds. {lastCheckedStep.TimeoutHint}",
-                                        StepStatus.Crashed => $"it threw an unexpected {lastState.ExceptionType}. The terminal running the app has the details.",
+                                        StepStatus.Crashed => $"it threw an unexpected {lastState.ExceptionType}.",
                                         _ => "it was stopped before it finished.",
                                     })
                                 </span>
@@ -216,7 +222,7 @@
                             </div>
                             break;
                         case StepStatus.NotImplemented:
-                            <div class="banner banner-missing banner-fresh" role="alert" @key="lastRunAt"><span><code>@state.MissingMember</code> still throws NotImplementedException. Open that method and read its hint (it is also in the terminal).</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            <div class="banner banner-missing banner-fresh" role="alert" @key="lastRunAt"><span><code>@state.MissingMember</code> still throws NotImplementedException. Open that method and read its hint.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
                             break;
                         case StepStatus.TimedOut:
                             <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
@@ -228,7 +234,14 @@
                             <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Some expected results did not match. Read the hint under each one.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
                             break;
                         case StepStatus.Crashed:
-                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt"><span>Step @step.Number threw an unexpected @state.ExceptionType. The terminal running the app has the details.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>
+                            <div class="banner banner-failed banner-fresh" role="alert" @key="lastRunAt">
+                                <span>Step @step.Number threw an unexpected @state.ExceptionType:</span>
+                                @if (state.Exception is not null)
+                                {
+                                    <pre class="exception"><code>@state.Exception</code></pre>
+                                }
+                                <span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span>
+                            </div>
                             break;
                         case StepStatus.Stopped:
                             <div class="banner banner-locked banner-fresh" role="status" @key="lastRunAt"><span>Step @step.Number was stopped before it finished.</span><span class="banner-note">Last run at @lastRunAt.ToString("HH:mm:ss")</span></div>

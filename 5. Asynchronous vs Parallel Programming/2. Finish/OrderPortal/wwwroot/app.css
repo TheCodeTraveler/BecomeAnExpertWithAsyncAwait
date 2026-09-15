@@ -736,6 +736,27 @@ button.action.small {
 	opacity: 0.85;
 }
 
+/* The full exception behind a failed banner, printed like the war room's order log so it scrolls inside the narrow guide */
+.exception {
+	justify-self: stretch;
+	max-height: 320px;
+	margin: 6px 0 2px;
+	padding: 10px 12px;
+	overflow: auto;
+	border-radius: 8px;
+	background: #070c15;
+	color: #d7dde6;
+	font-family: "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+	font-size: 0.78rem;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.exception code {
+	font-size: inherit;
+}
+
 /* @key recreates the banner for every new result, so this animation plays again after each click */
 .banner-fresh {
 	animation: banner-in 0.35s ease-out;

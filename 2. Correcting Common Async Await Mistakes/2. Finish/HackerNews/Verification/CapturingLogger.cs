@@ -3,7 +3,7 @@ using HackerNews.Components.Pages;
 namespace HackerNews;
 
 // Workshop plumbing: the ILogger<NewsPageBase> a step gives your page, so it can check what the page logged on the server.
-// Nothing is written to the terminal, so the errors a step causes on purpose do not look like errors in your app.
+// Nothing is written to the app's log output, so the errors a step causes on purpose do not look like errors in your app.
 public sealed class CapturingLogger : ILogger<NewsPageBase>
 {
 	readonly Lock _lock = new();

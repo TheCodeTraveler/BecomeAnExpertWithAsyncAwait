@@ -11,6 +11,12 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 
 	readonly CancellationTokenSource _disposeCancellationTokenSource = new();
 
+	// The id of Step 2's Try it panel, which step text links to with [label](#try-it)
+	public static string TryItAnchor => "try-it";
+
+	// The line of Experiments/ExecutionContextExperiment.cs that the Try it panel links to
+	public static string AwaitInsideSuppressFlowMarker => "Task AwaitInsideSuppressFlowAsync";
+
 	[Parameter]
 	public int Number { get; set; }
 
@@ -32,11 +38,24 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 
 	public string? ErrorMessage { get; private set; }
 
+	// The full exception behind ErrorMessage, when the experiment threw one you did not expect
+	public string? ErrorDetails { get; private set; }
+
 	public bool IsRunning { get; private set; }
 
 	public bool IsTryingIt { get; private set; }
 
 	public WorkshopStep? NextStep => Notebook.FindStep(Number + 1);
+
+	// Kept in the lab notebook, so every step page opens code links the same way
+	public CodeEditor CodeEditor
+	{
+		get => Notebook.CodeEditor;
+		set => Notebook.CodeEditor = value;
+	}
+
+	// The panels that step text can link to right now. Step 2's Try it panel only appears once its experiment has run.
+	public IReadOnlyCollection<string> Anchors => Step is Step2ExecutionContext && Notebook.GetProgress(Number).LatestRun is not null ? [TryItAnchor] : [];
 
 	// Why Run the experiment is disabled, or null when it is not
 	public string? RunBlockedReason
@@ -88,6 +107,7 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 
 		Step = Notebook.FindStep(Number);
 		ErrorMessage = null;
+		ErrorDetails = null;
 
 		if (Step?.ExperimentUrl is not null)
 		{
@@ -116,8 +136,10 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 		var token = _disposeCancellationTokenSource.Token;
 		var step = Step;
 		string? errorMessage = null;
+		string? errorDetails = null;
 
 		ErrorMessage = null;
+		ErrorDetails = null;
 		IsRunning = true;
 
 		var minimumActivityIndicatorTask = Task.Delay(_minimumActivityIndicatorTime, token);
@@ -141,19 +163,21 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 		{
 			Logger.LogWarning(e, "Step {StepNumber}'s experiment did not finish within {Timeout}", step.Number, WorkshopStep.Timeout);
 
-			errorMessage = $"The experiment did not finish within {WorkshopStep.Timeout.TotalSeconds} seconds. If you changed the experiment code, undo the change and run the app again.";
+			errorMessage = $"The experiment did not finish within {WorkshopStep.Timeout.TotalSeconds} seconds. If you changed {step.ExperimentFile}, undo the change and run the app again.";
 		}
 		catch (Exception e)
 		{
 			Logger.LogError(e, "Step {StepNumber}'s experiment threw an unexpected exception", step.Number);
 
-			errorMessage = "The experiment threw an unexpected exception. The terminal running the app has the details.";
+			errorMessage = "The experiment threw an unexpected exception:";
+			errorDetails = SourceCode.WithRelativePaths(e.ToString());
 		}
 
 		// The continuation is off Blazor's renderer, so every component state change goes back through it
 		await InvokeAsync(() =>
 		{
 			ErrorMessage = errorMessage;
+			ErrorDetails = errorDetails;
 			IsRunning = false;
 
 			StateHasChanged();
@@ -167,8 +191,10 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 
 		var token = _disposeCancellationTokenSource.Token;
 		string? errorMessage = null;
+		string? errorDetails = null;
 
 		ErrorMessage = null;
+		ErrorDetails = null;
 		IsTryingIt = true;
 
 		var minimumActivityIndicatorTask = Task.Delay(_minimumActivityIndicatorTime, token);
@@ -190,12 +216,14 @@ public partial class StepPageBase : ComponentBase, IAsyncDisposable
 		{
 			Logger.LogError(e, "Try it on Step {StepNumber} threw an unexpected exception", step.Number);
 
-			errorMessage = "Try it threw an unexpected exception. The terminal running the app has the details.";
+			errorMessage = "Try it threw an unexpected exception:";
+			errorDetails = SourceCode.WithRelativePaths(e.ToString());
 		}
 
 		await InvokeAsync(() =>
 		{
 			ErrorMessage = errorMessage;
+			ErrorDetails = errorDetails;
 			IsTryingIt = false;
 
 			StateHasChanged();

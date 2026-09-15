@@ -14,7 +14,7 @@ The **1. Start** folder contains the starter app. The **2. Finish** folder conta
 
 The starter app runs at [http://localhost:5015](http://localhost:5015). The finished app runs at [http://localhost:5016](http://localhost:5016), so you can run both at the same time and compare them later.
 
-The starter builds, but every `CustomTask` member is still a stub that throws a `NotImplementedException`. The Home page shows Step 1 as not implemented and names the member it hit first. The same exception, including the stub's hint, is in the terminal running the app.
+The starter builds, but every `CustomTask` member is still a stub that throws a `NotImplementedException`. The Home page shows Step 1 as not implemented and names the member it hit first. That member's stub in **CustomTask.cs** has a hint about what it needs to do.
 
 ## 2. Inspect the Starting Code
 
@@ -33,7 +33,7 @@ The app enforces the order of the steps:
 4. Stop and run the app again after each change to **CustomTask.cs**. If your IDE applied the change with Hot Reload, click **Run Steps 1-5** on the Home page instead.
 5. Steps 4 and 5 drive a simulated espresso machine. Leave **Automatic barista** on, or turn it off and press the machine's button yourself to watch `IsCompleted` stay `False` until you do.
 
-If the app exits, or the browser says it is reconnecting, a `CustomTask` member threw on a thread pool thread. An unhandled exception on a thread pool thread ends the whole process, and the terminal shows which stub it hit. That is exactly why `Run()` has to catch the exception its action throws and store it instead.
+If the app exits, or the browser says it is reconnecting, a `CustomTask` member threw on a thread pool thread. An unhandled exception on a thread pool thread ends the whole process, so the page cannot show it, but your IDE's Run or Debug output window shows which stub it hit (or the terminal, if you started the app with `dotnet run`). That is exactly why `Run()` has to catch the exception its action throws and store it instead.
 
 You are going to add just enough infrastructure to understand how task-like types work with continuations, blocking waits, timers, `ExecutionContext`, and the `await` keyword. This challenge builds on the .NET Internals section: the `ExecutionContext` flow you observed there is the same context your `CustomTask` must capture and restore when it runs continuations.
 
