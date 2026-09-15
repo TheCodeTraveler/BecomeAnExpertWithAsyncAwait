@@ -33,22 +33,27 @@ Recommended time: 12 minutes.
 
 Recommended time: 10 minutes.
 
-The previous challenge showed `ExecutionContext` flowing through a console app. This challenge shows the same mechanism inside an ASP.NET Core request, where the ambient values are the signed-in user and the current `HttpContext`.
-
 > **Note:** Please avoid letting AI Agents solve the challenges for you. You're smart. You got this. Use them to understand the existing code, clarify runtime concepts, interpret debugger observations, and ask questions that help you form your own explanation.
 
+The previous challenge showed `ExecutionContext` flowing through a console app. This challenge shows the same mechanism inside an ASP.NET Core request, where the ambient values are the signed-in user and the current `HttpContext`.
+
 1. Open **3. Principal/PrincipalExample.slnx**.
-2. Open **PrincipalExample/Program.cs** and **PrincipalExample/Controllers/AccountController.cs**.
-3. Before running, predict the output of each call to the `LogAmbientState(string)` method
-    * Which of the values listed below will still be available after the `await`, and which will be available inside the `Task.Run(...)` created while `ExecutionContext` flow is suppressed:
-        * `Thread.CurrentPrincipal`
-        * `IHttpContextAccessor.HttpContext`
-        * The controller's `HttpContext` property
-        * `principal`.
-4. Launch the app using the Debugger
-5. In a browser, navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login).
-6. Read the three `AccountController` log lines and compare them with your predictions.
-7. Explain which values are carried by `ExecutionContext` and which are simply object references that were never on a thread in the first place.
+2. Open **PrincipalExample/Controllers/HomeController.cs** and read `RunExperiment()`. Each `Observe(string)` call records a checkpoint: the current thread ID, plus the signed-in user's name as seen through four different expressions.
+3. Before running the app, copy this grid into your notes. In each cell, predict whether that expression returns your name or `null` at that checkpoint:
+
+    | Checkpoint | `Thread.CurrentPrincipal` | `httpContextAccessor.HttpContext?.User` | `HttpContext.User` | `signedInUser` |
+    | --- | --- | --- | --- | --- |
+    | 1. Start of the action | | | | |
+    | 2. After `await Task.Yield()` | | | | |
+    | 3. Inside `Task.Run(...)` | | | | |
+    | 4. Inside `Task.Run(...)` started while `ExecutionContext` flow is suppressed | | | | |
+
+4. Run or debug the project. If your IDE does not open a browser, navigate to [http://localhost:5000](http://localhost:5000). Sign in with your first name.
+5. Select **Run the experiment**. Compare the four name columns with your predictions, and note which thread ran each checkpoint.
+6. Select **Run it again** a few times. What changes from run to run, and what never changes?
+7. For each column, explain why the value is or is not still there at checkpoints 2, 3, and 4. Which values did `ExecutionContext` carry, and which were simply object references the code already held?
+8. Use checkpoint 1 to explain whether ASP.NET Core sets `Thread.CurrentPrincipal` for you. Open **PrincipalExample/Program.cs** to see where `HttpContext.User` gets its value.
+9. Explain why the checkpoint 4 task is created inside the `using` block but awaited after it.
 
 ## 4. SynchronizationContext Challenge
 

@@ -96,54 +96,120 @@ The exact thread ID may differ. The important observation is that the culture re
 
 The previous sample showed `ExecutionContext` flowing through a console app. This sample moves the same mechanism into an ASP.NET Core request. The goal is to separate two things that are easy to confuse: values that flow across an `await` because they ride on `ExecutionContext`, and values that are available after an `await` simply because they are object references the code already holds.
 
-Open **3. Principal/PrincipalExample/Controllers/AccountController.cs**. `Login()` sets `Thread.CurrentPrincipal`, then logs four values at three points:
+Open **3. Principal/PrincipalExample/Controllers/HomeController.cs**. `RunExperiment()` holds the signed-in user in a local variable, then records four checkpoints:
 
 ```cs
-Thread.CurrentPrincipal = principal;
+var checkpoints = new List<Checkpoint>();
+var signedInUser = HttpContext.User;
 
-LogAmbientState("Before await");
+checkpoints.Add(Observe("1. Start of the action"));
 
-await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal).ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.None);
+Thread.CurrentPrincipal = signedInUser;
 
-LogAmbientState("After await");
+// Yields the current thread: the rest of this method runs later as a continuation on the thread pool
+await Task.Yield();
 
-Task suppressedFlowTask;
+checkpoints.Add(Observe("2. After await Task.Yield()"));
+
+checkpoints.Add(await Task.Run(() => Observe("3. Inside Task.Run(...)")));
+
+Task<Checkpoint> suppressedFlowTask;
 using (ExecutionContext.SuppressFlow())
 {
-    suppressedFlowTask = Task.Run(() => LogAmbientState("Inside Task.Run with ExecutionContext suppressed"));
+    suppressedFlowTask = Task.Run(() => Observe("4. Inside Task.Run(...) started while ExecutionContext flow is suppressed"));
 }
 
-await suppressedFlowTask;
+checkpoints.Add(await suppressedFlowTask);
 ```
 
-`ConfigureAwaitOptions.ForceYielding` guarantees an asynchronous continuation, so the "After await" line always runs as a scheduled continuation rather than synchronously.
+Each checkpoint calls the `Observe(string)` local function, which reads the current thread ID and asks for the signed-in user's name four different ways:
 
-Debug **PrincipalExample.csproj**, navigate to [http://localhost:5000/Account/Login](http://localhost:5000/Account/Login), and read the three log lines. The output has this shape:
+```cs
+Checkpoint Observe(string checkpoint) => new Checkpoint(
+    checkpoint,
+    Environment.CurrentManagedThreadId,
+    Thread.CurrentPrincipal?.Identity?.Name,
+    httpContextAccessor.HttpContext?.User.Identity?.Name,
+    HttpContext.User.Identity?.Name,
+    signedInUser.Identity?.Name);
+```
+
+`await Task.Yield()` never completes synchronously. ASP.NET Core has no `SynchronizationContext`, so the rest of the method is queued to the thread pool as a real continuation, and it usually resumes on a different thread.
+
+Run the project:
 
 ```console
-Before await | Thread 12 | Thread.CurrentPrincipal: testuser | IHttpContextAccessor.HttpContext: available | Controller.HttpContext: available | principal local: testuser
-After await | Thread 13 | Thread.CurrentPrincipal: testuser | IHttpContextAccessor.HttpContext: available | Controller.HttpContext: available | principal local: testuser
-Inside Task.Run with ExecutionContext suppressed | Thread 9 | Thread.CurrentPrincipal: <null> | IHttpContextAccessor.HttpContext: <null> | Controller.HttpContext: available | principal local: testuser
+dotnet run --project "3. Principal/PrincipalExample/PrincipalExample.csproj"
 ```
 
-Thread IDs will differ. Read the columns, not the rows:
+Open [http://localhost:5000](http://localhost:5000), sign in, and select **Run the experiment**. Signed in as `Ada`, one run produced this **Results** table:
 
-| Value | After await | Flow suppressed | Mechanism |
-| --- | --- | --- | --- |
-| `Thread.CurrentPrincipal` | available | `<null>` | `ExecutionContext` (AsyncLocal-backed) |
-| `IHttpContextAccessor.HttpContext` | available | `<null>` | `ExecutionContext` (AsyncLocal-backed) |
-| `Controller.HttpContext` | available | available | Object reference on the controller instance |
-| `principal` local | available | available | Object reference hoisted into the async state machine |
+| Checkpoint | Thread | `Thread.CurrentPrincipal` | `httpContextAccessor.HttpContext?.User` | `HttpContext.User` | `signedInUser` |
+| --- | --- | --- | --- | --- | --- |
+| 1. Start of the action | 15 | null | Ada | Ada | Ada |
+| 2. After await Task.Yield() | 12 | Ada | Ada | Ada | Ada |
+| 3. Inside Task.Run(...) | 7 | Ada | Ada | Ada | Ada |
+| 4. Inside Task.Run(...) started while ExecutionContext flow is suppressed | 7 | null | null | Ada | Ada |
 
-The first two columns tell the `ExecutionContext` story. `Thread.CurrentPrincipal` and `IHttpContextAccessor.HttpContext` are both implemented with `AsyncLocal<T>`. They survive the thread switch at "After await" because `await` captured `ExecutionContext` and restored it on the continuation thread. They disappear inside the suppressed `Task.Run(...)` because nothing carried them there.
+Your name and the thread IDs will differ, and a checkpoint may reuse a thread from an earlier row. Select **Run it again** a few times: the thread IDs move around, but the names and `null`s never change. Read the columns, not the rows.
 
-The last two columns are the misconception to correct. The controller's `HttpContext` property and the `principal` local are still available with flow suppressed because they were never ambient thread state. `this.HttpContext` is a field read on the controller object, and `principal` is a local that the compiler hoisted into the async state machine. Both are ordinary references that any code holding the object can read, regardless of thread or `ExecutionContext`. Observing them after an `await` demonstrates that the state machine kept its captured variables, not that .NET flowed a security context.
+### Where the signed-in user comes from
 
-This distinction matters in .NET Framework history, too. Before .NET 4.6, `HttpContext.Current` was thread-bound, so it was lost after a thread switch. Modern ASP.NET Core makes `IHttpContextAccessor` AsyncLocal-backed so it flows the same way `Thread.CurrentPrincipal` does.
+Open **3. Principal/PrincipalExample/Program.cs**. The app uses cookie authentication:
+
+```cs
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(static options => options.LoginPath = "/");
+
+var app = builder.Build();
+
+// Reads the sign-in cookie on every request and assigns the signed-in user to HttpContext.User
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+When you signed in, `AccountController.Login` called `HttpContext.SignInAsync(...)`, which only writes the sign-in cookie:
+
+```cs
+// Writes the sign-in cookie. HttpContext.User is assigned from that cookie on the next request.
+await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+```
+
+On every request after that, the authentication middleware turns the cookie back into a `ClaimsPrincipal` and assigns it to `HttpContext.User` before the controller runs. That is why three columns already show your name at checkpoint 1. Nothing in ASP.NET Core assigns `Thread.CurrentPrincipal`, so it is `null` at checkpoint 1, and the sample copies the user into it by hand right after. In ASP.NET Core, `HttpContext.User` (also exposed as the controller's `User` property) is the principal to use. `Thread.CurrentPrincipal` only holds the user if your own code puts it there.
+
+Checkpoint 1 stays `null` on every run, even when the request lands on a thread where an earlier run assigned `Thread.CurrentPrincipal`. The earlier value belonged to that request's `ExecutionContext`, not to the thread, and the thread pool resets each thread to the default context after every work item it runs.
+
+### What `ExecutionContext` carries
+
+`Thread.CurrentPrincipal` and `IHttpContextAccessor.HttpContext` are both implemented with `AsyncLocal<T>`. At checkpoint 2 the thread changed from 15 to 12, yet both columns still show `Ada`: `await` captured `ExecutionContext` and restored it on the continuation thread. `Task.Run(...)` does the same capture and restore at checkpoint 3, on the thread pool thread that runs the lambda.
+
+At checkpoint 4 both columns are `null`. The task was created while flow was suppressed, so no `ExecutionContext` was captured for it, and its lambda ran with the default, empty context. The thread does not decide the result: in the run above, checkpoint 4 ran on thread 7, the same thread as checkpoint 3, and still saw `null`, because `ExecutionContext` belongs to the work item, not to the thread. The `httpContextAccessor` object itself was still reachable at checkpoint 4; only the `AsyncLocal<T>` lookup behind its `HttpContext` property came back empty.
+
+As in the previous sample, `ExecutionContext.SuppressFlow()` returns a thread-affine `AsyncFlowControl`. Create the task inside the `using` block, leave the block so flow is restored on the same thread, and only then await the task. Awaiting inside the block would let the method return before the block ends. The continuation runs with flow no longer suppressed, often on a different thread, so disposing the `AsyncFlowControl` at the end of the block throws `InvalidOperationException` even when the thread happens to be the same.
+
+### What only looks like it flowed
+
+`HttpContext.User` and `signedInUser` show `Ada` in every row, including checkpoint 4. This is the misconception to correct: neither value was ever ambient state.
+
+- `HttpContext` is a controller property that reads `ControllerContext.HttpContext`. MVC assigned `ControllerContext` when it created the controller, so this is a chain of ordinary object references reached through `this`.
+- `signedInUser` is a local variable used by the `Observe` local function, so the compiler stores it, along with `this`, in a closure object that the async state machine and both `Task.Run(...)` lambdas reference.
+
+Any code holding those objects can read them, on any thread, whether or not `ExecutionContext` flowed. Seeing them after an `await` proves that the compiler kept its captured variables, not that .NET flowed a security context.
+
+The `httpContextAccessor.HttpContext?.User` and `HttpContext.User` columns reach the same `HttpContext` object in two very different ways: `httpContextAccessor.HttpContext` looks it up in an `AsyncLocal<T>`, while the controller's `HttpContext` property is a plain object reference.
+
+| Value | Checkpoint 1 | Checkpoint 2 (after await) | Checkpoint 4 (flow suppressed) | Mechanism |
+| --- | --- | --- | --- | --- |
+| `Thread.CurrentPrincipal` | `null` | your name | `null` | `ExecutionContext` (AsyncLocal-backed), assigned only by your code |
+| `httpContextAccessor.HttpContext?.User` | your name | your name | `null` | `ExecutionContext` (AsyncLocal-backed) |
+| `HttpContext.User` | your name | your name | your name | Object reference on the controller instance |
+| `signedInUser` | your name | your name | your name | Local variable captured in a compiler-generated closure |
+
+A bit of history: in classic ASP.NET (System.Web), `HttpContext.Current` relied on ASP.NET's `SynchronizationContext` to be re-attached on the continuation thread, so it was commonly `null` after `ConfigureAwait(false)`. ASP.NET Core's `IHttpContextAccessor` is AsyncLocal-backed instead, so it flows the same way `Thread.CurrentPrincipal` does.
 
 ## 4. SynchronizationContext
 
-The previous two samples printed the values that ride on `ExecutionContext`. This sample prints the other piece of ambient state that `await` captures: `SynchronizationContext`. In Blazor Server that is the renderer's synchronization context, and it is exactly what `ConfigureAwait(false)` opts out of.
+The previous two samples showed the values that ride on `ExecutionContext`. This sample prints the other piece of ambient state that `await` captures: `SynchronizationContext`. In Blazor Server that is the renderer's synchronization context, and it is exactly what `ConfigureAwait(false)` opts out of.
 
 Open **4. SynchronizationContext/HackerNews/Components/Pages/News.razor.cs**. `RefreshAsync(CancellationToken token)` logs the current thread and `SynchronizationContext` before its first `ConfigureAwait(false)`:
 
